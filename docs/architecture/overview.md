@@ -1,0 +1,139 @@
+# Tổng quan kiến trúc
+
+## Mô hình triển khai
+
+eSchool SaaS sử dụng kiến trúc **Modular Monolith** – một ứng dụng NestJS duy nhất, chia module nội bộ, không tách microservice trong MVP.
+
+```text
+┌─────────────────────────────────────────────────────────┐
+│                    React SPA (client/)                   │
+│         Vite · TypeScript · TanStack Query · shadcn/ui  │
+└──────────────────────────┬──────────────────────────────┘
+                           │ HTTPS + REST API
+                           │ HttpOnly Cookie (JWT)
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│               NestJS Modular Monolith (server/)          │
+│  ┌─────────┐ ┌─────────┐ ┌──────────┐ ┌──────────────┐  │
+│  │  auth   │ │ schools │ │  users   │ │ permissions  │  │
+│  └─────────┘ └─────────┘ └──────────┘ └──────────────┘  │
+│  ┌─────────┐ ┌─────────┐ ┌──────────┐ ┌──────────────┐  │
+│  │students │ │ scores  │ │timetables│ │   reports    │  │
+│  └─────────┘ └─────────┘ └──────────┘ └──────────────┘  │
+│              (các module Sprint 2–8)                     │
+└──────────────┬──────────────────────────┬───────────────┘
+               │                          │
+               ▼                          ▼
+    ┌──────────────────┐      ┌──────────────────┐
+    │  Neon PostgreSQL │      │  Cloudflare R2   │
+    │     (Prisma)     │      │  (Sprint 3+)     │
+    └──────────────────┘      └──────────────────┘
+```
+
+## Stack công nghệ
+
+### Frontend (`client/`)
+
+| Công nghệ | Mục đích |
+|-----------|----------|
+| React 19 + TypeScript | UI framework |
+| Vite | Build tool |
+| React Router | Routing |
+| Tailwind CSS 4 | Styling |
+| shadcn/ui | Component library |
+| TanStack Query | Server state, cache, mutation |
+| React Hook Form + Zod | Form và validation client |
+| Axios | HTTP client |
+
+### Backend (`server/`)
+
+| Công nghệ | Mục đích |
+|-----------|----------|
+| NestJS 11 + TypeScript | API framework |
+| Prisma | ORM, migration, seed |
+| PostgreSQL (Neon) | Database |
+| JWT | Access token |
+| HttpOnly Cookie | Access + Refresh token transport |
+| Swagger/OpenAPI | API documentation |
+
+### Không dùng trong MVP
+
+Next.js, GraphQL, Redis, BullMQ, Kafka, RabbitMQ, WebSocket, Microservices, Elasticsearch, Supabase Auth, Clerk.
+
+## Nguyên tắc thiết kế
+
+1. **Tenant isolation** – Mọi dữ liệu nghiệp vụ gắn `school_id`, lọc theo `activeSchoolId` từ auth context.
+2. **Backend là nguồn quyết định quyền** – Frontend chỉ ẩn/hiện UI.
+3. **Modular Monolith** – Module giao tiếp qua service nội bộ, không event bus.
+4. **MVP first** – Triển khai từng sprint nhỏ, test được, rollback được.
+5. **Lịch sử thay đổi** – Không xóa cứng dữ liệu quan trọng; dùng status và audit log.
+
+## Phân tầng backend (mỗi module)
+
+```text
+controllers/   → HTTP layer, validation input, gọi service
+services/      → Business logic, transaction
+repositories/  → Truy vấn Prisma (hoặc query trực tiếp trong service nếu đơn giản)
+dto/           → Request/response shape
+policies/      → Permission và data scope checking
+mappers/       → Entity → DTO
+tests/         → Unit và integration test
+```
+
+Không tạo generic repository abstraction phức tạp. Không gom toàn bộ nghiệp vụ vào một service lớn.
+
+## Phân tầng frontend (mỗi feature)
+
+```text
+features/<tên-feature>/
+├── api/         → API calls
+├── components/  → UI components
+├── hooks/       → TanStack Query hooks
+├── pages/       → Route pages
+├── schemas/     → Zod schemas
+├── types/       → TypeScript types
+└── utils/       → Helper functions
+```
+
+## Request lifecycle
+
+```text
+HTTP Request
+  → Request ID middleware
+  → CORS + Cookie parser
+  → JWT Auth Guard (đọc access token cookie)
+  → Tenant Guard (xác nhận activeSchoolId)
+  → Permission Guard (kiểm tra permission code)
+  → Data Scope Policy (kiểm tra phạm vi dữ liệu nếu cần)
+  → Controller → Service → Prisma
+  → Response wrapper { success, data, message }
+  → Audit log (async, không làm hỏng transaction chính)
+```
+
+## Health check
+
+```text
+GET /api/v1/health
+```
+
+Kiểm tra:
+
+- API đang chạy
+- Database có thể kết nối
+
+Không kiểm tra R2 trong mọi health check request.
+
+## Roadmap sprint
+
+| Sprint | Phạm vi |
+|--------|---------|
+| **1** | Auth, tenant, RBAC, seed trường, quản lý user |
+| 2 | Năm học, khối, môn, lớp, lớp môn học |
+| 3 | Học sinh, enrollment, chuyển lớp, R2 upload |
+| 4 | Giáo viên, phân công, thời khóa biểu |
+| 5 | Điểm danh |
+| 6 | Sổ điểm |
+| 7 | Hạnh kiểm, tổng kết, lên lớp |
+| 8 | Báo cáo, test E2E, CI/CD, deployment |
+
+Chi tiết Sprint 1: [sprint-1-plan.md](../sprints/sprint-1-plan.md)
