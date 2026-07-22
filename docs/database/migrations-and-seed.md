@@ -15,15 +15,15 @@
 3. Migration phải chạy được trên PostgreSQL tiêu chuẩn (không dùng tính năng độc quyền Neon)
 4. Seed an toàn khi chạy lại (idempotent)
 
-## Cấu trúc file (dự kiến)
+## Cấu trúc file
 
 ```text
 server/
 ├── prisma/
 │   ├── schema.prisma
 │   ├── migrations/
-│   │   └── 20260101000000_init_sprint1/
-│   │       └── migration.sql
+│   │   ├── 20260720102813_init_sprint1/
+│   │   └── 20260720163000_simplify_rbac_mvp/
 │   └── seed.ts
 └── package.json          # prisma.seed config
 ```
@@ -34,13 +34,13 @@ server/
 cd server
 
 # Tạo migration mới sau khi sửa schema.prisma
-pnpm prisma migrate dev --name <ten_migration>
+pnpm prisma:migrate:dev
 
 # Áp dụng migration trên môi trường deploy
 pnpm prisma migrate deploy
 
 # Chạy seed
-pnpm prisma db seed
+pnpm prisma:seed
 
 # Mở Prisma Studio (debug)
 pnpm prisma studio
@@ -53,7 +53,7 @@ pnpm prisma migrate reset
 
 ```text
 1. Sửa server/prisma/schema.prisma
-2. Chạy: pnpm prisma migrate dev --name mo_ta_thay_doi
+2. Chạy: pnpm prisma:migrate:dev --name mo_ta_thay_doi
 3. Kiểm tra file SQL trong prisma/migrations/
 4. Cập nhật docs/database/schema-sprint1.md nếu cần
 5. Commit schema + migration vào Git
@@ -67,34 +67,39 @@ File: `server/prisma/seed.ts`
 
 | Thứ tự | Dữ liệu | Ghi chú |
 |--------|---------|---------|
-| 1 | Permissions hệ thống | Upsert theo `code` |
-| 2 | Trường mẫu | Upsert theo `code` từ env |
-| 3 | Roles mặc định | Upsert theo `school_id + code` |
-| 4 | Role ↔ Permission | Upsert, không trùng |
-| 5 | User admin | Upsert theo `email` |
-| 6 | Membership admin ↔ trường | Upsert theo `school_id + user_id` |
-| 7 | Membership ↔ Role SCHOOL_ADMIN | Upsert |
+| 1 | Trường mẫu | Upsert theo `code` từ env |
+| 2 | User admin | Upsert theo `email`, gán `school_id` + `role = SCHOOL_ADMIN` |
+| 3 | Giáo viên demo | 3 tài khoản `TEACHER` |
+| 4 | Học sinh demo | 5 tài khoản `STUDENT` |
 
 ### Biến môi trường seed
 
 ```env
 SEED_ADMIN_EMAIL=admin@demo.edu.vn
 SEED_ADMIN_PASSWORD=Admin@123456
+SEED_DEMO_PASSWORD=Demo@123456
 SEED_SCHOOL_CODE=DEMO
 SEED_SCHOOL_NAME=Trường THPT Demo
 SEED_SCHOOL_TYPE=THPT
 ```
 
+**Tài khoản demo sau seed:**
+
+| Vai trò | Email | Mật khẩu |
+|---------|-------|----------|
+| Admin trường | `admin@demo.edu.vn` | `SEED_ADMIN_PASSWORD` (mặc định `Admin@123456`) |
+| Giáo viên | `teacher1@demo.edu.vn` … `teacher3@demo.edu.vn` | `SEED_DEMO_PASSWORD` (mặc định `Demo@123456`) |
+| Học sinh | `student1@demo.edu.vn` … `student5@demo.edu.vn` | `SEED_DEMO_PASSWORD` (mặc định `Demo@123456`) |
+
 ### Idempotent strategy
 
-Mỗi bước seed dùng `upsert` hoặc `findFirst` + `create`:
+Mỗi bước seed dùng `upsert`:
 
 ```typescript
-// Ví dụ pattern
-await prisma.permission.upsert({
-  where: { code: 'user:read' },
-  update: {},  // không ghi đè nếu đã tồn tại
-  create: { code: 'user:read', resource: 'user', action: 'read', description: '...' },
+await prisma.user.upsert({
+  where: { email: env.SEED_ADMIN_EMAIL },
+  update: { schoolId: school.id, role: UserRole.SCHOOL_ADMIN },
+  create: { email, passwordHash, fullName, schoolId: school.id, role: UserRole.SCHOOL_ADMIN },
 });
 ```
 
@@ -103,11 +108,11 @@ Chạy lại seed **không tạo bản ghi trùng**, **không reset mật khẩu
 ### Output sau seed
 
 ```text
-✓ 9 permissions
-✓ 1 school: Trường THPT Demo (DEMO)
-✓ 2 roles: SCHOOL_ADMIN, TEACHER
-✓ 1 admin user: admin@demo.edu.vn
-✓ Membership + SCHOOL_ADMIN role assigned
+Seed completed.
+  School: Trường THPT Demo (DEMO)
+  Admin: admin@demo.edu.vn (SCHOOL_ADMIN)
+  Teachers: 3 accounts (password: Demo@123456)
+  Students: 5 accounts (password: Demo@123456)
 ```
 
 ## package.json seed config
@@ -120,16 +125,14 @@ Chạy lại seed **không tạo bản ghi trùng**, **không reset mật khẩu
 }
 ```
 
-Hoặc dùng `tsx prisma/seed.ts` nếu cài `tsx`.
-
 ## Migration naming convention
 
 ```text
 YYYYMMDDHHMMSS_<mo_ta_ngan>.sql
 
 Ví dụ:
-20260715100000_init_sprint1
-20260720120000_add_audit_logs_index
+20260720102813_init_sprint1
+20260720163000_simplify_rbac_mvp
 ```
 
 ## Rollback

@@ -1,25 +1,24 @@
 # Schema Sprint 1
 
-Schema cho Sprint 1: nền tảng SaaS, authentication, authorization, audit log.
+Schema cho Sprint 1: nền tảng SaaS, authentication, phân quyền đơn giản theo role.
 
-> ORM: Prisma. File schema dự kiến: `server/prisma/schema.prisma`
+> **Hoãn MVP:** `audit_logs` — xem [ADR 007](../decisions/007-defer-audit-logs.md)
+
+> **Đơn giản hóa MVP:** Không membership / permission matrix — xem [ADR 008](../decisions/008-simplify-rbac-mvp.md)
+
+> ORM: Prisma. File schema: `server/prisma/schema.prisma`
 
 ## Sơ đồ quan hệ
 
 ```text
 schools
   │
-  ├──< school_memberships >── users
-  │         │
-  │         └──< membership_roles >── roles
-  │                                      │
-  │                                      └──< role_permissions >── permissions
-  │
-  └──< roles (school-scoped)
-  └──< audit_logs
+  └──< users
+         ├── school_id → schools.id
+         └── role: SCHOOL_ADMIN | TEACHER | STUDENT
 
 users
-  └──< auth_sessions
+  └── (không có auth_sessions — JWT stateless, ADR 005)
 ```
 
 ## Bảng chi tiết
@@ -50,143 +49,49 @@ users
 | Cột | Kiểu | Ràng buộc | Mô tả |
 |-----|------|-----------|-------|
 | id | UUID | PK | |
+| school_id | UUID | FK → schools, NOT NULL | Trường user thuộc về |
 | email | VARCHAR(255) | UNIQUE | |
 | password_hash | VARCHAR(255) | NOT NULL | bcrypt |
 | full_name | VARCHAR(255) | NOT NULL | |
+| role | ENUM | DEFAULT STUDENT | SCHOOL_ADMIN, TEACHER, STUDENT |
 | status | ENUM | DEFAULT ACTIVE | ACTIVE, INACTIVE, LOCKED |
 | created_at | TIMESTAMPTZ | | |
 | updated_at | TIMESTAMPTZ | | |
 
-**Index:** `email`, `status`
+**Index:** `email`, `school_id`, `role`, `status`
 
 ---
 
-### school_memberships
+## Phân quyền MVP (trong code, không DB)
 
-| Cột | Kiểu | Ràng buộc | Mô tả |
-|-----|------|-----------|-------|
-| id | UUID | PK | |
-| school_id | UUID | FK → schools | |
-| user_id | UUID | FK → users | |
-| status | ENUM | DEFAULT ACTIVE | ACTIVE, INACTIVE, SUSPENDED |
-| joined_at | TIMESTAMPTZ | DEFAULT now() | |
-| created_at | TIMESTAMPTZ | | |
-| updated_at | TIMESTAMPTZ | | |
+| Role | Quyền tóm tắt Sprint 1 |
+|------|------------------------|
+| `SCHOOL_ADMIN` | Quản lý user, cài đặt trường |
+| `TEACHER` | Chức năng giáo viên (Phase sau) |
+| `STUDENT` | Chức năng học sinh (Phase sau) |
 
-**Unique:** `(school_id, user_id)`
-**Index:** `school_id`, `user_id`, `status`
+Backend dùng **RoleGuard** — không có bảng `permissions`, `roles`, `memberships`.
 
 ---
 
-### permissions
-
-| Cột | Kiểu | Ràng buộc | Mô tả |
-|-----|------|-----------|-------|
-| id | UUID | PK | |
-| code | VARCHAR(100) | UNIQUE | Ví dụ: `student:read` |
-| resource | VARCHAR(50) | NOT NULL | Ví dụ: `student` |
-| action | VARCHAR(50) | NOT NULL | Ví dụ: `read` |
-| description | TEXT | | Mô tả tiếng Việt |
-
-Permissions hệ thống – **không gắn school_id** (global catalog).
-
----
-
-### roles
-
-| Cột | Kiểu | Ràng buộc | Mô tả |
-|-----|------|-----------|-------|
-| id | UUID | PK | |
-| school_id | UUID | FK → schools | |
-| code | VARCHAR(50) | NOT NULL | SCHOOL_ADMIN, TEACHER, ... |
-| name | VARCHAR(100) | NOT NULL | Tên hiển thị tiếng Việt |
-| is_system | BOOLEAN | DEFAULT false | Role hệ thống không xóa được |
-| created_at | TIMESTAMPTZ | | |
-| updated_at | TIMESTAMPTZ | | |
-
-**Unique:** `(school_id, code)`
-**Index:** `school_id`
-
----
-
-### role_permissions
-
-| Cột | Kiểu | Ràng buộc |
-|-----|------|-----------|
-| role_id | UUID | FK → roles, PK (composite) |
-| permission_id | UUID | FK → permissions, PK (composite) |
-
----
-
-### membership_roles
-
-| Cột | Kiểu | Ràng buộc |
-|-----|------|-----------|
-| membership_id | UUID | FK → school_memberships, PK (composite) |
-| role_id | UUID | FK → roles, PK (composite) |
-
----
+## Ngoài phạm vi Sprint 1 MVP
 
 ### auth_sessions
 
-| Cột | Kiểu | Ràng buộc | Mô tả |
-|-----|------|-----------|-------|
-| id | UUID | PK | = `sid` trong JWT |
-| user_id | UUID | FK → users | |
-| refresh_token_hash | VARCHAR(255) | NOT NULL | bcrypt hash |
-| device_name | VARCHAR(255) | | |
-| user_agent | TEXT | | |
-| ip_address | VARCHAR(45) | | |
-| expires_at | TIMESTAMPTZ | NOT NULL | |
-| revoked_at | TIMESTAMPTZ | nullable | |
-| last_used_at | TIMESTAMPTZ | | |
-| created_at | TIMESTAMPTZ | DEFAULT now() | |
-
-**Index:** `user_id`, `expires_at`
-
----
+**Không tạo** trong MVP. Auth dùng JWT stateless — [ADR 005](../decisions/005-session-storage.md).
 
 ### audit_logs
 
-| Cột | Kiểu | Ràng buộc | Mô tả |
-|-----|------|-----------|-------|
-| id | UUID | PK | |
-| school_id | UUID | FK → schools, nullable | null cho sự kiện platform |
-| actor_user_id | UUID | FK → users, nullable | |
-| action | VARCHAR(100) | NOT NULL | LOGIN, LOGOUT, USER_CREATED, ... |
-| resource_type | VARCHAR(50) | | user, role, membership, ... |
-| resource_id | UUID | nullable | |
-| old_data | JSONB | nullable | |
-| new_data | JSONB | nullable | |
-| ip_address | VARCHAR(45) | | |
-| user_agent | TEXT | | |
-| request_id | VARCHAR(100) | | |
-| created_at | TIMESTAMPTZ | DEFAULT now() | |
+**Hoãn** — [ADR 007](../decisions/007-defer-audit-logs.md).
 
-**Index:** `school_id`, `actor_user_id`, `action`, `created_at`
+### RBAC nâng cao (hoãn)
 
-## Permissions seed (Sprint 1)
+Các bảng **không có** trong MVP, có thể thêm sau:
 
-| Code | Mô tả |
-|------|-------|
-| `user:read` | Xem danh sách người dùng |
-| `user:create` | Tạo người dùng |
-| `user:update` | Cập nhật người dùng |
-| `user:manage` | Quản lý đầy đủ người dùng |
-| `role:read` | Xem vai trò |
-| `role:manage` | Quản lý vai trò và phân quyền |
-| `school:read` | Xem thông tin trường |
-| `school:update` | Cập nhật thông tin trường |
-| `audit:read` | Xem nhật ký hệ thống |
+- `school_memberships` — user thuộc nhiều trường
+- `roles`, `permissions`, `role_permissions`, `membership_roles` — permission matrix tùy chỉnh
 
-> Permissions cho student, teacher, score, ... sẽ seed ở sprint tương ứng.
-
-## Roles seed (mỗi trường)
-
-| Code | Tên | Permissions |
-|------|-----|-------------|
-| `SCHOOL_ADMIN` | Quản trị trường | Tất cả Sprint 1 |
-| `TEACHER` | Giáo viên | (Sprint 1: không có quyền admin) |
+---
 
 ## Enum values
 
@@ -197,18 +102,15 @@ SchoolType: TH | THCS | THPT | OTHER
 
 // User
 UserStatus: ACTIVE | INACTIVE | LOCKED
-
-// Membership
-MembershipStatus: ACTIVE | INACTIVE | SUSPENDED
+UserRole: SCHOOL_ADMIN | TEACHER | STUDENT
 ```
 
 ## Ràng buộc quan trọng
 
 1. Email user unique toàn hệ thống
-2. Một user chỉ có một membership tại một trường (unique `school_id + user_id`)
-3. Role code unique trong phạm vi trường
-4. Permission code unique toàn hệ thống
-5. Không xóa role `is_system = true`
+2. Mỗi user thuộc **một trường** (`users.school_id`)
+3. Role là enum trên user — không tùy chỉnh theo trường trong MVP
+4. Tenant lấy từ `user.school_id` — không qua membership lookup
 
 ## Schema Sprint 2+ (tham khảo, chưa triển khai)
 

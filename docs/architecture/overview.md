@@ -15,7 +15,7 @@ eSchool SaaS sử dụng kiến trúc **Modular Monolith** – một ứng dụn
 ┌─────────────────────────────────────────────────────────┐
 │               NestJS Modular Monolith (server/)          │
 │  ┌─────────┐ ┌─────────┐ ┌──────────┐ ┌──────────────┐  │
-│  │  auth   │ │ schools │ │  users   │ │ permissions  │  │
+│  │  auth   │ │ schools │ │  users   │                   │
 │  └─────────┘ └─────────┘ └──────────┘ └──────────────┘  │
 │  ┌─────────┐ ┌─────────┐ ┌──────────┐ ┌──────────────┐  │
 │  │students │ │ scores  │ │timetables│ │   reports    │  │
@@ -42,7 +42,7 @@ eSchool SaaS sử dụng kiến trúc **Modular Monolith** – một ứng dụn
 | Tailwind CSS 4 | Styling |
 | shadcn/ui | Component library |
 | TanStack Query | Server state, cache, mutation |
-| React Hook Form + Zod | Form và validation client |
+| React Hook Form + Zod | Form và validation (client + server) |
 | Axios | HTTP client |
 
 ### Backend (`server/`)
@@ -52,7 +52,8 @@ eSchool SaaS sử dụng kiến trúc **Modular Monolith** – một ứng dụn
 | NestJS 11 + TypeScript | API framework |
 | Prisma | ORM, migration, seed |
 | PostgreSQL (Neon) | Database |
-| JWT | Access token |
+| `@nestjs/jwt` | Ký access/refresh JWT |
+| `@nestjs/passport` + `passport-jwt` | Xác thực access token từ cookie |
 | HttpOnly Cookie | Access + Refresh token transport |
 | Swagger/OpenAPI | API documentation |
 
@@ -71,11 +72,10 @@ Next.js, GraphQL, Redis, BullMQ, Kafka, RabbitMQ, WebSocket, Microservices, Elas
 ## Phân tầng backend (mỗi module)
 
 ```text
-controllers/   → HTTP layer, validation input, gọi service
+controllers/   → HTTP layer, Zod validation, gọi service
 services/      → Business logic, transaction
-repositories/  → Truy vấn Prisma (hoặc query trực tiếp trong service nếu đơn giản)
-dto/           → Request/response shape
-policies/      → Permission và data scope checking
+schemas/       → Zod schemas + inferred types (thay DTO class-validator)
+policies/      → Role và data scope checking
 mappers/       → Entity → DTO
 tests/         → Unit và integration test
 ```
@@ -103,7 +103,7 @@ HTTP Request
   → CORS + Cookie parser
   → JWT Auth Guard (đọc access token cookie)
   → Tenant Guard (xác nhận activeSchoolId)
-  → Permission Guard (kiểm tra permission code)
+  → Role Guard (kiểm tra role enum)
   → Data Scope Policy (kiểm tra phạm vi dữ liệu nếu cần)
   → Controller → Service → Prisma
   → Response wrapper { success, data, message }

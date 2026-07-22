@@ -2,15 +2,18 @@
 
 Danh sách endpoint dự kiến cho Sprint 1. Chi tiết request/response sẽ được bổ sung vào Swagger khi triển khai.
 
+> Phân quyền theo **role enum** (`SCHOOL_ADMIN`, `TEACHER`, `STUDENT`) — không dùng permission codes. Xem [ADR 008](../decisions/008-simplify-rbac-mvp.md).
+
 ## Auth
 
 | Method | Path | Auth | Mô tả |
 |--------|------|------|-------|
 | POST | `/auth/login` | Public | Đăng nhập |
-| POST | `/auth/logout` | Required | Đăng xuất |
+| POST | `/auth/logout` | Required | Đăng xuất (xóa cookie) |
 | POST | `/auth/refresh` | Cookie refresh | Làm mới token |
 | GET | `/auth/me` | Required | Thông tin session hiện tại |
-| POST | `/auth/switch-school` | Required | Chuyển trường active |
+
+> **Ngoài MVP:** `POST /auth/switch-school` — xem [ADR 006](../decisions/006-defer-switch-school.md)
 
 ### POST /auth/login
 
@@ -33,21 +36,16 @@ Danh sách endpoint dự kiến cho Sprint 1. Chi tiết request/response sẽ �
       "id": "uuid",
       "email": "admin@demo.edu.vn",
       "fullName": "Quản trị viên Demo",
+      "role": "SCHOOL_ADMIN",
       "status": "ACTIVE"
     },
-    "schools": [
-      {
-        "id": "uuid",
-        "code": "DEMO",
-        "name": "Trường THPT Demo",
-        "shortName": "THPT Demo",
-        "roles": [
-          { "code": "SCHOOL_ADMIN", "name": "Quản trị trường" }
-        ]
-      }
-    ],
     "activeSchoolId": "uuid",
-    "permissions": ["user:manage", "role:manage", "school:read", "..."]
+    "activeSchool": {
+      "id": "uuid",
+      "code": "DEMO",
+      "name": "Trường THPT Demo",
+      "shortName": "THPT Demo"
+    }
   },
   "message": "Đăng nhập thành công"
 }
@@ -65,36 +63,26 @@ Danh sách endpoint dự kiến cho Sprint 1. Chi tiết request/response sẽ �
 {
   "success": true,
   "data": {
-    "user": { "id": "...", "email": "...", "fullName": "..." },
+    "user": {
+      "id": "...",
+      "email": "...",
+      "fullName": "...",
+      "role": "SCHOOL_ADMIN"
+    },
     "activeSchoolId": "...",
-    "activeSchool": { "id": "...", "code": "DEMO", "name": "..." },
-    "permissions": ["user:manage", "..."]
+    "activeSchool": { "id": "...", "code": "DEMO", "name": "..." }
   }
 }
 ```
 
 ---
 
-### POST /auth/switch-school
-
-**Request:**
-
-```json
-{
-  "schoolId": "uuid"
-}
-```
-
-**Response 200:** Giống `/auth/me` với `activeSchoolId` mới.
-
----
-
 ## Schools (trong tenant)
 
-| Method | Path | Permission | Mô tả |
-|--------|------|------------|-------|
-| GET | `/schools/current` | `school:read` | Thông tin trường active |
-| PATCH | `/schools/current` | `school:update` | Cập nhật trường active |
+| Method | Path | Role | Mô tả |
+|--------|------|------|-------|
+| GET | `/schools/current` | Any | Thông tin trường active |
+| PATCH | `/schools/current` | `SCHOOL_ADMIN` | Cập nhật trường active |
 
 > Sprint 1 **không có** `POST /schools` (tạo trường). Tạo trường qua seed.
 
@@ -123,17 +111,17 @@ Danh sách endpoint dự kiến cho Sprint 1. Chi tiết request/response sẽ �
 
 ## Users (trong tenant)
 
-| Method | Path | Permission | Mô tả |
-|--------|------|------------|-------|
-| GET | `/users` | `user:read` | Danh sách user trong trường |
-| GET | `/users/:id` | `user:read` | Chi tiết user |
-| POST | `/users` | `user:create` | Tạo user + membership |
-| PATCH | `/users/:id` | `user:update` | Cập nhật thông tin |
-| PATCH | `/users/:id/status` | `user:manage` | Khóa/mở tài khoản |
+| Method | Path | Role | Mô tả |
+|--------|------|------|-------|
+| GET | `/users` | `SCHOOL_ADMIN` | Danh sách user trong trường |
+| GET | `/users/:id` | `SCHOOL_ADMIN` | Chi tiết user |
+| POST | `/users` | `SCHOOL_ADMIN` | Tạo user (gán role, school_id = active) |
+| PATCH | `/users/:id` | `SCHOOL_ADMIN` | Cập nhật thông tin / role |
+| PATCH | `/users/:id/status` | `SCHOOL_ADMIN` | Khóa/mở tài khoản |
 
 ### GET /users
 
-**Query:** `page`, `limit`, `search`, `sortBy`, `sortOrder`, `status`
+**Query:** `page`, `limit`, `search`, `sortBy`, `sortOrder`, `status`, `role`
 
 **Response 200:**
 
@@ -145,13 +133,9 @@ Danh sách endpoint dự kiến cho Sprint 1. Chi tiết request/response sẽ �
       "id": "uuid",
       "email": "gv01@demo.edu.vn",
       "fullName": "Nguyễn Văn A",
+      "role": "TEACHER",
       "status": "ACTIVE",
-      "membership": {
-        "id": "uuid",
-        "status": "ACTIVE",
-        "roles": [{ "code": "TEACHER", "name": "Giáo viên" }]
-      },
-      "joinedAt": "2026-07-15T00:00:00.000Z"
+      "createdAt": "2026-07-15T00:00:00.000Z"
     }
   ],
   "meta": { "page": 1, "limit": 20, "total": 1, "totalPages": 1 }
@@ -162,7 +146,7 @@ Danh sách endpoint dự kiến cho Sprint 1. Chi tiết request/response sẽ �
 
 ### POST /users
 
-Tạo user mới và gán membership vào trường active.
+Tạo user mới trong trường active.
 
 **Request:**
 
@@ -171,7 +155,7 @@ Tạo user mới và gán membership vào trường active.
   "email": "gv01@demo.edu.vn",
   "fullName": "Nguyễn Văn A",
   "password": "Temp@123456",
-  "roleIds": ["uuid-role-teacher"]
+  "role": "TEACHER"
 }
 ```
 
@@ -184,80 +168,12 @@ Tạo user mới và gán membership vào trường active.
     "id": "uuid",
     "email": "gv01@demo.edu.vn",
     "fullName": "Nguyễn Văn A",
-    "status": "ACTIVE",
-    "membership": {
-      "id": "uuid",
-      "roles": [{ "code": "TEACHER", "name": "Giáo viên" }]
-    }
+    "role": "TEACHER",
+    "status": "ACTIVE"
   },
   "message": "Tạo người dùng thành công"
 }
 ```
-
----
-
-## Roles (trong tenant)
-
-| Method | Path | Permission | Mô tả |
-|--------|------|------------|-------|
-| GET | `/roles` | `role:read` | Danh sách vai trò |
-| GET | `/roles/:id` | `role:read` | Chi tiết vai trò + permissions |
-| POST | `/roles` | `role:manage` | Tạo vai trò tùy chỉnh |
-| PATCH | `/roles/:id` | `role:manage` | Cập nhật vai trò |
-| PUT | `/roles/:id/permissions` | `role:manage` | Gán permissions cho vai trò |
-
-### GET /roles
-
-**Response 200:**
-
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "uuid",
-      "code": "SCHOOL_ADMIN",
-      "name": "Quản trị trường",
-      "isSystem": true,
-      "permissionCount": 9
-    },
-    {
-      "id": "uuid",
-      "code": "TEACHER",
-      "name": "Giáo viên",
-      "isSystem": true,
-      "permissionCount": 0
-    }
-  ]
-}
-```
-
----
-
-## Memberships
-
-| Method | Path | Permission | Mô tả |
-|--------|------|------------|-------|
-| PUT | `/memberships/:id/roles` | `role:manage` | Gán roles cho membership |
-| PATCH | `/memberships/:id/status` | `user:manage` | Suspend/activate membership |
-
----
-
-## Permissions
-
-| Method | Path | Permission | Mô tả |
-|--------|------|------------|-------|
-| GET | `/permissions` | `role:read` | Danh sách permissions (catalog) |
-
----
-
-## Audit logs
-
-| Method | Path | Permission | Mô tả |
-|--------|------|------------|-------|
-| GET | `/audit-logs` | `audit:read` | Nhật ký hệ thống (trong tenant) |
-
-**Query:** `page`, `limit`, `action`, `resourceType`, `actorUserId`, `from`, `to`
 
 ---
 
@@ -284,15 +200,25 @@ Tạo user mới và gán membership vào trường active.
 
 ## Frontend routes (tiếng Việt)
 
-| Path | Trang | Permission |
-|------|-------|------------|
-| `/dang-nhap` | Đăng nhập | Public |
-| `/chon-truong` | Chọn trường | Auth |
+| Path | Trang | Role |
+|------|-------|------|
+| `/login` | Đăng nhập | Public |
 | `/` | Dashboard | Auth |
-| `/nguoi-dung` | Quản lý người dùng | `user:read` |
-| `/vai-tro` | Quản lý vai trò | `role:read` |
-| `/cai-dat-truong` | Cài đặt trường | `school:read` |
-| `/nhat-ky` | Nhật ký hệ thống | `audit:read` |
+| `/users` | Quản lý người dùng | `SCHOOL_ADMIN` |
+| `/school-settings` | Cài đặt trường | `SCHOOL_ADMIN` |
+
+---
+
+## Ngoài MVP Sprint 1
+
+Các endpoint sau **không triển khai** trong Sprint 1:
+
+- `GET/POST/PATCH /roles`, `PUT /roles/:id/permissions`
+- `PUT /memberships/:id/roles`, `PATCH /memberships/:id/status`
+- `GET /permissions`
+- `POST /auth/switch-school`
+
+Sẽ thêm khi nâng cấp RBAC / multi-school — xem [ADR 008](../decisions/008-simplify-rbac-mvp.md).
 
 ---
 
@@ -300,10 +226,9 @@ Tạo user mới và gán membership vào trường active.
 
 | Test case | Mô tả |
 |-----------|-------|
-| Login success | Cookie được set, trả đúng user + schools |
+| Login success | Cookie set, trả user + activeSchool + role |
 | Login fail | Sai mật khẩu → 401 |
-| Refresh rotation | Token cũ bị revoke sau refresh |
-| Logout | Session revoked, cookie cleared |
+| Refresh | Access token mới khi refresh JWT hợp lệ |
+| Logout | Cookie cleared |
 | Tenant isolation | User trường A không đọc user trường B |
-| Permission guard | TEACHER không gọi được POST /users |
-| Switch school | Token mới có activeSchoolId đúng |
+| Role guard | TEACHER không gọi được POST /users |

@@ -17,10 +17,10 @@ Hệ thống quản trị trường học đa tenant (SaaS), tập trung MVP: qu
 
 | Hạng mục | Trạng thái |
 |----------|------------|
-| Sprint hiện tại | **Sprint 1** – Nền tảng SaaS, Auth, RBAC |
+| Sprint hiện tại | **Sprint 1** – Nền tảng SaaS, Auth, phân quyền theo role |
 | Frontend | `client/` – React + Vite (scaffold UI) |
-| Backend | `server/` – NestJS (scaffold) |
-| Database | Neon PostgreSQL + Prisma (chưa triển khai) |
+| Backend | `server/` – NestJS (Phase 1A–1C ✅) |
+| Database | Neon PostgreSQL + Prisma (2 bảng: schools, users) |
 | Tạo trường đầu tiên | Seed data (MVP) |
 
 ## Quyết định đã chốt
@@ -29,7 +29,17 @@ Hệ thống quản trị trường học đa tenant (SaaS), tập trung MVP: qu
 - ORM: **Prisma** (thay Drizzle trong master prompt gốc)
 - Database: **Neon PostgreSQL**
 - Ngôn ngữ giao diện: **Tiếng Việt**
-- Tạo trường tenant đầu tiên: **Seed script** (không có UI tạo trường trong Sprint 1)
+- Tạo trường tenant đầu tiên: **Seed script**
+- Auth MVP: **JWT stateless** — [ADR 005](./decisions/005-session-storage.md)
+- **Không** có `switch-school` trong MVP — [ADR 006](./decisions/006-defer-switch-school.md)
+- **Không** có `audit_logs` trong MVP — [ADR 007](./decisions/007-defer-audit-logs.md)
+- Validation backend: **Zod** — [ADR 004](./decisions/004-validation-library.md)
+- RBAC MVP đơn giản: **role enum trên user** — [ADR 008](./decisions/008-simplify-rbac-mvp.md)
+- Auth Phase 1C: **login/logout/refresh/me + JWT cookie guards**
+
+## Quyết định chưa chốt
+
+_Không còn ADR blocking cho Phase 1A._
 
 ## Luồng MVP mục tiêu (toàn sản phẩm)
 

@@ -13,8 +13,7 @@ Trong SaaS multi-tenant, cần quyết định ai và bằng cách nào tạo te
 Sprint 1 sử dụng **seed script** (`prisma/seed.ts`) để tạo:
 
 - Trường mẫu (tenant đầu tiên)
-- Tài khoản admin trường
-- Permissions, roles, membership
+- Tài khoản admin trường (`role = SCHOOL_ADMIN`, `school_id` gắn trường)
 
 **Không triển khai** API/UI tạo trường trong Sprint 1.
 
@@ -30,7 +29,7 @@ Sprint 1 sử dụng **seed script** (`prisma/seed.ts`) để tạo:
 ### Sprint 1 có
 
 - `pnpm prisma db seed` tạo trường + admin
-- Admin đăng nhập, quản lý user/role **trong trường**
+- Admin đăng nhập, quản lý user **trong trường** (gán role enum)
 - Test tenant isolation với 2 trường (seed thêm trường thứ 2 cho test)
 
 ### Sprint 1 không có

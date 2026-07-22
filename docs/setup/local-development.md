@@ -21,39 +21,37 @@ Mỗi thư mục `client/` và `server/` là một package pnpm độc lập, c�
 
 ## Biến môi trường
 
-### Server (`server/.env.development`)
+### Quy ước file env (server)
 
-Tạo file từ `.env.example` và điền giá trị:
+| File | Mục đích | Commit Git |
+|------|----------|------------|
+| `.env.example` | Chỉ liệt kê **key** (không giá trị) | ✅ Có |
+| `.env.development` | Giá trị cho local dev | ❌ Không |
+| `.env.production` | Giá trị cho production | ❌ Không |
+
+NestJS load theo thứ tự: `.env.development` hoặc `.env` (xem `ConfigModule` trong `app.module.ts`).
+
+### Server — bắt đầu local
+
+1. Xem danh sách key trong `server/.env.example`
+2. Copy sang `server/.env.development` (file đã có giá trị mẫu dev — chỉnh `DATABASE_URL` Neon của bạn)
+3. Không commit `.env.development` / `.env.production`
+
+**Giá trị mẫu development** (trong `.env.development`, không nằm trong example):
 
 ```env
-# Server
 PORT=8080
 NODE_ENV=development
-
-# Database (Neon PostgreSQL)
-DATABASE_URL="postgresql://user:password@host/dbname?sslmode=require"
-
-# JWT
-JWT_ACCESS_SECRET="thay-bang-chuoi-ngau-nhien-dai"
-JWT_REFRESH_SECRET="thay-bang-chuoi-ngau-nhien-khac"
-JWT_ACCESS_EXPIRES_IN=15m
-JWT_REFRESH_EXPIRES_IN=7d
-
-# Cookie
-COOKIE_SECURE=false
-COOKIE_SAME_SITE=lax
-
-# CORS – origin của frontend dev
+DATABASE_URL="postgresql://..."   # Neon connection string
+JWT_ACCESS_SECRET="..."           # ≥ 32 ký tự
+JWT_REFRESH_SECRET="..."          # ≥ 32 ký tự
 CORS_ORIGIN=http://localhost:5173
-
-# Seed (chỉ dùng khi chạy seed)
-SEED_ADMIN_EMAIL=admin@demo.edu.vn
-SEED_ADMIN_PASSWORD=Admin@123456
-SEED_SCHOOL_CODE=DEMO
-SEED_SCHOOL_NAME=Trường THPT Demo
+COOKIE_SECURE=false
 ```
 
-> **Lưu ý bảo mật:** Không commit file `.env*` chứa secret thật. Chỉ commit `.env.example` với placeholder.
+**Production** (`server/.env.production`): điền secret thật, `COOKIE_SECURE=true`, `CORS_ORIGIN` = domain frontend production.
+
+> **Lưu ý bảo mật:** Không commit file chứa secret. `.env.example` chỉ có tên biến.
 
 ### Client (`client/.env.development`)
 
@@ -75,7 +73,7 @@ pnpm install
 
 ## Database – Migration và Seed
 
-> Phần này sẽ có hiệu lực sau khi Phase 1B (Prisma setup) được triển khai.
+> Phần này đã sẵn sàng sau Phase 1B.
 
 ```bash
 cd server
@@ -89,10 +87,8 @@ pnpm prisma db seed
 
 Seed tạo:
 
-- Permissions hệ thống
-- Roles mặc định (`SCHOOL_ADMIN`, `TEACHER`, …)
 - 1 trường mẫu
-- 1 tài khoản admin trường
+- 1 tài khoản admin trường (`role = SCHOOL_ADMIN`)
 
 Chi tiết: [Migration và Seed](../database/migrations-and-seed.md)
 
@@ -134,11 +130,12 @@ pnpm run build
 
 ## Tài khoản dev sau seed
 
-| Trường | Giá trị mặc định |
-|--------|------------------|
-| Email | `admin@demo.edu.vn` |
-| Mật khẩu | `Admin@123456` (đổi qua `SEED_ADMIN_PASSWORD`) |
-| Trường | Trường THPT Demo (`DEMO`) |
+| Vai trò | Email | Mật khẩu |
+|---------|-------|----------|
+| Admin trường | `admin@demo.edu.vn` | `Admin@123456` (đổi qua `SEED_ADMIN_PASSWORD`) |
+| Giáo viên | `teacher1@demo.edu.vn`, `teacher2@demo.edu.vn`, `teacher3@demo.edu.vn` | `Demo@123456` (đổi qua `SEED_DEMO_PASSWORD`) |
+| Học sinh | `student1@demo.edu.vn` … `student5@demo.edu.vn` | `Demo@123456` |
+| Trường | Trường THPT Demo (`DEMO`) | — |
 
 > Chỉ dùng cho môi trường development. Không dùng mật khẩu mặc định trên production.
 

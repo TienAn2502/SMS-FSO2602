@@ -1,8 +1,14 @@
-# Authentication
+# Authentication (MVP Sprint 1)
 
 ## Tổng quan
 
-Hệ thống dùng **Access Token + Refresh Token**, cả hai truyền qua **HttpOnly Cookie**. Không lưu token trong localStorage.
+MVP dùng **JWT stateless** — access token + refresh token qua **HttpOnly Cookie**. Không lưu token vào DB hay Redis.
+
+Xác thực access token dùng **Passport JWT** (`passport-jwt`) — đọc token từ cookie `access_token`.
+
+Quyết định: [ADR 005](../decisions/005-session-storage.md)
+
+Phân quyền đơn giản theo role enum — [ADR 008](../decisions/008-simplify-rbac-mvp.md)
 
 ## Token
 
@@ -10,77 +16,25 @@ Hệ thống dùng **Access Token + Refresh Token**, cả hai truyền qua **Htt
 
 | Thuộc tính | Giá trị |
 |------------|---------|
-| Thời hạn | 15 phút (cấu hình qua env) |
-| Lưu trữ client | HttpOnly cookie `access_token` |
-| Payload | `{ sub, sid, activeSchoolId }` |
+| Thời hạn | 15 phút (`JWT_ACCESS_EXPIRES_IN`) |
+| Cookie | `access_token`, HttpOnly |
+| Payload | `{ sub, activeSchoolId }` |
 
-Không nhét toàn bộ permissions vào access token.
+**Vai trò:** Xác định user + tenant (trường). `activeSchoolId = user.school_id`.
+
+Role **không** nằm trong JWT — load từ DB khi login / `/auth/me`.
 
 ### Refresh Token
 
 | Thuộc tính | Giá trị |
 |------------|---------|
-| Thời hạn | 7 ngày (cấu hình qua env) |
-| Lưu trữ client | HttpOnly cookie `refresh_token`, path `/api/v1/auth/refresh` |
-| Lưu trữ server | Hash trong `auth_sessions.refresh_token_hash` |
+| Thời hạn | 7 ngày (`JWT_REFRESH_EXPIRES_IN`) |
+| Cookie | `refresh_token`, HttpOnly, path `/api/v1/auth/refresh` |
+| Payload | `{ sub }` (tối thiểu) |
 
-Quy tắc refresh token:
+**Vai trò:** Lấy access token mới khi hết hạn. Verify chữ ký + expiry — không tra DB.
 
-- Hash trước khi lưu database (bcrypt hoặc argon2)
-- **Rotate** sau mỗi lần refresh – thu hồi token cũ, phát token mới
-- Có thể revoke (logout, đổi mật khẩu, khóa tài khoản)
-- Gắn với một `auth_session`
-- Không lưu plaintext
-
-## Bảng session
-
-```text
-auth_sessions
-├── id
-├── user_id
-├── refresh_token_hash
-├── device_name
-├── user_agent
-├── ip_address
-├── expires_at
-├── revoked_at
-├── last_used_at
-└── created_at
-```
-
-## Cookie configuration
-
-### Development
-
-```typescript
-{
-  httpOnly: true,
-  secure: false,       // COOKIE_SECURE=false
-  sameSite: 'lax',
-  path: '/',
-}
-```
-
-Refresh cookie:
-
-```typescript
-{
-  httpOnly: true,
-  secure: false,
-  sameSite: 'lax',
-  path: '/api/v1/auth/refresh',
-}
-```
-
-### Production
-
-```typescript
-{
-  httpOnly: true,
-  secure: true,
-  sameSite: 'lax',
-}
-```
+---
 
 ## Luồng đăng nhập
 
@@ -91,15 +45,13 @@ POST /api/v1/auth/login
 1. Tìm user theo email
 2. Kiểm tra status = ACTIVE
 3. Verify password (bcrypt)
-4. Tạo auth_session
-5. Tạo access token + refresh token
-6. Hash và lưu refresh token
-7. Set HttpOnly cookies
-8. Trả user info + danh sách trường (memberships)
-9. Ghi audit log: LOGIN
+4. Set activeSchoolId = user.school_id
+5. Ký access JWT + refresh JWT
+6. Set HttpOnly cookies
+7. Trả user info + activeSchool + role
 ```
 
-Response (không trả token trong body):
+Response (token **không** trả trong body):
 
 ```json
 {
@@ -108,36 +60,37 @@ Response (không trả token trong body):
     "user": {
       "id": "...",
       "email": "admin@demo.edu.vn",
-      "fullName": "Quản trị viên Demo"
+      "fullName": "Quản trị viên Demo",
+      "role": "SCHOOL_ADMIN"
     },
-    "schools": [
-      {
-        "id": "...",
-        "code": "DEMO",
-        "name": "Trường THPT Demo",
-        "roles": ["SCHOOL_ADMIN"]
-      }
-    ],
-    "activeSchoolId": "..."
+    "activeSchoolId": "...",
+    "activeSchool": {
+      "id": "...",
+      "code": "DEMO",
+      "name": "Trường THPT Demo"
+    }
   },
   "message": "Đăng nhập thành công"
 }
 ```
 
+---
+
 ## Luồng refresh
 
 ```text
 POST /api/v1/auth/refresh
-  Cookie: refresh_token (tự động gửi)
+  Cookie: refresh_token
 
-1. Đọc refresh token từ cookie
-2. Tìm auth_session theo hash
-3. Kiểm tra chưa revoke, chưa hết hạn
-4. Revoke refresh token cũ
-5. Tạo access token + refresh token mới
-6. Cập nhật hash trong session
-7. Set cookies mới
+1. Verify chữ ký refresh JWT
+2. Kiểm tra chưa hết hạn
+3. Load user, kiểm tra status ACTIVE
+4. Set activeSchoolId = user.school_id
+5. Phát access JWT (+ refresh JWT mới — optional rotate không state)
+6. Set cookies
 ```
+
+---
 
 ## Luồng logout
 
@@ -145,89 +98,165 @@ POST /api/v1/auth/refresh
 POST /api/v1/auth/logout
   Cookie: access_token
 
-1. Revoke auth_session (revoked_at = now)
-2. Xóa cookies
-3. Ghi audit log: LOGOUT
+1. Xóa cookies access_token + refresh_token
 ```
 
-## Luồng chuyển trường
+**MVP:** Không revoke server-side. Token còn valid đến hết TTL — chấp nhận theo ADR 005.
 
-```text
-POST /api/v1/auth/switch-school
-  Body: { schoolId }
-  Cookie: access_token
+---
 
-1. Xác thực user
-2. Kiểm tra user có membership ACTIVE tại schoolId
-3. Phát access token mới với activeSchoolId cập nhật
-4. Trả thông tin trường + permissions của user tại trường đó
-```
-
-## Luồng lấy session hiện tại
+## Luồng session hiện tại
 
 ```text
 GET /api/v1/auth/me
   Cookie: access_token
 
-→ Trả user, activeSchoolId, permissions tại trường active
+→ Decode JWT → sub, activeSchoolId
+→ Trả user, activeSchool, role
 ```
 
-Permissions được load từ database (membership → roles → permissions), không decode từ token.
+---
+
+## Cookie configuration
+
+### Development
+
+```typescript
+// access_token
+{ httpOnly: true, secure: false, sameSite: 'lax', path: '/' }
+
+// refresh_token
+{ httpOnly: true, secure: false, sameSite: 'lax', path: '/api/v1/auth/refresh' }
+```
+
+### Production
+
+```typescript
+{ httpOnly: true, secure: true, sameSite: 'lax' }
+```
+
+---
 
 ## CSRF và CORS
 
-Vì dùng cookie:
-
 | Biện pháp | Mô tả |
 |-----------|-------|
-| CORS | Chỉ allow origin frontend cụ thể, `credentials: true` |
-| SameSite | `lax` (mặc định) |
-| Origin check | Kiểm tra Origin/Referer cho mutation request (POST, PUT, PATCH, DELETE) |
-| CSRF token | Đề xuất thêm cho endpoint nhạy cảm nếu cần (Sprint 1+: đánh giá sau khi có cookie auth) |
-
-Cấu hình CORS:
+| CORS | Origin cụ thể, `credentials: true` |
+| SameSite | `lax` |
+| Origin check | Mutation request (POST, PUT, PATCH, DELETE) |
 
 ```typescript
 app.enableCors({
-  origin: process.env.CORS_ORIGIN,  // không wildcard
+  origin: process.env.CORS_ORIGIN,
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
 });
 ```
 
+---
+
 ## Mật khẩu
 
-- Hash bằng **bcrypt** (cost factor 12)
-- Không lưu plaintext
-- Không trả `password_hash` trong API response
+- Hash **bcrypt** (cost 12)
+- Không trả `password_hash` trong API
 - Không ghi password vào audit log
+
+---
 
 ## Bảo vệ route
 
 ### Backend
 
 ```text
-@Public()           → Không cần auth (login, health)
-JwtAuthGuard        → Yêu cầu access token hợp lệ
-TenantGuard         → Yêu cầu activeSchoolId hợp lệ
-PermissionGuard     → Yêu cầu permission code
+@Public()        → login, refresh, health
+JwtAuthGuard      → Passport AuthGuard('jwt-access'), global
+TenantGuard       → API nghiệp vụ cần activeSchoolId
+RoleGuard         → Kiểm tra role enum (SCHOOL_ADMIN, TEACHER, ...)
 ```
 
-### Frontend
+### Frontend (MVP)
 
 ```text
-ProtectedRoute      → Redirect /dang-nhap nếu chưa auth
-PermissionGate      → Ẩn component nếu thiếu permission
-SchoolRequired      → Redirect /chon-truong nếu chưa chọn trường
+ProtectedRoute    → Chưa auth → /login
+RoleGate          → Ẩn UI theo role
 ```
+
+**Không có** `SchoolRequired` / `/chon-truong` trong MVP.
+
+---
 
 ## Error codes (auth)
 
 | Code | HTTP | Mô tả |
 |------|------|-------|
-| `INVALID_CREDENTIALS` | 401 | Email hoặc mật khẩu sai |
-| `ACCOUNT_INACTIVE` | 403 | Tài khoản bị khóa |
-| `SESSION_EXPIRED` | 401 | Refresh token hết hạn |
-| `SESSION_REVOKED` | 401 | Session đã bị thu hồi |
-| `SCHOOL_ACCESS_DENIED` | 403 | Không có membership tại trường |
-| `UNAUTHORIZED` | 401 | Thiếu hoặc token không hợp lệ |
+| `INVALID_CREDENTIALS` | 401 | Email/mật khẩu sai |
+| `ACCOUNT_INACTIVE` | 403 | Tài khoản khóa |
+| `SESSION_EXPIRED` | 401 | Token hết hạn |
+| `UNAUTHORIZED` | 401 | Token không hợp lệ |
+| `FORBIDDEN` | 403 | Role không đủ quyền |
+
+---
+
+## Backlog: Chuyển trường (switch-school)
+
+> **Ngoài MVP Sprint 1** — tham khảo khi triển khai [ADR 006](../decisions/006-defer-switch-school.md)
+
+Khi user thuộc nhiều trường (cần thêm lại `school_memberships`), cần endpoint riêng để đổi `activeSchoolId`:
+
+```text
+POST /api/v1/auth/switch-school
+Body: { schoolId }
+```
+
+Frontend bổ sung: `/chon-truong`, header "Đổi trường".
+
+---
+
+## Triển khai (Phase 1C ✅)
+
+### Endpoints
+
+| Method | Path | Guard | Mô tả |
+|--------|------|-------|-------|
+| POST | `/auth/login` | `@Public()` | Đăng nhập, set cookies |
+| POST | `/auth/refresh` | `@Public()` | Refresh token từ cookie |
+| POST | `/auth/logout` | JwtAuthGuard | Xóa cookies |
+| GET | `/auth/me` | JwtAuthGuard | Session hiện tại |
+
+### Cấu trúc code
+
+```text
+server/src/
+├── common/
+│   ├── auth/
+│   │   ├── auth.constants.ts
+│   │   ├── auth.types.ts
+│   │   ├── cookie.service.ts
+│   │   ├── jwt-token.service.ts
+│   │   └── strategies/
+│   │       └── jwt-access.strategy.ts  # Passport JWT (cookie)
+│   ├── decorators/
+│   │   ├── current-user.decorator.ts
+│   │   ├── public.decorator.ts
+│   │   └── roles.decorator.ts
+│   ├── guards/
+│   │   ├── jwt-auth.guard.ts      # AuthGuard('jwt-access') + @Public()
+│   │   ├── tenant.guard.ts        # Dùng cho API nghiệp vụ Phase 1D
+│   │   └── roles.guard.ts         # Kiểm tra @Roles()
+│   └── utils/
+│       └── password.service.ts    # bcrypt hash/verify
+└── modules/auth/
+    ├── auth.module.ts
+    ├── auth.controller.ts
+    ├── auth.service.ts
+    ├── schemas/login.schema.ts
+    └── mappers/auth.mapper.ts
+```
+
+### Dùng guard cho API Phase 1D
+
+```typescript
+@UseGuards(TenantGuard, RolesGuard)
+@Roles(UserRole.SCHOOL_ADMIN)
+@Get('users')
+listUsers(@CurrentUser() user: AuthenticatedUser) { ... }
+```

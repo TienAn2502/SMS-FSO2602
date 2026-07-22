@@ -21,10 +21,10 @@ Final Project/
 │   └── vite.config.ts
 │
 ├── server/                  # NestJS API
-│   ├── prisma/              # (Phase 1B) schema, migrations, seed
+│   ├── prisma/              # schema, migrations, seed
 │   ├── src/
 │   │   ├── common/          # auth, database, guards, decorators, ...
-│   │   └── modules/         # auth, schools, users, roles, ...
+│   │   └── modules/         # auth, health, schools, users, ...
 │   ├── test/
 │   └── package.json
 │
@@ -42,26 +42,24 @@ Final Project/
 ```text
 server/src/
 ├── common/
-│   ├── auth/           # JWT strategy, cookie helpers
+│   ├── auth/           # JWT strategy (Passport), cookie helpers
 │   ├── constants/
 │   ├── database/       # PrismaService
-│   ├── decorators/     # @CurrentUser(), @RequirePermission()
+│   ├── decorators/     # @CurrentUser(), @Roles()
 │   ├── exceptions/     # Custom exceptions + error codes
 │   ├── filters/        # Global exception filter
-│   ├── guards/         # JwtAuthGuard, PermissionGuard, TenantGuard
+│   ├── guards/         # JwtAuthGuard, RoleGuard, TenantGuard
 │   ├── interceptors/   # Response wrapper, request ID
 │   ├── pagination/
-│   ├── pipes/
+│   ├── pipes/          # ZodValidationPipe
+│   ├── schemas/        # pagination, uuid, shared Zod schemas
 │   └── utils/
 │
 ├── modules/
 │   ├── auth/
 │   ├── schools/
 │   ├── users/
-│   ├── memberships/
-│   ├── roles/
-│   ├── permissions/
-│   └── audit-logs/
+│   └── audit-logs/     # Sprint sau (ADR 007)
 │   # Sprint 2+: academic-years, students, teachers, ...
 │
 ├── app.module.ts
@@ -73,9 +71,9 @@ Mỗi module:
 ```text
 modules/<tên>/
 ├── <tên>.module.ts
+├── schemas/       # Zod schemas (ADR 004)
 ├── controllers/
 ├── services/
-├── dto/
 ├── mappers/
 └── tests/
 ```
@@ -115,11 +113,11 @@ client/src/
 
 | Loại | Quy ước | Ví dụ |
 |------|---------|-------|
-| Database table | snake_case, số nhiều | `school_memberships` |
-| Prisma model | PascalCase | `SchoolMembership` |
+| Database table | snake_case, số nhiều | `users` |
+| Prisma model | PascalCase | `User` |
 | NestJS module | kebab-case folder | `audit-logs/` |
-| API path | kebab-case | `/api/v1/auth/switch-school` |
-| Permission code | `resource:action` | `student:read` |
+| API path | kebab-case | `/api/v1/auth/login` |
+| User role | UPPER_SNAKE enum | `SCHOOL_ADMIN` |
 | React feature folder | kebab-case | `features/auth/` |
 | React component | PascalCase | `LoginForm.tsx` |
 | Query key | mảng có tenant | `['users', schoolId, filters]` |
@@ -141,4 +139,4 @@ dist/
 *.local
 ```
 
-Chỉ commit `.env.example` với placeholder.
+Chỉ commit `.env.example` (danh sách key). Giá trị nằm trong `.env.development` / `.env.production`.

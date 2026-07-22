@@ -1,2 +1,7 @@
 allowBuilds:
+  '@prisma/client': true
+  '@prisma/engines': true
+  bcrypt: true
+  prisma: true
+  '@scarf/scarf': true
   unrs-resolver: true

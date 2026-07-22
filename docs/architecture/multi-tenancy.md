@@ -41,10 +41,11 @@ Access token payload tối thiểu:
 ```json
 {
   "sub": "user-id",
-  "sid": "session-id",
   "activeSchoolId": "school-id"
 }
 ```
+
+`activeSchoolId` = `users.school_id` — xem [ADR 008](../decisions/008-simplify-rbac-mvp.md).
 
 ### 2. Mọi truy vấn theo ID phải kèm tenant
 
@@ -59,8 +60,8 @@ findById(id)
 Ví dụ Prisma:
 
 ```typescript
-await prisma.student.findFirst({
-  where: { id: studentId, schoolId: activeSchoolId },
+await prisma.user.findFirst({
+  where: { id: userId, schoolId: activeSchoolId },
 });
 ```
 
@@ -68,49 +69,42 @@ await prisma.student.findFirst({
 
 Các bảng Sprint 1:
 
-- `school_memberships`
-- `roles`
-- `audit_logs`
+- `users` (FK trực tiếp tới `schools`)
 
 Các bảng Sprint 2+ (tất cả có `school_id`):
 
 - `students`, `teachers`, `academic_years`, `homeroom_classes`
 - `course_sections`, `enrollments`, `timetables`, `assessments`, `scores`
-- `roles`, `audit_logs`, ...
+- `audit_logs`, ...
 
-### 4. User có thể thuộc nhiều trường
-
-Quan hệ qua `school_memberships`:
+### 4. MVP: một user thuộc một trường
 
 ```text
-users ──< school_memberships >── schools
-              │
-              └──< membership_roles >── roles
+schools ──< users
+              ├── school_id
+              └── role
 ```
 
-User chọn **một trường active** khi đăng nhập hoặc qua API switch school. Token mới được phát với `activeSchoolId` cập nhật.
+Không có `school_memberships` trong MVP. User gắn trực tiếp `school_id`.
 
-## Luồng chọn trường
+> Multi-school (user thuộc nhiều trường) và `switch-school` **hoãn** — [ADR 006](../decisions/006-defer-switch-school.md), [ADR 008](../decisions/008-simplify-rbac-mvp.md)
+
+## Luồng tenant MVP
 
 ```text
 Đăng nhập thành công
-→ Backend trả danh sách trường user thuộc về
-→ Nếu 1 trường: tự động set activeSchoolId
-→ Nếu nhiều trường: frontend hiển thị màn chọn trường
-→ POST /auth/switch-school { schoolId }
-→ Backend kiểm tra membership hợp lệ
-→ Phát access token mới với activeSchoolId
-→ Frontend invalidate toàn bộ cache tenant cũ
+→ Backend đọc user.school_id
+→ Set activeSchoolId = user.school_id vào access JWT
+→ Mọi API nghiệp vụ lọc theo activeSchoolId từ token
 ```
 
-## Phân quyền hai tầng
+## Phân quyền MVP
 
-Mỗi thao tác kiểm tra:
+MVP dùng **role enum** trên user (`SCHOOL_ADMIN | TEACHER | STUDENT`), kiểm tra bằng **RoleGuard** trong code.
 
-1. **Permission** – User có quyền phù hợp không? (ví dụ `student:read`)
-2. **Data scope** – User có quyền trên dữ liệu cụ thể không? (ví dụ giáo viên chỉ nhập điểm lớp được phân công)
+Không có permission matrix (`student:read`, `user:manage`, ...) trong DB.
 
-Sprint 1 chỉ triển khai tầng 1 (permission). Tầng 2 bắt đầu từ Sprint 4–6.
+Tầng data scope (giáo viên chỉ thao tác lớp được phân công) bắt đầu từ Sprint 4–6.
 
 ## Test tenant isolation
 

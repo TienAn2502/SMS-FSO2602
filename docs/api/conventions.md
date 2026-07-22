@@ -70,10 +70,10 @@ Quy tắc đặt tên: `SCREAMING_SNAKE_CASE`, ổn định cho frontend.
 | Nhóm | Ví dụ |
 |------|-------|
 | Auth | `INVALID_CREDENTIALS`, `SESSION_EXPIRED`, `UNAUTHORIZED` |
-| Permission | `FORBIDDEN`, `PERMISSION_DENIED` |
+| Role | `FORBIDDEN`, `ROLE_REQUIRED` |
 | Validation | `VALIDATION_ERROR` |
 | Resource | `USER_NOT_FOUND`, `SCHOOL_NOT_FOUND` |
-| Conflict | `EMAIL_ALREADY_EXISTS`, `ROLE_CODE_EXISTS` |
+| Conflict | `EMAIL_ALREADY_EXISTS` |
 | Tenant | `SCHOOL_ACCESS_DENIED`, `TENANT_MISMATCH` |
 
 Frontend map error code → thông báo tiếng Việt.
@@ -120,7 +120,7 @@ Frontend map error code → thông báo tiếng Việt.
 
 | Loại | Quy ước | Ví dụ |
 |------|---------|-------|
-| Path | kebab-case, số nhiều | `/api/v1/auth/switch-school` |
+| Path | kebab-case, số nhiều | `/api/v1/auth/login` |
 | Query param | camelCase | `?sortBy=createdAt` |
 | JSON body key | camelCase | `{ "fullName": "..." }` |
 | Error code | SCREAMING_SNAKE | `USER_NOT_FOUND` |
@@ -128,7 +128,7 @@ Frontend map error code → thông báo tiếng Việt.
 ## Quy tắc bảo mật
 
 1. **Không trả entity database trực tiếp** – dùng DTO/mapper
-2. **Không lộ** `password_hash`, `refresh_token_hash`
+2. **Không lộ** `password_hash`, token, cookie, secret
 3. **Không tin `schoolId` từ request** – lấy từ auth context
 4. Mọi truy vấn theo ID phải kèm tenant filter
 5. Swagger cập nhật cùng mỗi endpoint mới
@@ -153,10 +153,20 @@ Dùng để liên kết log API và audit log.
 
 ## Validation
 
-- Backend: `class-validator` + `class-transformer` (NestJS ValidationPipe)
-- Frontend: Zod schema (tương thích nhưng không thay thế validation backend)
-- UUID param: ParseUUIDPipe
-- Pagination: custom pipe validate range
+Backend và frontend đều dùng **Zod** — [ADR 004](../decisions/004-validation-library.md).
+
+| Layer | Công nghệ |
+|-------|-----------|
+| Backend DTO / query / params | Zod schema + `ZodValidationPipe` |
+| Backend env | Zod (`env.schema.ts`) |
+| Frontend form | React Hook Form + Zod |
+
+Quy tắc:
+
+1. Mọi input phải validate qua Zod schema trước service layer
+2. Frontend Zod **không thay thế** validation backend
+3. UUID param / pagination dùng shared schema trong `server/src/common/schemas/`
+4. Lỗi trả `VALIDATION_ERROR` + `details[]` (map từ `ZodError`)
 
 ## CORS (frontend gọi API)
 
