@@ -77,6 +77,8 @@ Các bảng Sprint 2+ (tất cả có `school_id`):
 - `course_sections`, `enrollments`, `timetables`, `assessments`, `scores`
 - `audit_logs`, ...
 
+Chi tiết Sprint 2: [schema-sprint2.md](../database/schema-sprint2.md)
+
 ### 4. MVP: một user thuộc một trường
 
 ```text

@@ -23,7 +23,9 @@ server/
 │   ├── schema.prisma
 │   ├── migrations/
 │   │   ├── 20260720102813_init_sprint1/
-│   │   └── 20260720163000_simplify_rbac_mvp/
+│   │   ├── 20260720163000_simplify_rbac_mvp/
+│   │   └── 20260723132737_init_sprint2_academic/
+│   │   └── 20260723134500_semester_is_current/
 │   └── seed.ts
 └── package.json          # prisma.seed config
 ```
@@ -59,7 +61,7 @@ pnpm prisma migrate reset
 5. Commit schema + migration vào Git
 ```
 
-## Seed Sprint 1
+## Seed Sprint 1 + Sprint 2
 
 File: `server/prisma/seed.ts`
 
@@ -71,6 +73,13 @@ File: `server/prisma/seed.ts`
 | 2 | User admin | Upsert theo `email`, gán `school_id` + `role = SCHOOL_ADMIN` |
 | 3 | Giáo viên demo | 3 tài khoản `TEACHER` |
 | 4 | Học sinh demo | 5 tài khoản `STUDENT` |
+| 5 | Năm học 2025-2026 | `is_current = true`, code `2025-26` |
+| 6 | Học kỳ HK1, HK2 | Thuộc năm học trên |
+| 7 | Khối 10, 11, 12 | Upsert theo `(school_id, code)` |
+| 8 | Môn TOAN, VAN, ANH | Upsert theo `(school_id, code)` |
+| 9 | grade_level_subjects | Khối 10 × 3 môn, `is_required = true` |
+| 10 | Lớp HC 10A1 | GVCN = `teacher1@demo.edu.vn` |
+| 11 | Lớp môn | TOAN-10A1, VAN-10A1, ANH-10A1 |
 
 ### Biến môi trường seed
 
@@ -113,6 +122,11 @@ Seed completed.
   Admin: admin@demo.edu.vn (SCHOOL_ADMIN)
   Teachers: 3 accounts (password: Demo@123456)
   Students: 5 accounts (password: Demo@123456)
+  Academic year: 2025-2026 (is_current)
+  Grade levels: 3
+  Subjects: 3
+  Homeroom class: 10A1
+  Course sections: 3
 ```
 
 ## package.json seed config
@@ -133,6 +147,7 @@ YYYYMMDDHHMMSS_<mo_ta_ngan>.sql
 Ví dụ:
 20260720102813_init_sprint1
 20260720163000_simplify_rbac_mvp
+20260723132737_init_sprint2_academic
 ```
 
 ## Rollback

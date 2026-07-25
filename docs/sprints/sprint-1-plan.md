@@ -185,11 +185,4 @@ API chi tiết: [sprint1-endpoints.md](../api/sprint1-endpoints.md)
 
 ## Bước tiếp theo
 
-**Phase 1E hoàn thành.** Kiểm tra thủ công end-to-end:
-
-1. Chạy server + client (xem [local-development.md](../setup/local-development.md))
-2. Đăng nhập `admin@demo.edu.vn` / `Admin@123456`
-3. Tạo user, khóa/mở khóa, cập nhật thông tin trường
-4. Đăng nhập TEACHER → sidebar không hiện mục admin
-
-Sprint 1 còn lại: checklist chất lượng (auth flow, tenant isolation test, server build/lint).
+Sprint 1 hoàn thành. Bắt đầu **[Sprint 2 – Khung học vụ](./sprint-2-plan.md)** (Phase 2A: schema + migration + seed).

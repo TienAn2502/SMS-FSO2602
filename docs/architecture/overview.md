@@ -136,4 +136,5 @@ Không kiểm tra R2 trong mọi health check request.
 | 7 | Hạnh kiểm, tổng kết, lên lớp |
 | 8 | Báo cáo, test E2E, CI/CD, deployment |
 
-Chi tiết Sprint 1: [sprint-1-plan.md](../sprints/sprint-1-plan.md)
+Chi tiết Sprint 1: [sprint-1-plan.md](../sprints/sprint-1-plan.md)  
+Chi tiết Sprint 2: [sprint-2-plan.md](../sprints/sprint-2-plan.md)

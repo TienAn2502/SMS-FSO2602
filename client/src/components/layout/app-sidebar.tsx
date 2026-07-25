@@ -1,17 +1,35 @@
-import { NavLink, useNavigate } from 'react-router';
+import { NavLink, useMatch, useNavigate } from 'react-router';
 import {
+  BookOpen,
   Building2,
+  Calendar,
+  GraduationCap,
+  Layers,
   LayoutDashboard,
   LogOut,
+  School,
   Users,
 } from 'lucide-react';
 
 import { ROUTES } from '@/app/router/routes';
 import { ModeToggle } from '@/components/common/mode-toggle';
 import { Button } from '@/components/ui/button';
-import { ROLE_LABELS } from '@/lib/labels';
-import { cn } from '@/lib/utils';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+  SidebarSeparator,
+} from '@/components/ui/sidebar';
 import { useAuth } from '@/features/auth/hooks/use-auth';
+import { ROLE_LABELS } from '@/lib/labels';
 import type { UserRole } from '@/types/api.types';
 
 interface NavItem {
@@ -19,23 +37,108 @@ interface NavItem {
   label: string;
   icon: typeof LayoutDashboard;
   roles?: UserRole[];
+  group?: 'main' | 'academic';
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { to: ROUTES.home, label: 'Tổng quan', icon: LayoutDashboard },
+  { to: ROUTES.home, label: 'Tổng quan', icon: LayoutDashboard, group: 'main' },
   {
     to: ROUTES.users,
     label: 'Người dùng',
     icon: Users,
     roles: ['SCHOOL_ADMIN'],
+    group: 'main',
   },
   {
     to: ROUTES.schoolSettings,
     label: 'Cài đặt trường',
     icon: Building2,
     roles: ['SCHOOL_ADMIN'],
+    group: 'main',
+  },
+  {
+    to: ROUTES.academicYears,
+    label: 'Năm học',
+    icon: Calendar,
+    roles: ['SCHOOL_ADMIN'],
+    group: 'academic',
+  },
+  {
+    to: ROUTES.gradeLevels,
+    label: 'Khối',
+    icon: Layers,
+    roles: ['SCHOOL_ADMIN'],
+    group: 'academic',
+  },
+  {
+    to: ROUTES.subjects,
+    label: 'Môn học',
+    icon: BookOpen,
+    roles: ['SCHOOL_ADMIN'],
+    group: 'academic',
+  },
+  {
+    to: ROUTES.homeroomClasses,
+    label: 'Lớp hành chính',
+    icon: School,
+    roles: ['SCHOOL_ADMIN'],
+    group: 'academic',
+  },
+  {
+    to: ROUTES.courseSections,
+    label: 'Lớp môn học',
+    icon: GraduationCap,
+    roles: ['SCHOOL_ADMIN'],
+    group: 'academic',
   },
 ];
+
+function SidebarNavItem({ item }: { item: NavItem }) {
+  const match = useMatch({
+    path: item.to,
+    end: item.to === ROUTES.home,
+  });
+
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton
+        isActive={Boolean(match)}
+        tooltip={item.label}
+        render={
+          <NavLink to={item.to} end={item.to === ROUTES.home} />
+        }
+      >
+        <item.icon />
+        <span>{item.label}</span>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  );
+}
+
+function SidebarNavGroup({
+  label,
+  items,
+}: {
+  label?: string;
+  items: NavItem[];
+}) {
+  if (items.length === 0) {
+    return null;
+  }
+
+  return (
+    <SidebarGroup>
+      {label ? <SidebarGroupLabel>{label}</SidebarGroupLabel> : null}
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {items.map((item) => (
+            <SidebarNavItem key={item.to} item={item} />
+          ))}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  );
+}
 
 export function AppSidebar() {
   const { session, logout } = useAuth();
@@ -51,59 +154,59 @@ export function AppSidebar() {
       !item.roles || (session && item.roles.includes(session.user.role)),
   );
 
+  const mainItems = visibleItems.filter((item) => item.group !== 'academic');
+  const academicItems = visibleItems.filter((item) => item.group === 'academic');
+
   return (
-    <aside className='flex w-64 shrink-0 flex-col border-r border-border bg-sidebar text-sidebar-foreground'>
-      <div className='border-b border-sidebar-border p-4'>
-        <p className='font-semibold'>eSchool SaaS</p>
-        <p className='truncate text-xs text-muted-foreground'>
-          {session?.activeSchool.name}
-        </p>
-      </div>
-
-      <nav className='flex flex-1 flex-col gap-1 p-3'>
-        {visibleItems.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.to === ROUTES.home}
-            className={({ isActive }) =>
-              cn(
-                'flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors',
-                isActive
-                  ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                  : 'text-sidebar-foreground hover:bg-sidebar-accent/60',
-              )
-            }
+    <Sidebar collapsible='icon'>
+      <SidebarHeader className='border-b border-sidebar-border'>
+        <div className='px-2 py-1'>
+          <p className='truncate font-semibold group-data-[collapsible=icon]:hidden'>
+            eSchool SaaS
+          </p>
+          <p className='truncate text-xs text-muted-foreground group-data-[collapsible=icon]:hidden'>
+            {session?.activeSchool.name}
+          </p>
+          <p
+            className='hidden truncate text-center text-xs font-semibold group-data-[collapsible=icon]:block'
+            title='eSchool SaaS'
           >
-            <item.icon className='size-4' />
-            {item.label}
-          </NavLink>
-        ))}
-      </nav>
+            eS
+          </p>
+        </div>
+      </SidebarHeader>
 
-      <div className='space-y-3 border-t border-sidebar-border p-4'>
+      <SidebarContent>
+        <SidebarNavGroup items={mainItems} />
+        <SidebarNavGroup label='Học vụ' items={academicItems} />
+      </SidebarContent>
+
+      <SidebarFooter className='border-t border-sidebar-border'>
         {session ? (
-          <div className='text-xs'>
-            <p className='font-medium'>{session.user.fullName}</p>
-            <p className='text-muted-foreground'>{session.user.email}</p>
+          <div className='space-y-1 px-2 py-1 text-xs group-data-[collapsible=icon]:hidden'>
+            <p className='truncate font-medium'>{session.user.fullName}</p>
+            <p className='truncate text-muted-foreground'>{session.user.email}</p>
             <p className='text-muted-foreground'>
               {ROLE_LABELS[session.user.role]}
             </p>
           </div>
         ) : null}
-        <div className='flex items-center gap-2'>
+        <SidebarSeparator className='group-data-[collapsible=icon]:hidden' />
+        <div className='flex items-center gap-2 px-2 py-1'>
           <ModeToggle />
           <Button
             variant='outline'
             size='sm'
-            className='flex-1'
+            className='flex-1 group-data-[collapsible=icon]:flex-none group-data-[collapsible=icon]:px-2'
             onClick={() => void handleLogout()}
+            title='Đăng xuất'
           >
             <LogOut className='size-4' />
-            Đăng xuất
+            <span className='group-data-[collapsible=icon]:hidden'>Đăng xuất</span>
           </Button>
         </div>
-      </div>
-    </aside>
+      </SidebarFooter>
+      <SidebarRail />
+    </Sidebar>
   );
 }

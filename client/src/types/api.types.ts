@@ -32,3 +32,4 @@ export interface ApiPaginatedResponse<T> {
 
 export type UserRole = 'SCHOOL_ADMIN' | 'TEACHER' | 'STUDENT';
 export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'LOCKED';
+export type AcademicEntityStatus = 'ACTIVE' | 'INACTIVE';

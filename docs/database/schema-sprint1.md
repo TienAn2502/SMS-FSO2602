@@ -112,15 +112,13 @@ UserRole: SCHOOL_ADMIN | TEACHER | STUDENT
 3. Role là enum trên user — không tùy chỉnh theo trường trong MVP
 4. Tenant lấy từ `user.school_id` — không qua membership lookup
 
-## Schema Sprint 2+ (tham khảo, chưa triển khai)
+## Schema Sprint 2
 
-Các bảng sẽ thêm ở sprint sau, tất cả có `school_id`:
+Chi tiết đầy đủ: [schema-sprint2.md](./schema-sprint2.md)
 
-- `academic_years`, `semesters`, `grade_levels`, `subjects`
-- `homeroom_classes`, `course_sections`
+Các bảng Sprint 3+ (chưa triển khai), tất cả có `school_id`:
+
 - `students`, `student_enrollments`, `teachers`
 - `teaching_assignments`, `timetable_entries`
 - `attendance_sessions`, `attendance_records`
-- `assessments`, `scores`, `audit_logs` (mở rộng actions)
-
-Chi tiết đầy đủ theo master prompt sẽ được bổ sung khi vào sprint tương ứng.
+- `assessments`, `scores`, `audit_logs`

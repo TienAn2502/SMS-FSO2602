@@ -32,6 +32,11 @@ enum UserRole {
   STUDENT
 }
 
+enum AcademicEntityStatus {
+  ACTIVE
+  INACTIVE
+}
+
 model School {
   id         String       @id @default(uuid()) @db.Uuid
   code       String       @unique @db.VarChar(50)
@@ -45,7 +50,14 @@ model School {
   createdAt  DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt  DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  users User[]
+  users              User[]
+  academicYears      AcademicYear[]
+  semesters          Semester[]
+  gradeLevels        GradeLevel[]
+  subjects           Subject[]
+  gradeLevelSubjects GradeLevelSubject[]
+  homeroomClasses    HomeroomClass[]
+  courseSections     CourseSection[]
 
   @@index([status])
   @@map("schools")
@@ -62,10 +74,163 @@ model User {
   createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  school          School          @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  homeroomClasses HomeroomClass[] @relation("HomeroomTeacher")
 
   @@index([schoolId])
   @@index([status])
   @@index([role])
   @@map("users")
+}
+
+model AcademicYear {
+  id        String               @id @default(uuid()) @db.Uuid
+  schoolId  String               @map("school_id") @db.Uuid
+  name      String               @db.VarChar(100)
+  code      String               @db.VarChar(20)
+  startDate DateTime             @map("start_date") @db.Date
+  endDate   DateTime             @map("end_date") @db.Date
+  isCurrent Boolean              @default(false) @map("is_current")
+  status    AcademicEntityStatus @default(ACTIVE)
+  createdAt DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school           School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  semesters        Semester[]
+  homeroomClasses  HomeroomClass[]
+  courseSections   CourseSection[]
+
+  @@unique([schoolId, code])
+  @@index([schoolId])
+  @@index([isCurrent])
+  @@index([status])
+  @@map("academic_years")
+}
+
+model Semester {
+  id             String               @id @default(uuid()) @db.Uuid
+  schoolId       String               @map("school_id") @db.Uuid
+  academicYearId String               @map("academic_year_id") @db.Uuid
+  name           String               @db.VarChar(50)
+  code           String               @db.VarChar(20)
+  startDate      DateTime             @map("start_date") @db.Date
+  endDate        DateTime             @map("end_date") @db.Date
+  isCurrent      Boolean              @default(false) @map("is_current")
+  status         AcademicEntityStatus @default(ACTIVE)
+  createdAt      DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school       School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  @@unique([academicYearId, code])
+  @@index([schoolId])
+  @@index([academicYearId])
+  @@index([isCurrent])
+  @@map("semesters")
+}
+
+model GradeLevel {
+  id       String @id @default(uuid()) @db.Uuid
+  schoolId String @map("school_id") @db.Uuid
+  name     String @db.VarChar(100)
+  code     String @db.VarChar(20)
+
+  school             School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  gradeLevelSubjects GradeLevelSubject[]
+  homeroomClasses    HomeroomClass[]
+
+  @@unique([schoolId, code])
+  @@index([schoolId])
+  @@map("grade_levels")
+}
+
+model Subject {
+  id          String               @id @default(uuid()) @db.Uuid
+  schoolId    String               @map("school_id") @db.Uuid
+  code        String               @db.VarChar(20)
+  name        String               @db.VarChar(255)
+  description String?              @db.Text
+  status      AcademicEntityStatus @default(ACTIVE)
+
+  school             School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  gradeLevelSubjects GradeLevelSubject[]
+
+  @@unique([schoolId, code])
+  @@index([schoolId])
+  @@index([status])
+  @@map("subjects")
+}
+
+model GradeLevelSubject {
+  id           String               @id @default(uuid()) @db.Uuid
+  schoolId     String               @map("school_id") @db.Uuid
+  gradeLevelId String               @map("grade_level_id") @db.Uuid
+  subjectId    String               @map("subject_id") @db.Uuid
+  isRequired   Boolean              @default(true) @map("is_required")
+  status       AcademicEntityStatus @default(ACTIVE)
+
+  school         School          @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  gradeLevel     GradeLevel      @relation(fields: [gradeLevelId], references: [id], onDelete: Cascade)
+  subject        Subject         @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  courseSections CourseSection[]
+
+  @@unique([schoolId, gradeLevelId, subjectId])
+  @@index([schoolId])
+  @@index([gradeLevelId])
+  @@index([subjectId])
+  @@map("grade_level_subjects")
+}
+
+model HomeroomClass {
+  id                String               @id @default(uuid()) @db.Uuid
+  schoolId          String               @map("school_id") @db.Uuid
+  academicYearId    String               @map("academic_year_id") @db.Uuid
+  gradeLevelId      String               @map("grade_level_id") @db.Uuid
+  name              String               @db.VarChar(100)
+  code              String               @db.VarChar(20)
+  capacity          Int?
+  homeroomTeacherId String?              @map("homeroom_teacher_id") @db.Uuid
+  status            AcademicEntityStatus @default(ACTIVE)
+  createdAt         DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school          School          @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  academicYear    AcademicYear    @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  gradeLevel      GradeLevel      @relation(fields: [gradeLevelId], references: [id], onDelete: Cascade)
+  homeroomTeacher User?           @relation("HomeroomTeacher", fields: [homeroomTeacherId], references: [id], onDelete: SetNull)
+  courseSections  CourseSection[]
+
+  @@unique([schoolId, academicYearId, code])
+  @@index([schoolId])
+  @@index([academicYearId])
+  @@index([gradeLevelId])
+  @@index([homeroomTeacherId])
+  @@map("homeroom_classes")
+}
+
+model CourseSection {
+  id                  String               @id @default(uuid()) @db.Uuid
+  schoolId            String               @map("school_id") @db.Uuid
+  academicYearId      String               @map("academic_year_id") @db.Uuid
+  homeroomClassId     String?              @map("homeroom_class_id") @db.Uuid
+  gradeLevelSubjectId String               @map("grade_level_subject_id") @db.Uuid
+  name                String               @db.VarChar(100)
+  code                String               @db.VarChar(30)
+  status              AcademicEntityStatus @default(ACTIVE)
+  createdAt           DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school            School            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  academicYear      AcademicYear      @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  homeroomClass     HomeroomClass?    @relation(fields: [homeroomClassId], references: [id], onDelete: SetNull)
+  gradeLevelSubject GradeLevelSubject @relation(fields: [gradeLevelSubjectId], references: [id], onDelete: Restrict)
+
+  @@unique([schoolId, academicYearId, code])
+  @@unique([homeroomClassId, gradeLevelSubjectId])
+  @@index([schoolId])
+  @@index([academicYearId])
+  @@index([homeroomClassId])
+  @@index([gradeLevelSubjectId])
+  @@map("course_sections")
 }

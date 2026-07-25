@@ -11,3 +11,8 @@ export const STATUS_LABELS = {
   INACTIVE: 'Ngưng hoạt động',
   LOCKED: 'Đã khóa',
 } as const;
+
+export const ACADEMIC_STATUS_LABELS = {
+  ACTIVE: 'Hoạt động',
+  INACTIVE: 'Ngưng hoạt động',
+} as const;

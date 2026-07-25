@@ -90,7 +90,7 @@ export function UsersPage() {
   const createMutation = useMutation({
     mutationFn: createUser,
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['users'] });
+      void queryClient.invalidateQueries({ queryKey: ['users'] }); //  đánh dấu cache cũ là hết hạn và tự fetch lại dữ liệu mới với các queryKey liên quan, vd như 'users'
       toast.success('Tạo người dùng thành công');
       reset();
       setShowForm(false);
