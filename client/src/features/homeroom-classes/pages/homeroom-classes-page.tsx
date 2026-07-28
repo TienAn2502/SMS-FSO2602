@@ -30,7 +30,7 @@ import {
   updateHomeroomClassStatus,
   type HomeroomClass,
 } from '@/features/homeroom-classes/api/homeroom-classes-api';
-import { fetchUsers } from '@/features/users/api/users-api';
+import { fetchAllTeachers } from '@/features/teachers/api/teachers-api';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { getApiError } from '@/lib/api';
 import { getErrorMessage } from '@/lib/error-messages';
@@ -91,8 +91,8 @@ export function HomeroomClassesPage() {
   });
 
   const teachersQuery = useQuery({
-    queryKey: ['users', session?.activeSchoolId, 'teachers'],
-    queryFn: () => fetchUsers({ role: 'TEACHER', status: 'ACTIVE', limit: 100 }),
+    queryKey: ['teachers', session?.activeSchoolId, 'all'],
+    queryFn: fetchAllTeachers,
     enabled: Boolean(session?.activeSchoolId),
   });
 
@@ -184,9 +184,9 @@ export function HomeroomClassesPage() {
   const teacherMap = useMemo(
     () =>
       new Map(
-        (teachersQuery.data?.items ?? []).map((t) => [t.id, t.fullName]),
+        (teachersQuery.data ?? []).map((t) => [t.id, t.fullName]),
       ),
-    [teachersQuery.data?.items],
+    [teachersQuery.data],
   );
 
   const columns = useMemo<ColumnDef<HomeroomClass>[]>(
@@ -252,7 +252,7 @@ export function HomeroomClassesPage() {
   const filtersActive = hasColumnFilters(columnFilters, globalFilter);
   const years = yearsQuery.data?.items ?? [];
   const grades = gradesQuery.data?.items ?? [];
-  const teachers = teachersQuery.data?.items ?? [];
+  const teachers = teachersQuery.data ?? [];
 
   return (
     <div className='space-y-6'>

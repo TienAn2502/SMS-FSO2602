@@ -30,9 +30,13 @@
     "prisma:migrate:dev": "dotenv -e .env.development -- prisma migrate dev",
     "prisma:migrate:deploy": "dotenv -e .env.development -- prisma migrate deploy",
     "prisma:seed": "dotenv -e .env.development -- prisma db seed",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "postman:export": "node scripts/sync-postman-nestjs.mjs --export-json",
+    "postman:sync": "node scripts/sync-postman-nestjs.mjs"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1094.0",
+    "@aws-sdk/s3-request-presigner": "^3.1094.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.1",
@@ -59,6 +63,7 @@
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
+    "@types/multer": "^2.2.0",
     "@types/node": "^22.10.7",
     "@types/passport-jwt": "^4.0.1",
     "@types/supertest": "^6.0.2",

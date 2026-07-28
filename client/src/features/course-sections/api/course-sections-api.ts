@@ -7,6 +7,7 @@ import type {
 
 export interface CourseSection {
   id: string;
+  semesterId: string;
   academicYearId: string;
   homeroomClassId: string | null;
   gradeLevelSubjectId: string;
@@ -22,13 +23,14 @@ export interface ListCourseSectionsParams {
   limit?: number;
   search?: string;
   status?: AcademicEntityStatus;
+  semesterId?: string;
   academicYearId?: string;
   homeroomClassId?: string;
   subjectId?: string;
 }
 
 export interface CreateCourseSectionInput {
-  academicYearId: string;
+  semesterId: string;
   subjectId: string;
   homeroomClassId?: string | null;
   gradeLevelId?: string;

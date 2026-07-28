@@ -3,12 +3,17 @@ import {
   BookOpen,
   Building2,
   Calendar,
+  CalendarDays,
+  ClipboardList,
   GraduationCap,
+  HeartHandshake,
   Layers,
   LayoutDashboard,
   LogOut,
   School,
+  UserRound,
   Users,
+  UserSquare2,
 } from 'lucide-react';
 
 import { ROUTES } from '@/app/router/routes';
@@ -37,11 +42,61 @@ interface NavItem {
   label: string;
   icon: typeof LayoutDashboard;
   roles?: UserRole[];
-  group?: 'main' | 'academic';
+  group?: 'main' | 'academic' | 'sprint4' | 'sprint5' | 'portal';
+  activePrefix?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { to: ROUTES.home, label: 'Tổng quan', icon: LayoutDashboard, group: 'main' },
+  { to: ROUTES.home, label: 'Tổng quan', icon: LayoutDashboard, group: 'main', roles: ['SCHOOL_ADMIN'] },
+  {
+    to: ROUTES.portal,
+    label: 'Portal',
+    icon: LayoutDashboard,
+    group: 'portal',
+    roles: ['TEACHER', 'STUDENT', 'PARENT'],
+  },
+  {
+    to: ROUTES.portalMyClass,
+    label: 'Lớp chủ nhiệm',
+    icon: School,
+    group: 'portal',
+    roles: ['TEACHER'],
+  },
+  {
+    to: ROUTES.portalMySchedule,
+    label: 'Thời khóa biểu',
+    icon: CalendarDays,
+    group: 'portal',
+    roles: ['TEACHER'],
+  },
+  {
+    to: ROUTES.portalAttendance,
+    label: 'Điểm danh',
+    icon: ClipboardList,
+    group: 'portal',
+    roles: ['TEACHER'],
+  },
+  {
+    to: ROUTES.portalMyProfile,
+    label: 'Hồ sơ của tôi',
+    icon: UserRound,
+    group: 'portal',
+    roles: ['STUDENT'],
+  },
+  {
+    to: ROUTES.portalMyAttendance,
+    label: 'Điểm danh của tôi',
+    icon: ClipboardList,
+    group: 'portal',
+    roles: ['STUDENT'],
+  },
+  {
+    to: ROUTES.portalMyChildren,
+    label: 'Con của tôi',
+    icon: HeartHandshake,
+    group: 'portal',
+    roles: ['PARENT'],
+  },
   {
     to: ROUTES.users,
     label: 'Người dùng',
@@ -85,27 +140,80 @@ const NAV_ITEMS: NavItem[] = [
     group: 'academic',
   },
   {
+    to: ROUTES.students,
+    label: 'Học sinh',
+    icon: UserRound,
+    roles: ['SCHOOL_ADMIN'],
+    group: 'academic',
+    activePrefix: true,
+  },
+  {
     to: ROUTES.courseSections,
     label: 'Lớp môn học',
     icon: GraduationCap,
     roles: ['SCHOOL_ADMIN'],
     group: 'academic',
   },
+  {
+    to: ROUTES.teachers,
+    label: 'Giáo viên',
+    icon: UserSquare2,
+    roles: ['SCHOOL_ADMIN'],
+    group: 'sprint4',
+    activePrefix: true,
+  },
+  {
+    to: ROUTES.teachingAssignments,
+    label: 'Phân công',
+    icon: GraduationCap,
+    roles: ['SCHOOL_ADMIN'],
+    group: 'sprint4',
+  },
+  {
+    to: ROUTES.timetable,
+    label: 'Thời khóa biểu',
+    icon: CalendarDays,
+    roles: ['SCHOOL_ADMIN'],
+    group: 'sprint4',
+  },
+  {
+    to: ROUTES.parents,
+    label: 'Phụ huynh',
+    icon: HeartHandshake,
+    roles: ['SCHOOL_ADMIN'],
+    group: 'sprint4',
+    activePrefix: true,
+  },
+  {
+    to: ROUTES.attendanceSessions,
+    label: 'Điểm danh',
+    icon: ClipboardList,
+    roles: ['SCHOOL_ADMIN'],
+    group: 'sprint5',
+    activePrefix: true,
+  },
 ];
 
 function SidebarNavItem({ item }: { item: NavItem }) {
-  const match = useMatch({
+  const exactMatch = useMatch({
     path: item.to,
-    end: item.to === ROUTES.home,
+    end: item.to === ROUTES.home || item.to === ROUTES.portal,
   });
+  const prefixMatch = useMatch({
+    path: `${item.to}/*`,
+  });
+
+  const isActive = item.activePrefix
+    ? Boolean(exactMatch || prefixMatch)
+    : Boolean(exactMatch);
 
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
-        isActive={Boolean(match)}
+        isActive={isActive}
         tooltip={item.label}
         render={
-          <NavLink to={item.to} end={item.to === ROUTES.home} />
+          <NavLink to={item.to} end={item.to === ROUTES.home || item.to === ROUTES.portal} />
         }
       >
         <item.icon />
@@ -154,8 +262,11 @@ export function AppSidebar() {
       !item.roles || (session && item.roles.includes(session.user.role)),
   );
 
-  const mainItems = visibleItems.filter((item) => item.group !== 'academic');
+  const mainItems = visibleItems.filter((item) => item.group === 'main');
+  const portalItems = visibleItems.filter((item) => item.group === 'portal');
   const academicItems = visibleItems.filter((item) => item.group === 'academic');
+  const sprint4Items = visibleItems.filter((item) => item.group === 'sprint4');
+  const sprint5Items = visibleItems.filter((item) => item.group === 'sprint5');
 
   return (
     <Sidebar collapsible='icon'>
@@ -178,7 +289,10 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarNavGroup items={mainItems} />
+        <SidebarNavGroup label='Portal' items={portalItems} />
         <SidebarNavGroup label='Học vụ' items={academicItems} />
+        <SidebarNavGroup label='Nhân sự & TKB' items={sprint4Items} />
+        <SidebarNavGroup label='Điểm danh' items={sprint5Items} />
       </SidebarContent>
 
       <SidebarFooter className='border-t border-sidebar-border'>

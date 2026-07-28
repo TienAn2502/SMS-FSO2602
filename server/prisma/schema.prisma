@@ -30,11 +30,50 @@ enum UserRole {
   SCHOOL_ADMIN
   TEACHER
   STUDENT
+  PARENT
+}
+
+enum ParentRelationship {
+  FATHER
+  MOTHER
+  GUARDIAN
+  OTHER
 }
 
 enum AcademicEntityStatus {
   ACTIVE
   INACTIVE
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  TRANSFERRED
+  WITHDRAWN
+  COMPLETED
+}
+
+enum FilePurpose {
+  SCHOOL_LOGO
+  STUDENT_AVATAR
+  OTHER
+}
+
+enum AttendanceSessionStatus {
+  OPEN
+  CLOSED
+}
+
+enum AttendanceRecordStatus {
+  PRESENT // Có mặt
+  ABSENT // Vắng
+  LATE // Muộn
+  EXCUSED // Vắng có lý do
 }
 
 model School {
@@ -46,18 +85,30 @@ model School {
   email      String?      @db.VarChar(255)
   phone      String?      @db.VarChar(20)
   address    String?      @db.Text
+  logoFileId String?      @map("logo_file_id") @db.Uuid
   status     SchoolStatus @default(ACTIVE)
   createdAt  DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt  DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
 
+  logoFile           File?               @relation("SchoolLogo", fields: [logoFileId], references: [id], onDelete: SetNull)
   users              User[]
+  files              File[]
+  students           Student[]
+  studentEnrollments StudentEnrollment[]
   academicYears      AcademicYear[]
   semesters          Semester[]
   gradeLevels        GradeLevel[]
   subjects           Subject[]
   gradeLevelSubjects GradeLevelSubject[]
-  homeroomClasses    HomeroomClass[]
-  courseSections     CourseSection[]
+  homeroomClasses      HomeroomClass[]
+  courseSections       CourseSection[]
+  teachers             Teacher[]
+  teachingAssignments  TeachingAssignment[]
+  timetableEntries     TimetableEntry[]
+  parents              Parent[]
+  studentParents       StudentParent[]
+  attendanceSessions   AttendanceSession[]
+  attendanceRecords    AttendanceRecord[]
 
   @@index([status])
   @@map("schools")
@@ -75,7 +126,10 @@ model User {
   updatedAt    DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   school          School          @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  homeroomClasses HomeroomClass[] @relation("HomeroomTeacher")
+  uploadedFiles   File[]          @relation("UploadedFiles")
+  students        Student[]
+  teachers        Teacher[]
+  parents         Parent[]
 
   @@index([schoolId])
   @@index([status])
@@ -95,10 +149,9 @@ model AcademicYear {
   createdAt DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  school           School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  semesters        Semester[]
-  homeroomClasses  HomeroomClass[]
-  courseSections   CourseSection[]
+  school             School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  semesters          Semester[]
+  homeroomClasses    HomeroomClass[]
 
   @@unique([schoolId, code])
   @@index([schoolId])
@@ -120,8 +173,12 @@ model Semester {
   createdAt      DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  school       School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  academicYear AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  school         School          @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  academicYear     AcademicYear     @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  courseSections   CourseSection[]
+  timetableEntries TimetableEntry[]
+  studentEnrollments StudentEnrollment[]
+  attendanceSessions AttendanceSession[]
 
   @@unique([academicYearId, code])
   @@index([schoolId])
@@ -198,8 +255,9 @@ model HomeroomClass {
   school          School          @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   academicYear    AcademicYear    @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
   gradeLevel      GradeLevel      @relation(fields: [gradeLevelId], references: [id], onDelete: Cascade)
-  homeroomTeacher User?           @relation("HomeroomTeacher", fields: [homeroomTeacherId], references: [id], onDelete: SetNull)
-  courseSections  CourseSection[]
+  homeroomTeacher    Teacher?            @relation("HomeroomTeacher", fields: [homeroomTeacherId], references: [id], onDelete: SetNull)
+  courseSections     CourseSection[]
+  studentEnrollments StudentEnrollment[]
 
   @@unique([schoolId, academicYearId, code])
   @@index([schoolId])
@@ -212,7 +270,7 @@ model HomeroomClass {
 model CourseSection {
   id                  String               @id @default(uuid()) @db.Uuid
   schoolId            String               @map("school_id") @db.Uuid
-  academicYearId      String               @map("academic_year_id") @db.Uuid
+  semesterId          String               @map("semester_id") @db.Uuid
   homeroomClassId     String?              @map("homeroom_class_id") @db.Uuid
   gradeLevelSubjectId String               @map("grade_level_subject_id") @db.Uuid
   name                String               @db.VarChar(100)
@@ -222,15 +280,267 @@ model CourseSection {
   updatedAt           DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   school            School            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  academicYear      AcademicYear      @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
-  homeroomClass     HomeroomClass?    @relation(fields: [homeroomClassId], references: [id], onDelete: SetNull)
-  gradeLevelSubject GradeLevelSubject @relation(fields: [gradeLevelSubjectId], references: [id], onDelete: Restrict)
+  semester          Semester          @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+  homeroomClass        HomeroomClass?        @relation(fields: [homeroomClassId], references: [id], onDelete: SetNull)
+  gradeLevelSubject    GradeLevelSubject     @relation(fields: [gradeLevelSubjectId], references: [id], onDelete: Restrict)
+  teachingAssignments  TeachingAssignment[]
+  timetableEntries     TimetableEntry[]
+  attendanceSessions   AttendanceSession[]
 
-  @@unique([schoolId, academicYearId, code])
-  @@unique([homeroomClassId, gradeLevelSubjectId])
+  @@unique([schoolId, semesterId, code])
+  @@unique([homeroomClassId, gradeLevelSubjectId, semesterId])
   @@index([schoolId])
-  @@index([academicYearId])
+  @@index([semesterId])
   @@index([homeroomClassId])
   @@index([gradeLevelSubjectId])
   @@map("course_sections")
+}
+
+model File {
+  id           String               @id @default(uuid()) @db.Uuid
+  schoolId     String               @map("school_id") @db.Uuid
+  purpose      FilePurpose
+  originalName String               @map("original_name") @db.VarChar(255)
+  mimeType     String               @map("mime_type") @db.VarChar(100)
+  sizeBytes    Int                  @map("size_bytes")
+  storageKey   String               @map("storage_key") @db.VarChar(500)
+  uploadedById String?              @map("uploaded_by_id") @db.Uuid
+  status       AcademicEntityStatus @default(ACTIVE)
+  createdAt    DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  school         School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  uploadedBy     User?     @relation("UploadedFiles", fields: [uploadedById], references: [id], onDelete: SetNull)
+  schoolLogos    School[]  @relation("SchoolLogo")
+  studentAvatars Student[] @relation("StudentAvatar")
+  teacherAvatars Teacher[] @relation("TeacherAvatar")
+
+  @@unique([schoolId, storageKey])
+  @@index([schoolId])
+  @@index([purpose])
+  @@index([status])
+  @@map("files")
+}
+
+model Student {
+  id           String               @id @default(uuid()) @db.Uuid
+  schoolId     String               @map("school_id") @db.Uuid
+  userId       String?              @map("user_id") @db.Uuid
+  fullName     String               @map("full_name") @db.VarChar(255)
+  dateOfBirth  DateTime?            @map("date_of_birth") @db.Date
+  gender       Gender?
+  phone        String?              @db.VarChar(20)
+  address      String?              @db.Text
+  avatarFileId String?              @map("avatar_file_id") @db.Uuid
+  status       AcademicEntityStatus @default(ACTIVE)
+  createdAt    DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school      School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  user        User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  avatarFile      File?             @relation("StudentAvatar", fields: [avatarFileId], references: [id], onDelete: SetNull)
+  enrollments     StudentEnrollment[]
+  studentParents  StudentParent[]
+  attendanceRecords AttendanceRecord[]
+
+  @@unique([schoolId, userId])
+  @@index([schoolId])
+  @@index([userId])
+  @@index([status])
+  @@index([fullName])
+  @@map("students")
+}
+
+model StudentEnrollment {
+  id              String           @id @default(uuid()) @db.Uuid
+  schoolId        String           @map("school_id") @db.Uuid
+  studentId       String           @map("student_id") @db.Uuid
+  semesterId      String           @map("semester_id") @db.Uuid
+  homeroomClassId String           @map("homeroom_class_id") @db.Uuid
+  enrolledAt      DateTime         @map("enrolled_at") @db.Date
+  leftAt          DateTime?        @map("left_at") @db.Date
+  status          EnrollmentStatus @default(ACTIVE)
+  note            String?          @db.Text
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school        School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student       Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  semester      Semester      @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+  homeroomClass HomeroomClass @relation(fields: [homeroomClassId], references: [id], onDelete: Restrict)
+
+  @@index([schoolId])
+  @@index([studentId])
+  @@index([semesterId])
+  @@index([homeroomClassId])
+  @@index([status])
+  @@map("student_enrollments")
+}
+
+model Teacher {
+  id             String               @id @default(uuid()) @db.Uuid
+  schoolId       String               @map("school_id") @db.Uuid
+  userId         String?              @map("user_id") @db.Uuid
+  fullName       String               @map("full_name") @db.VarChar(255)
+  phone          String?              @db.VarChar(11)
+  avatarFileId   String?              @map("avatar_file_id") @db.Uuid
+  specialization String?              @db.VarChar(255)
+  dateOfBirth    DateTime?            @map("date_of_birth") @db.Date
+  gender         Gender?
+  address        String?              @db.Text
+  status         AcademicEntityStatus @default(ACTIVE)
+
+  school      School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  user        User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  avatarFile  File?   @relation("TeacherAvatar", fields: [avatarFileId], references: [id], onDelete: SetNull)
+
+  teachingAssignments TeachingAssignment[]
+  timetableEntries    TimetableEntry[]
+  attendanceSessions  AttendanceSession[]
+  homeroomClasses     HomeroomClass[]      @relation("HomeroomTeacher")
+
+  @@unique([schoolId, userId])
+  @@index([schoolId])
+  @@index([userId])
+  @@index([status])
+  @@index([fullName])
+  @@map("teachers")
+}
+
+model TeachingAssignment {
+  id              String               @id @default(uuid()) @db.Uuid
+  schoolId        String               @map("school_id") @db.Uuid
+  teacherId       String               @map("teacher_id") @db.Uuid
+  courseSectionId String               @map("course_section_id") @db.Uuid
+  assignAt        DateTime             @map("assign_at") @db.Date
+  endAt           DateTime?            @map("end_at") @db.Date
+  status          AcademicEntityStatus @default(ACTIVE)
+
+  school        School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  teacher       Teacher       @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  courseSection CourseSection @relation(fields: [courseSectionId], references: [id], onDelete: Cascade)
+
+  @@unique([teacherId, courseSectionId])
+  @@index([schoolId])
+  @@index([teacherId])
+  @@index([courseSectionId])
+  @@index([status])
+  @@map("teaching_assignments")
+}
+
+model TimetableEntry {
+  id              String               @id @default(uuid()) @db.Uuid
+  schoolId        String               @map("school_id") @db.Uuid
+  semesterId      String               @map("semester_id") @db.Uuid
+  courseSectionId String               @map("course_section_id") @db.Uuid
+  teacherId       String               @map("teacher_id") @db.Uuid
+  dayOfWeek       Int                  @map("day_of_week") @db.SmallInt
+  periodNumber    Int                  @map("period_number") @db.SmallInt
+  room            String?              @db.VarChar(255)
+  status          AcademicEntityStatus @default(ACTIVE)
+
+  school        School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  semester      Semester      @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+  courseSection CourseSection @relation(fields: [courseSectionId], references: [id], onDelete: Cascade)
+  teacher       Teacher       @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  attendanceSessions AttendanceSession[]
+
+  @@unique([courseSectionId, dayOfWeek, periodNumber])
+  @@index([schoolId])
+  @@index([semesterId])
+  @@index([courseSectionId])
+  @@index([teacherId])
+  @@index([dayOfWeek])
+  @@map("timetable_entries")
+}
+
+model Parent {
+  id       String               @id @default(uuid()) @db.Uuid
+  schoolId String               @map("school_id") @db.Uuid
+  userId   String?              @map("user_id") @db.Uuid
+  fullName String               @map("full_name") @db.VarChar(255)
+  phone    String?              @db.VarChar(11)
+  status   AcademicEntityStatus @default(ACTIVE)
+
+  school         School          @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  user           User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  studentParents StudentParent[]
+
+  @@unique([schoolId, userId])
+  @@index([schoolId])
+  @@index([userId])
+  @@index([status])
+  @@index([fullName])
+  @@map("parents")
+}
+
+model StudentParent {
+  id                String             @id @default(uuid()) @db.Uuid
+  schoolId          String             @map("school_id") @db.Uuid
+  parentId          String             @map("parent_id") @db.Uuid
+  studentId         String             @map("student_id") @db.Uuid
+  relationship      ParentRelationship
+  isPrimaryContact  Boolean            @default(false) @map("is_primary_contact")
+
+  school  School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  parent  Parent  @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([parentId, studentId])
+  @@index([schoolId])
+  @@index([parentId])
+  @@index([studentId])
+  @@map("student_parents")
+}
+
+model AttendanceSession {
+  id               String                  @id @default(uuid()) @db.Uuid
+  schoolId         String                  @map("school_id") @db.Uuid
+  semesterId       String                  @map("semester_id") @db.Uuid
+  courseSectionId  String                  @map("course_section_id") @db.Uuid
+  teacherId        String                  @map("teacher_id") @db.Uuid
+  timetableEntryId String?                 @map("timetable_entry_id") @db.Uuid
+  sessionDate      DateTime                @map("session_date") @db.Date
+  periodNumber     Int                     @map("period_number") @db.SmallInt
+  status           AttendanceSessionStatus @default(OPEN)
+  note             String?                 @db.Text
+  createdAt        DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school         School            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  semester       Semester          @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+  courseSection  CourseSection     @relation(fields: [courseSectionId], references: [id], onDelete: Cascade)
+  teacher        Teacher           @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  timetableEntry TimetableEntry?   @relation(fields: [timetableEntryId], references: [id], onDelete: SetNull)
+  records        AttendanceRecord[]
+
+  @@unique([courseSectionId, sessionDate, periodNumber])
+  @@index([schoolId])
+  @@index([semesterId])
+  @@index([courseSectionId])
+  @@index([teacherId])
+  @@index([sessionDate])
+  @@index([status])
+  @@map("attendance_sessions")
+}
+
+model AttendanceRecord {
+  id        String                 @id @default(uuid()) @db.Uuid
+  schoolId  String                 @map("school_id") @db.Uuid
+  sessionId String                 @map("session_id") @db.Uuid
+  studentId String                 @map("student_id") @db.Uuid
+  status    AttendanceRecordStatus @default(PRESENT)
+  note      String?                @db.Text
+  createdAt DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school  School            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  session AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, studentId])
+  @@index([schoolId])
+  @@index([sessionId])
+  @@index([studentId])
+  @@index([status])
+  @@map("attendance_records")
 }

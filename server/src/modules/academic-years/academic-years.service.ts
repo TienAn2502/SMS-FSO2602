@@ -278,7 +278,9 @@ export class AcademicYearsService {
   ): Promise<void> {
     const [homeroomClassCount, courseSectionCount] = await Promise.all([
       tx.homeroomClass.count({ where: { schoolId, academicYearId } }),
-      tx.courseSection.count({ where: { schoolId, academicYearId } }),
+      tx.courseSection.count({
+        where: { schoolId, semester: { academicYearId } },
+      }),
     ]);
 
     if (homeroomClassCount > 0 || courseSectionCount > 0) {

@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { type ColumnDef, type ColumnFiltersState } from '@tanstack/react-table';
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { fetchAllAcademicYears } from '@/features/academic-years/api/academic-years-api';
+import { fetchAllAcademicYears, fetchSemesters } from '@/features/academic-years/api/academic-years-api';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { fetchAllGradeLevels } from '@/features/grade-levels/api/grade-levels-api';
 import {
@@ -50,6 +50,7 @@ const PAGE_SIZE = 20;
 const createSchema = z
   .object({
     academicYearId: z.string().uuid('Chọn năm học'),
+    semesterId: z.string().uuid('Chọn học kỳ'),
     subjectId: z.string().uuid('Chọn môn học'),
     homeroomClassId: z.string().optional(),
     gradeLevelId: z.string().optional(),
@@ -83,6 +84,7 @@ export function CourseSectionsPage() {
   const debouncedSearch = useDebouncedValue(globalFilter, 300);
 
   const yearFilter = getColumnFilterValue<string>(columnFilters, 'academicYearId');
+  const semesterFilter = getColumnFilterValue<string>(columnFilters, 'semesterId');
   const subjectFilter = getColumnFilterValue<string>(columnFilters, 'subjectId');
   const statusFilter = getColumnFilterValue<AcademicEntityStatus>(
     columnFilters,
@@ -94,6 +96,38 @@ export function CourseSectionsPage() {
     queryFn: fetchAllAcademicYears,
     enabled: Boolean(session?.activeSchoolId),
   });
+
+  const years = yearsQuery.data?.items ?? [];
+
+  const semestersQueries = useQueries({
+    queries: years.map((year) => ({
+      queryKey: ['semesters', session?.activeSchoolId, year.id],
+      queryFn: () => fetchSemesters(year.id),
+      enabled: Boolean(session?.activeSchoolId),
+    })),
+  });
+
+  const semesterMap = useMemo(() => {
+    const map = new Map<string, { name: string; academicYearId: string }>();
+    for (const query of semestersQueries) {
+      for (const semester of query.data ?? []) {
+        map.set(semester.id, {
+          name: semester.name,
+          academicYearId: semester.academicYearId,
+        });
+      }
+    }
+    return map;
+  }, [semestersQueries]);
+
+  const filterSemesters = useMemo(() => {
+    if (!yearFilter) {
+      return [];
+    }
+    return [...semesterMap.entries()]
+      .filter(([, semester]) => semester.academicYearId === yearFilter)
+      .map(([id, semester]) => ({ id, name: semester.name }));
+  }, [semesterMap, yearFilter]);
 
   const subjectsQuery = useQuery({
     queryKey: ['subjects', session?.activeSchoolId, 'all'],
@@ -113,6 +147,7 @@ export function CourseSectionsPage() {
       session?.activeSchoolId,
       debouncedSearch,
       yearFilter,
+      semesterFilter,
       subjectFilter,
       statusFilter,
       page,
@@ -121,6 +156,7 @@ export function CourseSectionsPage() {
       fetchCourseSections({
         search: debouncedSearch || undefined,
         academicYearId: yearFilter,
+        semesterId: semesterFilter,
         subjectId: subjectFilter,
         status: statusFilter,
         page,
@@ -140,6 +176,7 @@ export function CourseSectionsPage() {
     resolver: zodResolver(createSchema),
     defaultValues: {
       academicYearId: '',
+      semesterId: '',
       subjectId: '',
       homeroomClassId: '',
       gradeLevelId: '',
@@ -150,6 +187,12 @@ export function CourseSectionsPage() {
 
   const formYearId = watch('academicYearId');
   const formHomeroomClassId = watch('homeroomClassId');
+
+  const formSemestersQuery = useQuery({
+    queryKey: ['semesters', session?.activeSchoolId, 'form', formYearId],
+    queryFn: () => fetchSemesters(formYearId),
+    enabled: Boolean(session?.activeSchoolId && formYearId),
+  });
 
   const homeroomClassesQuery = useQuery({
     queryKey: [
@@ -204,19 +247,14 @@ export function CourseSectionsPage() {
     [statusMutation],
   );
 
-  const yearMap = useMemo(
-    () => new Map((yearsQuery.data?.items ?? []).map((y) => [y.id, y.name])),
-    [yearsQuery.data?.items],
-  );
-
   const columns = useMemo<ColumnDef<CourseSection>[]>(
     () => [
       { accessorKey: 'code', header: 'Mã lớp môn' },
       { accessorKey: 'name', header: 'Tên lớp môn' },
       {
-        id: 'year',
-        header: 'Năm học',
-        cell: ({ row }) => yearMap.get(row.original.academicYearId) ?? '—',
+        id: 'semester',
+        header: 'Học kỳ',
+        cell: ({ row }) => semesterMap.get(row.original.semesterId)?.name ?? '—',
       },
       {
         accessorKey: 'status',
@@ -252,15 +290,15 @@ export function CourseSectionsPage() {
         ),
       },
     ],
-    [handleToggleStatus, statusMutation.isPending, yearMap],
+    [handleToggleStatus, semesterMap, statusMutation.isPending],
   );
 
   const items = listQuery.data?.items ?? [];
   const filtersActive = hasColumnFilters(columnFilters, globalFilter);
-  const years = yearsQuery.data?.items ?? [];
   const subjects = subjectsQuery.data?.items ?? [];
   const grades = gradesQuery.data?.items ?? [];
   const homeroomClasses = homeroomClassesQuery.data?.items ?? [];
+  const formSemesters = formSemestersQuery.data ?? [];
 
   return (
     <div className='space-y-6'>
@@ -268,7 +306,7 @@ export function CourseSectionsPage() {
         <div>
           <h1 className='text-2xl font-semibold'>Lớp môn học</h1>
           <p className='text-sm text-muted-foreground'>
-            Quản lý lớp môn theo năm học, môn và lớp hành chính
+            Quản lý lớp môn theo học kỳ, môn và lớp hành chính
           </p>
         </div>
         <Button onClick={() => setShowForm((v) => !v)}>
@@ -289,7 +327,7 @@ export function CourseSectionsPage() {
               className='grid gap-4 md:grid-cols-2'
               onSubmit={handleSubmit((values) =>
                 createMutation.mutate({
-                  academicYearId: values.academicYearId,
+                  semesterId: values.semesterId,
                   subjectId: values.subjectId,
                   name: values.name,
                   code: values.code,
@@ -302,7 +340,19 @@ export function CourseSectionsPage() {
             >
               <div className='space-y-2'>
                 <Label htmlFor='cs-year'>Năm học</Label>
-                <select id='cs-year' className={selectClassName} {...register('academicYearId')}>
+                <select
+                  id='cs-year'
+                  className={selectClassName}
+                  {...register('academicYearId', {
+                    onChange: () => {
+                      reset((values) => ({
+                        ...values,
+                        semesterId: '',
+                        homeroomClassId: '',
+                      }));
+                    },
+                  })}
+                >
                   <option value=''>Chọn năm học</option>
                   {years.map((y) => (
                     <option key={y.id} value={y.id}>
@@ -310,6 +360,27 @@ export function CourseSectionsPage() {
                     </option>
                   ))}
                 </select>
+              </div>
+              <div className='space-y-2'>
+                <Label htmlFor='cs-semester'>Học kỳ</Label>
+                <select
+                  id='cs-semester'
+                  className={selectClassName}
+                  disabled={!formYearId}
+                  {...register('semesterId')}
+                >
+                  <option value=''>Chọn học kỳ</option>
+                  {formSemesters.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.semesterId ? (
+                  <p className='text-sm text-destructive'>
+                    {errors.semesterId.message}
+                  </p>
+                ) : null}
               </div>
               <div className='space-y-2'>
                 <Label htmlFor='cs-subject'>Môn học</Label>
@@ -399,11 +470,15 @@ export function CourseSectionsPage() {
                 className={selectClassName}
                 value={yearFilter ?? ''}
                 onChange={(e) => {
-                  setColumnFilters(
+                  setColumnFilters((prev) =>
                     setColumnFilterValue(
-                      columnFilters,
-                      'academicYearId',
-                      e.target.value || undefined,
+                      setColumnFilterValue(
+                        prev,
+                        'academicYearId',
+                        e.target.value || undefined,
+                      ),
+                      'semesterId',
+                      undefined,
                     ),
                   );
                   setPage(1);
@@ -413,6 +488,32 @@ export function CourseSectionsPage() {
                 {years.map((y) => (
                   <option key={y.id} value={y.id}>
                     {y.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className='space-y-1.5'>
+              <Label htmlFor='cs-filter-semester'>Học kỳ</Label>
+              <select
+                id='cs-filter-semester'
+                className={selectClassName}
+                value={semesterFilter ?? ''}
+                disabled={!yearFilter}
+                onChange={(e) => {
+                  setColumnFilters(
+                    setColumnFilterValue(
+                      columnFilters,
+                      'semesterId',
+                      e.target.value || undefined,
+                    ),
+                  );
+                  setPage(1);
+                }}
+              >
+                <option value=''>Tất cả</option>
+                {filterSemesters.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
                   </option>
                 ))}
               </select>

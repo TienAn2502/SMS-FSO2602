@@ -172,7 +172,7 @@ Tất cả request đã auth — `schoolId` lấy từ JWT, **không** gửi t�
   "name": "10A1",
   "code": "10A1",
   "capacity": 45,
-  "homeroomTeacherId": "uuid-or-null"
+  "homeroomTeacherId": "uuid-teachers-id-or-null"
 }
 ```
 
@@ -181,7 +181,7 @@ Tất cả request đã auth — `schoolId` lấy từ JWT, **không** gửi t�
 | Code | HTTP | Mô tả |
 |------|------|-------|
 | `ACADEMIC_YEAR_NOT_FOUND` | 404 | Năm học không thuộc trường |
-| `INVALID_HOMEROOM_TEACHER` | 422 | User không phải TEACHER cùng trường |
+| `INVALID_HOMEROOM_TEACHER` | 422 | Không tìm thấy hồ sơ giáo viên ACTIVE cùng trường |
 
 ---
 
@@ -189,7 +189,7 @@ Tất cả request đã auth — `schoolId` lấy từ JWT, **không** gửi t�
 
 | Method | Path | Mô tả |
 |--------|------|-------|
-| GET | `/course-sections` | Danh sách (filter: yearId, subjectId, homeroomClassId) |
+| GET | `/course-sections` | Danh sách (filter: semesterId, academicYearId, subjectId, homeroomClassId) |
 | GET | `/course-sections/:id` | Chi tiết |
 | POST | `/course-sections` | Tạo lớp môn |
 | PATCH | `/course-sections/:id` | Cập nhật |
@@ -201,7 +201,7 @@ Tất cả request đã auth — `schoolId` lấy từ JWT, **không** gửi t�
 
 ```json
 {
-  "academicYearId": "uuid",
+  "semesterId": "uuid",
   "subjectId": "uuid",
   "homeroomClassId": "uuid-or-null",
   "gradeLevelId": "uuid",
@@ -223,7 +223,8 @@ Tất cả request đã auth — `schoolId` lấy từ JWT, **không** gửi t�
 | `limit` | number | Số bản ghi (default 20, max 100) |
 | `search` | string | Tìm theo name/code |
 | `status` | enum | ACTIVE, INACTIVE |
-| `academicYearId` | uuid | Filter theo năm học (lớp HC, lớp môn) |
+| `academicYearId` | uuid | Filter theo năm học (lớp HC, lớp môn — qua `semester`) |
+| `semesterId` | uuid | Filter theo học kỳ (lớp môn) |
 | `gradeLevelId` | uuid | Filter theo khối (lớp HC) |
 | `subjectId` | uuid | Filter theo môn (lớp môn) |
 

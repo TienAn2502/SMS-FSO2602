@@ -84,6 +84,25 @@ export class SemestersService {
     return toSemesterResponse(semester);
   }
 
+  async findSemesterInTenantById(
+    schoolId: string,
+    semesterId: string,
+  ): Promise<Semester> {
+    const semester = await this.prisma.semester.findFirst({
+      where: { id: semesterId, schoolId },
+    });
+
+    if (!semester) {
+      throw new AppException(
+        'SEMESTER_NOT_FOUND',
+        'Không tìm thấy học kỳ',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    return semester;
+  }
+
   async findById(
     schoolId: string,
     academicYearId: string,

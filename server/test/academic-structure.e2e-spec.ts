@@ -65,7 +65,7 @@ describe('Academic structure API (e2e)', () => {
     const res = await request(app.getHttpServer())
       .post('/api/v1/course-sections')
       .send({
-        academicYearId: '00000000-0000-4000-8000-000000000001',
+        semesterId: '00000000-0000-4000-8000-000000000001',
         subjectId: '00000000-0000-4000-8000-000000000002',
         homeroomClassId: '00000000-0000-4000-8000-000000000003',
         name: 'Toán 10A1',

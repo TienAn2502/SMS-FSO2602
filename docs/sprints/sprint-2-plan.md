@@ -76,7 +76,7 @@ Admin đăng nhập trường DEMO
 - Mọi bảng có `school_id`
 - Mỗi trường tối đa **một** năm học `is_current = true`
 - `homeroom_classes`: unique `(school_id, academic_year_id, code)`
-- `course_sections`: unique `(school_id, academic_year_id, code)`
+- `course_sections`: unique `(school_id, semester_id, code)`
 
 ---
 
@@ -212,4 +212,4 @@ Admin đăng nhập trường DEMO
 
 ## Bước tiếp theo
 
-Bắt đầu **Phase 2A** — Prisma schema + migration + seed năm học mẫu cho trường DEMO.
+Chuyển sang **Sprint 3** — hồ sơ học sinh, ghi danh, upload file. Xem [sprint-3-plan.md](./sprint-3-plan.md).

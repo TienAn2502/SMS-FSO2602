@@ -10,6 +10,7 @@ export interface School {
   email: string | null;
   phone: string | null;
   address: string | null;
+  logoFileId: string | null;
   status: string;
 }
 
@@ -20,6 +21,7 @@ export interface UpdateSchoolInput {
   email?: string | null;
   phone?: string | null;
   address?: string | null;
+  logoFileId?: string | null;
 }
 
 export async function fetchCurrentSchool(): Promise<School> {

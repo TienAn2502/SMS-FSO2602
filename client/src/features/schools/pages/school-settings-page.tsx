@@ -1,9 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
+import { LogoUploadDropzone } from '@/components/common/logo-upload-dropzone';
 import { ErrorState } from '@/components/feedback/error-state';
 import { LoadingState } from '@/components/feedback/loading-state';
 import { Button } from '@/components/ui/button';
@@ -16,6 +18,10 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  fetchFileSignedUrl,
+  uploadFile,
+} from '@/features/files/api/files-api';
 import { getApiError } from '@/lib/api';
 import { getErrorMessage } from '@/lib/error-messages';
 
@@ -37,11 +43,21 @@ type SchoolFormValues = z.infer<typeof schoolFormSchema>;
 
 export function SchoolSettingsPage() {
   const queryClient = useQueryClient();
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
 
   const schoolQuery = useQuery({
     queryKey: ['schools', 'current'],
     queryFn: fetchCurrentSchool,
   });
+
+  const logoUrlQuery = useQuery({
+    queryKey: ['files', 'logo-url', schoolQuery.data?.logoFileId],
+    queryFn: () => fetchFileSignedUrl(schoolQuery.data!.logoFileId!),
+    enabled: Boolean(schoolQuery.data?.logoFileId),
+    staleTime: 60_000,
+  });
+
+  const displayLogoUrl = logoPreviewUrl ?? logoUrlQuery.data?.url ?? null;
 
   const {
     register,
@@ -88,6 +104,59 @@ export function SchoolSettingsPage() {
     },
   });
 
+  const uploadLogoMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const uploaded = await uploadFile(file, 'SCHOOL_LOGO'); // trả về file id
+      return updateCurrentSchool({ logoFileId: uploaded.id }); // cập nhật logoFileId vào trường trường
+    },
+    onSuccess: (school) => {
+      queryClient.setQueryData(['schools', 'current'], school);
+      void queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      void queryClient.invalidateQueries({ queryKey: ['files', 'logo-url'] });
+      setLogoPreviewUrl(null);
+      toast.success('Upload logo thành công');
+    },
+    onError: (error) => {
+      setLogoPreviewUrl(null);
+      const apiError = getApiError(error);
+      toast.error(
+        getErrorMessage(
+          apiError?.code,
+          apiError?.message ?? 'Upload logo thất bại',
+        ),
+      );
+    },
+  });
+
+  const removeLogoMutation = useMutation({
+    mutationFn: () => updateCurrentSchool({ logoFileId: null }),
+    onSuccess: (school) => {
+      queryClient.setQueryData(['schools', 'current'], school);
+      void queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      void queryClient.invalidateQueries({ queryKey: ['files', 'logo-url'] });
+      setLogoPreviewUrl(null);
+      toast.success('Đã gỡ logo trường');
+    },
+    onError: (error) => {
+      const apiError = getApiError(error);
+      toast.error(
+        getErrorMessage(
+          apiError?.code,
+          apiError?.message ?? 'Gỡ logo thất bại',
+        ),
+      );
+    },
+  });
+
+  const uploadLogoFile = useCallback(
+    (file: File) => {
+      const preview = URL.createObjectURL(file);
+      setLogoPreviewUrl(preview);
+      uploadLogoMutation.mutate(file);
+    },
+    [uploadLogoMutation],
+  );
+
   if (schoolQuery.isLoading) {
     return <LoadingState />;
   }
@@ -120,6 +189,25 @@ export function SchoolSettingsPage() {
           Cập nhật thông tin liên hệ và hiển thị của trường
         </p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Logo trường</CardTitle>
+          <CardDescription>
+            PNG, JPEG, WebP hoặc GIF — tối đa 2MB
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <LogoUploadDropzone
+            previewUrl={displayLogoUrl}
+            isUploading={uploadLogoMutation.isPending}
+            onUpload={uploadLogoFile}
+            canRemove={Boolean(schoolQuery.data?.logoFileId)}
+            isRemoving={removeLogoMutation.isPending}
+            onRemove={() => removeLogoMutation.mutate()}
+          />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

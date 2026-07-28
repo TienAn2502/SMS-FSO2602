@@ -30,6 +30,6 @@ export interface ApiPaginatedResponse<T> {
   message: string | null;
 }
 
-export type UserRole = 'SCHOOL_ADMIN' | 'TEACHER' | 'STUDENT';
+export type UserRole = 'SCHOOL_ADMIN' | 'TEACHER' | 'STUDENT' | 'PARENT';
 export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'LOCKED';
 export type AcademicEntityStatus = 'ACTIVE' | 'INACTIVE';

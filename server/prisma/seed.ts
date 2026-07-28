@@ -1,12 +1,35 @@
 import {
   AcademicEntityStatus,
+  EnrollmentStatus,
+  Gender,
   PrismaClient,
   UserRole,
+  UserStatus,
 } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { config } from 'dotenv';
 import { resolve } from 'node:path';
 import { z } from 'zod';
+
+import { clearSchoolDemoData } from './seed-data/clear-school-data';
+import { seedAttendance } from './seed-data/attendance';
+import { seedParents } from './seed-data/parents';
+import { seedTeachingAssignmentsAndTimetable } from './seed-data/teaching-and-timetable';
+import {
+  CLASSES_PER_GRADE,
+  DEMO_GRADE_LEVELS,
+  DEMO_TEACHER_COUNT,
+  STUDENTS_PER_CLASS,
+  THPT_SUBJECTS,
+  buildHomeroomClassCode,
+  buildStudentDemoEmail,
+  DEMO_PARENT_ACCOUNT_COUNT,
+  DEMO_STUDENTS_WITH_PARENTS,
+} from './seed-data/thpt-curriculum';
+import {
+  generateStudentProfile,
+  generateTeacherName,
+} from './seed-data/vietnamese-names';
 
 config({ path: resolve(__dirname, '../.env.development') });
 config({ path: resolve(__dirname, '../.env') });
@@ -18,6 +41,10 @@ const seedEnvSchema = z.object({
   SEED_SCHOOL_CODE: z.string().min(1),
   SEED_SCHOOL_NAME: z.string().min(1),
   SEED_SCHOOL_TYPE: z.enum(['TH', 'THCS', 'THPT', 'OTHER']).default('THPT'),
+  SEED_CLEAR_DEMO: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((value) => value === 'true'),
 });
 
 const prisma = new PrismaClient();
@@ -30,31 +57,11 @@ interface SeedUserInput {
   schoolId: string;
 }
 
-const DEMO_TEACHERS: Array<Pick<SeedUserInput, 'email' | 'fullName'>> = [
-  { email: 'teacher1@demo.edu.vn', fullName: 'Nguyễn Văn An' },
-  { email: 'teacher2@demo.edu.vn', fullName: 'Trần Thị Bình' },
-  { email: 'teacher3@demo.edu.vn', fullName: 'Lê Hoàng Cường' },
-];
-
-const DEMO_STUDENTS: Array<Pick<SeedUserInput, 'email' | 'fullName'>> = [
-  { email: 'student1@demo.edu.vn', fullName: 'Phạm Minh Đức' },
-  { email: 'student2@demo.edu.vn', fullName: 'Hoàng Thị Em' },
-  { email: 'student3@demo.edu.vn', fullName: 'Vũ Quốc Huy' },
-  { email: 'student4@demo.edu.vn', fullName: 'Đặng Thu Hà' },
-  { email: 'student5@demo.edu.vn', fullName: 'Bùi Văn Khoa' },
-];
-
-const DEMO_GRADE_LEVELS = [
-  { code: '10', name: 'Khối 10' },
-  { code: '11', name: 'Khối 11' },
-  { code: '12', name: 'Khối 12' },
-] as const;
-
-const DEMO_SUBJECTS = [
-  { code: 'TOAN', name: 'Toán học' },
-  { code: 'VAN', name: 'Ngữ văn' },
-  { code: 'ANH', name: 'Tiếng Anh' },
-] as const;
+interface HomeroomClassSeed {
+  id: string;
+  code: string;
+  gradeCode: string;
+}
 
 async function upsertUser(input: SeedUserInput) {
   return prisma.user.upsert({
@@ -74,22 +81,58 @@ async function upsertUser(input: SeedUserInput) {
   });
 }
 
-async function seedAcademicStructure(schoolId: string, homeroomTeacherId: string) {
-  const academicYear = await prisma.academicYear.upsert({
-    where: {
-      schoolId_code: {
-        schoolId,
-        code: '2025-26',
+async function seedTeachers(schoolId: string, demoPasswordHash: string) {
+  const teachers: Array<{ teacherId: string; userId: string; index: number }> = [];
+
+  for (let i = 0; i < DEMO_TEACHER_COUNT; i++) {
+    const fullName = generateTeacherName(i);
+    const specialization =
+      THPT_SUBJECTS[i % THPT_SUBJECTS.length]?.name ?? 'Giáo viên';
+    const email = `teacher${String(i + 1).padStart(2, '0')}@demo.edu.vn`;
+
+    const user = await upsertUser({
+      email,
+      fullName,
+      passwordHash: demoPasswordHash,
+      schoolId,
+      role: UserRole.TEACHER,
+    });
+
+    const teacher = await prisma.teacher.upsert({
+      where: {
+        schoolId_userId: {
+          schoolId,
+          userId: user.id,
+        },
       },
-    },
-    update: {
-      name: '2025-2026',
-      startDate: new Date('2025-09-01'),
-      endDate: new Date('2026-05-31'),
-      isCurrent: true,
-      status: AcademicEntityStatus.ACTIVE,
-    },
-    create: {
+      update: {
+        fullName,
+        specialization,
+        gender: i % 2 === 0 ? Gender.MALE : Gender.FEMALE,
+        status: AcademicEntityStatus.ACTIVE,
+      },
+      create: {
+        schoolId,
+        userId: user.id,
+        fullName,
+        specialization,
+        gender: i % 2 === 0 ? Gender.MALE : Gender.FEMALE,
+        status: AcademicEntityStatus.ACTIVE,
+      },
+    });
+
+    teachers.push({ teacherId: teacher.id, userId: user.id, index: i });
+  }
+
+  return teachers;
+}
+
+async function seedAcademicStructure(
+  schoolId: string,
+  teacherIds: string[],
+) {
+  const academicYear = await prisma.academicYear.create({
+    data: {
       schoolId,
       name: '2025-2026',
       code: '2025-26',
@@ -109,206 +152,229 @@ async function seedAcademicStructure(schoolId: string, homeroomTeacherId: string
     data: { isCurrent: false },
   });
 
-  for (const semester of [
-    {
+  const hk1 = await prisma.semester.create({
+    data: {
+      schoolId,
+      academicYearId: academicYear.id,
       code: 'HK1',
       name: 'Học kỳ 1',
       startDate: new Date('2025-09-01'),
       endDate: new Date('2025-12-31'),
       isCurrent: true,
+      status: AcademicEntityStatus.ACTIVE,
     },
-    {
+  });
+
+  await prisma.semester.create({
+    data: {
+      schoolId,
+      academicYearId: academicYear.id,
       code: 'HK2',
       name: 'Học kỳ 2',
       startDate: new Date('2026-01-01'),
       endDate: new Date('2026-05-31'),
       isCurrent: false,
+      status: AcademicEntityStatus.ACTIVE,
     },
-  ]) {
-    await prisma.semester.upsert({
-      where: {
-        academicYearId_code: {
-          academicYearId: academicYear.id,
-          code: semester.code,
-        },
-      },
-      update: {
-        name: semester.name,
-        startDate: semester.startDate,
-        endDate: semester.endDate,
-        schoolId,
-        status: AcademicEntityStatus.ACTIVE,
-        isCurrent: semester.isCurrent,
-      },
-      create: {
-        schoolId,
-        academicYearId: academicYear.id,
-        code: semester.code,
-        name: semester.name,
-        startDate: semester.startDate,
-        endDate: semester.endDate,
-        status: AcademicEntityStatus.ACTIVE,
-        isCurrent: semester.isCurrent,
-      },
-    });
-  }
+  });
 
   await prisma.semester.updateMany({
-    where: { schoolId },
+    where: { schoolId, id: { not: hk1.id } },
     data: { isCurrent: false },
   });
 
-  await prisma.semester.updateMany({
-    where: { schoolId, academicYearId: academicYear.id, code: 'HK1' },
-    data: { isCurrent: true },
-  });
-
-  const gradeLevels = new Map<string, string>();
+  const gradeLevelIds = new Map<string, string>();
   for (const grade of DEMO_GRADE_LEVELS) {
-    const record = await prisma.gradeLevel.upsert({
-      where: {
-        schoolId_code: {
-          schoolId,
-          code: grade.code,
-        },
-      },
-      update: { name: grade.name },
-      create: {
+    const record = await prisma.gradeLevel.create({
+      data: {
         schoolId,
         code: grade.code,
         name: grade.name,
       },
     });
-    gradeLevels.set(grade.code, record.id);
+    gradeLevelIds.set(grade.code, record.id);
   }
 
-  const subjects = new Map<string, string>();
-  for (const subject of DEMO_SUBJECTS) {
-    const record = await prisma.subject.upsert({
-      where: {
-        schoolId_code: {
-          schoolId,
-          code: subject.code,
-        },
-      },
-      update: {
-        name: subject.name,
-        status: AcademicEntityStatus.ACTIVE,
-      },
-      create: {
+  const subjectIds = new Map<string, string>();
+  for (const subject of THPT_SUBJECTS) {
+    const record = await prisma.subject.create({
+      data: {
         schoolId,
         code: subject.code,
         name: subject.name,
         status: AcademicEntityStatus.ACTIVE,
       },
     });
-    subjects.set(subject.code, record.id);
+    subjectIds.set(subject.code, record.id);
   }
 
-  const gradeLevelSubjects = new Map<string, string>();
-  const grade10Id = gradeLevels.get('10');
-  if (!grade10Id) {
-    throw new Error('Missing grade level 10 for seed');
-  }
-
-  for (const subject of DEMO_SUBJECTS) {
-    const subjectId = subjects.get(subject.code);
-    if (!subjectId) {
-      throw new Error(`Missing subject ${subject.code} for seed`);
+  const gradeLevelSubjectIds = new Map<string, string>();
+  for (const grade of DEMO_GRADE_LEVELS) {
+    const gradeLevelId = gradeLevelIds.get(grade.code);
+    if (!gradeLevelId) {
+      throw new Error(`Missing grade level ${grade.code}`);
     }
 
-    const record = await prisma.gradeLevelSubject.upsert({
-      where: {
-        schoolId_gradeLevelId_subjectId: {
+    for (const subject of THPT_SUBJECTS) {
+      const subjectId = subjectIds.get(subject.code);
+      if (!subjectId) {
+        throw new Error(`Missing subject ${subject.code}`);
+      }
+
+      const key = `${grade.code}:${subject.code}`;
+      const record = await prisma.gradeLevelSubject.create({
+        data: {
           schoolId,
-          gradeLevelId: grade10Id,
+          gradeLevelId,
           subjectId,
+          isRequired: subject.isRequired,
+          status: AcademicEntityStatus.ACTIVE,
         },
-      },
-      update: {
-        isRequired: true,
-        status: AcademicEntityStatus.ACTIVE,
-      },
-      create: {
-        schoolId,
-        gradeLevelId: grade10Id,
-        subjectId,
-        isRequired: true,
-        status: AcademicEntityStatus.ACTIVE,
-      },
-    });
-    gradeLevelSubjects.set(subject.code, record.id);
+      });
+      gradeLevelSubjectIds.set(key, record.id);
+    }
   }
 
-  const homeroomClass = await prisma.homeroomClass.upsert({
-    where: {
-      schoolId_academicYearId_code: {
-        schoolId,
-        academicYearId: academicYear.id,
-        code: '10A1',
-      },
-    },
-    update: {
-      name: '10A1',
-      gradeLevelId: grade10Id,
-      capacity: 45,
-      homeroomTeacherId,
-      status: AcademicEntityStatus.ACTIVE,
-    },
-    create: {
-      schoolId,
-      academicYearId: academicYear.id,
-      gradeLevelId: grade10Id,
-      name: '10A1',
-      code: '10A1',
-      capacity: 45,
-      homeroomTeacherId,
-      status: AcademicEntityStatus.ACTIVE,
-    },
-  });
+  const homeroomClasses: HomeroomClassSeed[] = [];
+  let homeroomTeacherCursor = 0;
 
-  for (const subject of DEMO_SUBJECTS) {
-    const gradeLevelSubjectId = gradeLevelSubjects.get(subject.code);
-    if (!gradeLevelSubjectId) {
-      throw new Error(`Missing grade level subject ${subject.code} for seed`);
+  for (const grade of DEMO_GRADE_LEVELS) {
+    const gradeLevelId = gradeLevelIds.get(grade.code);
+    if (!gradeLevelId) {
+      throw new Error(`Missing grade level ${grade.code}`);
     }
 
-    const code = `${subject.code}-10A1`;
-    const name = `${subject.name} 10A1`;
+    for (let classIndex = 0; classIndex < CLASSES_PER_GRADE; classIndex++) {
+      const code = buildHomeroomClassCode(grade.code, classIndex);
+      const homeroomTeacherId =
+        teacherIds[homeroomTeacherCursor % teacherIds.length];
+      homeroomTeacherCursor += 1;
 
-    await prisma.courseSection.upsert({
-      where: {
-        schoolId_academicYearId_code: {
+      if (!homeroomTeacherId) {
+        throw new Error('Missing homeroom teacher for seed');
+      }
+
+      const homeroomClass = await prisma.homeroomClass.create({
+        data: {
           schoolId,
           academicYearId: academicYear.id,
+          gradeLevelId,
+          name: code,
           code,
+          capacity: 45,
+          homeroomTeacherId,
+          status: AcademicEntityStatus.ACTIVE,
         },
-      },
-      update: {
-        name,
-        homeroomClassId: homeroomClass.id,
-        gradeLevelSubjectId,
-        status: AcademicEntityStatus.ACTIVE,
-      },
-      create: {
-        schoolId,
-        academicYearId: academicYear.id,
-        homeroomClassId: homeroomClass.id,
-        gradeLevelSubjectId,
-        name,
+      });
+
+      homeroomClasses.push({
+        id: homeroomClass.id,
         code,
-        status: AcademicEntityStatus.ACTIVE,
-      },
-    });
+        gradeCode: grade.code,
+      });
+
+      for (const subject of THPT_SUBJECTS) {
+        const gradeLevelSubjectId = gradeLevelSubjectIds.get(
+          `${grade.code}:${subject.code}`,
+        );
+        if (!gradeLevelSubjectId) {
+          throw new Error(
+            `Missing grade level subject ${grade.code}:${subject.code}`,
+          );
+        }
+
+        const sectionCode = `${subject.code}-${code}`;
+        await prisma.courseSection.create({
+          data: {
+            schoolId,
+            semesterId: hk1.id,
+            homeroomClassId: homeroomClass.id,
+            gradeLevelSubjectId,
+            name: `${subject.name} ${code}`,
+            code: sectionCode,
+            status: AcademicEntityStatus.ACTIVE,
+          },
+        });
+      }
+    }
   }
 
   return {
     academicYear,
-    homeroomClass,
-    gradeLevelCount: gradeLevels.size,
-    subjectCount: subjects.size,
-    courseSectionCount: DEMO_SUBJECTS.length,
+    hk1Semester: hk1,
+    homeroomClasses,
+    gradeLevelCount: gradeLevelIds.size,
+    subjectCount: subjectIds.size,
+    courseSectionCount:
+      homeroomClasses.length * THPT_SUBJECTS.length,
   };
+}
+
+async function seedStudentsAndEnrollments(
+  schoolId: string,
+  semesterId: string,
+  homeroomClasses: HomeroomClassSeed[],
+  demoPasswordHash: string,
+) {
+  let studentCount = 0;
+  let enrollmentCount = 0;
+  let globalIndex = 0;
+
+  for (const homeroomClass of homeroomClasses) {
+    const grade = DEMO_GRADE_LEVELS.find(
+      (item) => item.code === homeroomClass.gradeCode,
+    );
+    if (!grade) {
+      throw new Error(`Missing grade config ${homeroomClass.gradeCode}`);
+    }
+
+    for (let seat = 1; seat <= STUDENTS_PER_CLASS; seat++) {
+      const profile = generateStudentProfile(globalIndex, grade.birthYear);
+      const email = buildStudentDemoEmail(globalIndex);
+
+      await prisma.$transaction(async (tx) => {
+        const user = await tx.user.create({
+          data: {
+            email,
+            passwordHash: demoPasswordHash,
+            fullName: profile.fullName,
+            role: UserRole.STUDENT,
+            schoolId,
+            status: UserStatus.ACTIVE,
+          },
+        });
+
+        const student = await tx.student.create({
+          data: {
+            schoolId,
+            userId: user.id,
+            fullName: profile.fullName,
+            dateOfBirth: profile.dateOfBirth,
+            gender: profile.gender,
+            status: AcademicEntityStatus.ACTIVE,
+          },
+        });
+
+        await tx.studentEnrollment.create({
+          data: {
+            schoolId,
+            studentId: student.id,
+            semesterId,
+            homeroomClassId: homeroomClass.id,
+            enrolledAt: new Date('2025-09-01'),
+            note: `Ghi danh ${homeroomClass.code} HK1`,
+            status: EnrollmentStatus.ACTIVE,
+          },
+        });
+      });
+
+      studentCount += 1;
+      enrollmentCount += 1;
+      globalIndex += 1;
+    }
+  }
+
+  return { studentCount, enrollmentCount };
 }
 
 async function main(): Promise<void> {
@@ -330,6 +396,11 @@ async function main(): Promise<void> {
     },
   });
 
+  if (env.SEED_CLEAR_DEMO) {
+    console.log('Clearing existing demo data for school...');
+    await clearSchoolDemoData(prisma, school.id);
+  }
+
   console.log(`Seeding admin user: ${env.SEED_ADMIN_EMAIL}`);
   const adminPasswordHash = await bcrypt.hash(env.SEED_ADMIN_PASSWORD, 12);
 
@@ -341,47 +412,71 @@ async function main(): Promise<void> {
     role: UserRole.SCHOOL_ADMIN,
   });
 
-  console.log('Seeding demo teachers...');
+  console.log(`Seeding ${DEMO_TEACHER_COUNT} demo teachers...`);
   const demoPasswordHash = await bcrypt.hash(env.SEED_DEMO_PASSWORD, 12);
+  const teacherUsers = await seedTeachers(school.id, demoPasswordHash);
+  const teacherIds = teacherUsers.map((teacher) => teacher.teacherId);
 
-  let firstTeacherId: string | null = null;
-  for (const teacher of DEMO_TEACHERS) {
-    const record = await upsertUser({
-      ...teacher,
-      passwordHash: demoPasswordHash,
-      schoolId: school.id,
-      role: UserRole.TEACHER,
-    });
-    firstTeacherId ??= record.id;
-  }
+  console.log('Seeding academic structure (grades, subjects, homeroom classes)...');
+  const academic = await seedAcademicStructure(school.id, teacherIds);
 
-  console.log('Seeding demo students...');
-  for (const student of DEMO_STUDENTS) {
-    await upsertUser({
-      ...student,
-      passwordHash: demoPasswordHash,
-      schoolId: school.id,
-      role: UserRole.STUDENT,
-    });
-  }
+  const totalStudents =
+    DEMO_GRADE_LEVELS.length * CLASSES_PER_GRADE * STUDENTS_PER_CLASS;
+  console.log(`Seeding ${totalStudents} students (${STUDENTS_PER_CLASS}/lớp)...`);
+  const students = await seedStudentsAndEnrollments(
+    school.id,
+    academic.hk1Semester.id,
+    academic.homeroomClasses,
+    demoPasswordHash,
+  );
 
-  if (!firstTeacherId) {
-    throw new Error('No demo teacher available for homeroom class seed');
-  }
+  console.log('Seeding teaching assignments and timetable entries...');
+  const teachingTimetable = await seedTeachingAssignmentsAndTimetable(
+    prisma,
+    school.id,
+    academic.hk1Semester.id,
+    new Date('2025-09-01'),
+  );
 
-  console.log('Seeding Sprint 2 academic structure...');
-  const academic = await seedAcademicStructure(school.id, firstTeacherId);
+  console.log(
+    `Seeding parents (${DEMO_PARENT_ACCOUNT_COUNT} accounts, ${DEMO_STUDENTS_WITH_PARENTS} students with profiles)...`,
+  );
+  const parents = await seedParents(prisma, school.id, demoPasswordHash);
+
+  console.log('Seeding sample attendance (10A1 — TOAN/VAN/ANH)...');
+  const attendance = await seedAttendance(
+    prisma,
+    school.id,
+    academic.hk1Semester.id,
+  );
 
   console.log('Seed completed.');
   console.log(`  School: ${school.name} (${school.code})`);
   console.log(`  Admin: ${admin.email} (${admin.role})`);
-  console.log(`  Teachers: ${DEMO_TEACHERS.length} accounts (password: ${env.SEED_DEMO_PASSWORD})`);
-  console.log(`  Students: ${DEMO_STUDENTS.length} accounts (password: ${env.SEED_DEMO_PASSWORD})`);
+  console.log(
+    `  Teachers: ${DEMO_TEACHER_COUNT} accounts (password: ${env.SEED_DEMO_PASSWORD})`,
+  );
+  console.log(
+    `  Students: ${students.studentCount} accounts (student0001…${String(students.studentCount).padStart(4, '0')}@demo.edu.vn, password: ${env.SEED_DEMO_PASSWORD}) + ${students.enrollmentCount} enrollments`,
+  );
   console.log(`  Academic year: ${academic.academicYear.name} (is_current)`);
   console.log(`  Grade levels: ${academic.gradeLevelCount}`);
-  console.log(`  Subjects: ${academic.subjectCount}`);
-  console.log(`  Homeroom class: ${academic.homeroomClass.code}`);
-  console.log(`  Course sections: ${academic.courseSectionCount}`);
+  console.log(`  Subjects (BGD THPT): ${academic.subjectCount}`);
+  console.log(
+    `  Homeroom classes: ${DEMO_GRADE_LEVELS.length} khối × ${CLASSES_PER_GRADE} lớp = ${academic.homeroomClasses.length}`,
+  );
+  console.log(`  Course sections (HK1): ${academic.courseSectionCount}`);
+  console.log(
+    `  Teaching assignments: ${teachingTimetable.assignmentCount}`,
+  );
+  console.log(`  Timetable entries: ${teachingTimetable.timetableCount}`);
+  console.log(
+    `  Parents: ${parents.parentProfileCount} profiles (${parents.parentAccountCount} login accounts, password: ${env.SEED_DEMO_PASSWORD})`,
+  );
+  console.log(`  Student–parent links: ${parents.studentParentLinkCount}`);
+  console.log(
+    `  Attendance: ${attendance.sessionCount} sessions, ${attendance.recordCount} records (10A1 demo)`,
+  );
 }
 
 main()

@@ -9,6 +9,7 @@ export interface SchoolResponse {
   email: string | null;
   phone: string | null;
   address: string | null;
+  logoFileId: string | null;
   status: School['status'];
 }
 
@@ -22,6 +23,7 @@ export function toSchoolResponse(school: School): SchoolResponse {
     email: school.email,
     phone: school.phone,
     address: school.address,
+    logoFileId: school.logoFileId,
     status: school.status,
   };
 }

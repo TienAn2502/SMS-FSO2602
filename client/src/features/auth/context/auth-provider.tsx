@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const handleLogin = useCallback(
     async (input: LoginInput) => {
-      await loginMutation.mutateAsync(input);
+      return loginMutation.mutateAsync(input);
     },
     [loginMutation],
   );

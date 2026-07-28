@@ -130,11 +130,14 @@ Không kiểm tra R2 trong mọi health check request.
 | **1** | Auth, tenant, RBAC, seed trường, quản lý user |
 | 2 | Năm học, khối, môn, lớp, lớp môn học |
 | 3 | Học sinh, enrollment, chuyển lớp, R2 upload |
-| 4 | Giáo viên, phân công, thời khóa biểu |
-| 5 | Điểm danh |
+| 4 | Giáo viên, phân công, thời khóa biểu, phụ huynh, portal |
+| **5** | Điểm danh (Phase 5A: schema + seed ✅) |
 | 6 | Sổ điểm |
 | 7 | Hạnh kiểm, tổng kết, lên lớp |
 | 8 | Báo cáo, test E2E, CI/CD, deployment |
 
 Chi tiết Sprint 1: [sprint-1-plan.md](../sprints/sprint-1-plan.md)  
-Chi tiết Sprint 2: [sprint-2-plan.md](../sprints/sprint-2-plan.md)
+Chi tiết Sprint 2: [sprint-2-plan.md](../sprints/sprint-2-plan.md)  
+Chi tiết Sprint 3: [sprint-3-plan.md](../sprints/sprint-3-plan.md)  
+Chi tiết Sprint 4: [sprint-4-plan.md](../sprints/sprint-4-plan.md)  
+Chi tiết Sprint 5: [sprint-5-plan.md](../sprints/sprint-5-plan.md)

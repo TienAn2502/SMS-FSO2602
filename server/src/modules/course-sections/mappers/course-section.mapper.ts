@@ -1,7 +1,8 @@
-import type { CourseSection } from '@prisma/client';
+import type { CourseSection, Semester } from '@prisma/client';
 
 export interface CourseSectionResponse {
   id: string;
+  semesterId: string;
   academicYearId: string;
   homeroomClassId: string | null;
   gradeLevelSubjectId: string;
@@ -12,12 +13,17 @@ export interface CourseSectionResponse {
   updatedAt: string;
 }
 
+type CourseSectionWithSemester = CourseSection & {
+  semester: Pick<Semester, 'academicYearId'>;
+};
+
 export function toCourseSectionResponse(
-  courseSection: CourseSection,
+  courseSection: CourseSectionWithSemester,
 ): CourseSectionResponse {
   return {
     id: courseSection.id,
-    academicYearId: courseSection.academicYearId,
+    semesterId: courseSection.semesterId,
+    academicYearId: courseSection.semester.academicYearId,
     homeroomClassId: courseSection.homeroomClassId,
     gradeLevelSubjectId: courseSection.gradeLevelSubjectId,
     name: courseSection.name,
@@ -27,3 +33,9 @@ export function toCourseSectionResponse(
     updatedAt: courseSection.updatedAt.toISOString(),
   };
 }
+
+export const courseSectionInclude = {
+  semester: {
+    select: { academicYearId: true },
+  },
+} as const;

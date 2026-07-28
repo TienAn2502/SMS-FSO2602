@@ -27,6 +27,13 @@ server/
 │   │   └── 20260723132737_init_sprint2_academic/
 │   │   └── 20260723134500_semester_is_current/
 │   └── seed.ts
+│   └── seed-data/
+│       ├── thpt-curriculum.ts
+│       ├── vietnamese-names.ts
+│       ├── clear-school-data.ts
+│       ├── parents.ts
+│       ├── attendance.ts
+│       └── teaching-and-timetable.ts
 └── package.json          # prisma.seed config
 ```
 
@@ -71,15 +78,25 @@ File: `server/prisma/seed.ts`
 |--------|---------|---------|
 | 1 | Trường mẫu | Upsert theo `code` từ env |
 | 2 | User admin | Upsert theo `email`, gán `school_id` + `role = SCHOOL_ADMIN` |
-| 3 | Giáo viên demo | 3 tài khoản `TEACHER` |
-| 4 | Học sinh demo | 5 tài khoản `STUDENT` |
+| 3 | Giáo viên demo | 25 tài khoản `TEACHER` (teacher01…25@demo.edu.vn) |
+| 4 | Học sinh demo | 450 tài khoản `STUDENT` (student0001…450@demo.edu.vn) + ghi danh HK1 |
 | 5 | Năm học 2025-2026 | `is_current = true`, code `2025-26` |
 | 6 | Học kỳ HK1, HK2 | Thuộc năm học trên |
 | 7 | Khối 10, 11, 12 | Upsert theo `(school_id, code)` |
-| 8 | Môn TOAN, VAN, ANH | Upsert theo `(school_id, code)` |
-| 9 | grade_level_subjects | Khối 10 × 3 môn, `is_required = true` |
-| 10 | Lớp HC 10A1 | GVCN = `teacher1@demo.edu.vn` |
-| 11 | Lớp môn | TOAN-10A1, VAN-10A1, ANH-10A1 |
+| 8 | Môn THPT (BGD CT 2018) | 14 môn: TOAN, VAN, ANH, LY, HOA, SINH, SU, DIA, GKTPL, TIN, CN, TD, GDQP, HDTN |
+| 9 | grade_level_subjects | Mỗi khối × 14 môn |
+| 10 | Lớp HC | 5 lớp/khối (10A1…12A5) |
+| 11 | Lớp môn (HK1) | Mỗi lớp HC × môn của khối |
+| 12 | Ghi danh | Mỗi HS → enrollment ACTIVE học kỳ HK1 |
+| 13 | Phân công giảng dạy | Mỗi lớp môn HK1 → 1 GV theo chuyên môn môn học |
+| 14 | Thời khóa biểu | 1 tiết/tuần/lớp môn (Thứ 2–6, tiết 1–3), phòng `P.{mã lớp HC}` |
+| 15 | Phụ huynh | 100 HS có hồ sơ PH (mẹ + cha); 15 tài khoản đăng nhập portal |
+| 16 | Liên kết PH–HS | `student_parents`: quan hệ FATHER/MOTHER, primary contact |
+| 17 | Điểm danh demo | 3 phiên `10A1` (TOAN/VAN/ANH), ngày `2025-09-01`, ~30 HS/phiên |
+
+**Bảng chưa seed (cố ý):** `files` — cần upload thật qua S3/local storage, không tạo metadata giả.
+
+Trước khi seed, mặc định **xóa dữ liệu nghiệp vụ cũ** của trường demo (`SEED_CLEAR_DEMO=true`, giữ admin + school).
 
 ### Biến môi trường seed
 
@@ -90,6 +107,7 @@ SEED_DEMO_PASSWORD=Demo@123456
 SEED_SCHOOL_CODE=DEMO
 SEED_SCHOOL_NAME=Trường THPT Demo
 SEED_SCHOOL_TYPE=THPT
+SEED_CLEAR_DEMO=true
 ```
 
 **Tài khoản demo sau seed:**
@@ -97,22 +115,15 @@ SEED_SCHOOL_TYPE=THPT
 | Vai trò | Email | Mật khẩu |
 |---------|-------|----------|
 | Admin trường | `admin@demo.edu.vn` | `SEED_ADMIN_PASSWORD` (mặc định `Admin@123456`) |
-| Giáo viên | `teacher1@demo.edu.vn` … `teacher3@demo.edu.vn` | `SEED_DEMO_PASSWORD` (mặc định `Demo@123456`) |
-| Học sinh | `student1@demo.edu.vn` … `student5@demo.edu.vn` | `SEED_DEMO_PASSWORD` (mặc định `Demo@123456`) |
+| Giáo viên | `teacher01@demo.edu.vn` … `teacher25@demo.edu.vn` | `SEED_DEMO_PASSWORD` (mặc định `Demo@123456`) |
+| Học sinh | `student0001@demo.edu.vn` … `student0450@demo.edu.vn` | `SEED_DEMO_PASSWORD` (mặc định `Demo@123456`) |
+| Phụ huynh | `parent01@demo.edu.vn` … `parent15@demo.edu.vn` | `SEED_DEMO_PASSWORD` (mặc định `Demo@123456`) |
+
+**Demo portal phụ huynh:** `parent01@demo.edu.vn` gắn HS `student0001` và `student0002` (2 con cùng PH).
 
 ### Idempotent strategy
 
-Mỗi bước seed dùng `upsert`:
-
-```typescript
-await prisma.user.upsert({
-  where: { email: env.SEED_ADMIN_EMAIL },
-  update: { schoolId: school.id, role: UserRole.SCHOOL_ADMIN },
-  create: { email, passwordHash, fullName, schoolId: school.id, role: UserRole.SCHOOL_ADMIN },
-});
-```
-
-Chạy lại seed **không tạo bản ghi trùng**, **không reset mật khẩu** nếu user đã tồn tại (trừ khi dùng flag `SEED_FORCE_RESET_PASSWORD=true` cho dev).
+School và admin user dùng `upsert`. Các dữ liệu nghiệp vụ (HS, lớp, môn, ghi danh…) được **xóa và tạo lại** khi `SEED_CLEAR_DEMO=true` (mặc định).
 
 ### Output sau seed
 
@@ -120,8 +131,8 @@ Chạy lại seed **không tạo bản ghi trùng**, **không reset mật khẩu
 Seed completed.
   School: Trường THPT Demo (DEMO)
   Admin: admin@demo.edu.vn (SCHOOL_ADMIN)
-  Teachers: 3 accounts (password: Demo@123456)
-  Students: 5 accounts (password: Demo@123456)
+  Teachers: 25 accounts (password: Demo@123456)
+  Students: 450 accounts (student0001…student0450@demo.edu.vn, password: Demo@123456)
   Academic year: 2025-2026 (is_current)
   Grade levels: 3
   Subjects: 3

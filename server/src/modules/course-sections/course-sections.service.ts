@@ -5,6 +5,7 @@ import {
   type CourseSection,
   type GradeLevelSubject,
   type HomeroomClass,
+  type Semester,
 } from '@prisma/client';
 
 import { AppException } from '../../common/exceptions/app.exception';
@@ -14,11 +15,11 @@ import {
   buildPaginationMeta,
   getSkip,
 } from '../../common/utils/pagination.util';
-import { AcademicYearsService } from '../academic-years/academic-years.service';
 import { GradeLevelsService } from '../grade-levels/grade-levels.service';
 import { HomeroomClassesService } from '../homeroom-classes/homeroom-classes.service';
 import { SubjectsService } from '../subjects/subjects.service';
 import {
+  courseSectionInclude,
   toCourseSectionResponse,
   type CourseSectionResponse,
 } from './mappers/course-section.mapper';
@@ -33,7 +34,6 @@ import type {
 export class CourseSectionsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly academicYearsService: AcademicYearsService,
     private readonly gradeLevelsService: GradeLevelsService,
     private readonly homeroomClassesService: HomeroomClassesService,
     private readonly subjectsService: SubjectsService,
@@ -46,7 +46,10 @@ export class CourseSectionsService {
     const where: Prisma.CourseSectionWhereInput = {
       schoolId,
       ...(query.status ? { status: query.status } : {}),
-      ...(query.academicYearId ? { academicYearId: query.academicYearId } : {}),
+      ...(query.semesterId ? { semesterId: query.semesterId } : {}),
+      ...(query.academicYearId
+        ? { semester: { academicYearId: query.academicYearId } }
+        : {}),
       ...(query.homeroomClassId
         ? { homeroomClassId: query.homeroomClassId }
         : {}),
@@ -88,6 +91,7 @@ export class CourseSectionsService {
         orderBy,
         skip: getSkip(query.page, query.limit),
         take: query.limit,
+        include: courseSectionInclude,
       }),
     ]);
 
@@ -112,17 +116,14 @@ export class CourseSectionsService {
     schoolId: string,
     input: CreateCourseSectionInput,
   ): Promise<CourseSectionResponse> {
-    await this.academicYearsService.findAcademicYearInTenant(
-      schoolId,
-      input.academicYearId,
-    );
+    const semester = await this.findSemesterInTenant(schoolId, input.semesterId);
     await this.subjectsService.findSubjectInTenant(schoolId, input.subjectId);
 
     const homeroomClass = input.homeroomClassId
       ? await this.validateHomeroomClassForYear(
           schoolId,
           input.homeroomClassId,
-          input.academicYearId,
+          semester.academicYearId,
         )
       : null;
 
@@ -151,12 +152,13 @@ export class CourseSectionsService {
       const courseSection = await this.prisma.courseSection.create({
         data: {
           schoolId,
-          academicYearId: input.academicYearId,
+          semesterId: semester.id,
           homeroomClassId: input.homeroomClassId ?? null,
           gradeLevelSubjectId: gradeLevelSubject.id,
           name: input.name,
           code: input.code,
         },
+        include: courseSectionInclude,
       });
 
       return toCourseSectionResponse(courseSection);
@@ -180,7 +182,7 @@ export class CourseSectionsService {
       const homeroomClass = await this.validateHomeroomClassForYear(
         schoolId,
         input.homeroomClassId,
-        existing.academicYearId,
+        existing.semester.academicYearId,
       );
 
       const gradeLevelSubject = await this.prisma.gradeLevelSubject.findFirst({
@@ -212,6 +214,7 @@ export class CourseSectionsService {
             ? { homeroomClassId: input.homeroomClassId }
             : {}),
         },
+        include: courseSectionInclude,
       });
 
       return toCourseSectionResponse(courseSection);
@@ -231,6 +234,7 @@ export class CourseSectionsService {
     const courseSection = await this.prisma.courseSection.update({
       where: { id: courseSectionId },
       data: { status: input.status },
+      include: courseSectionInclude,
     });
 
     return toCourseSectionResponse(courseSection);
@@ -239,9 +243,10 @@ export class CourseSectionsService {
   async findCourseSectionInTenant(
     schoolId: string,
     courseSectionId: string,
-  ): Promise<CourseSection> {
+  ): Promise<CourseSection & { semester: Pick<Semester, 'academicYearId'> }> {
     const courseSection = await this.prisma.courseSection.findFirst({
       where: { id: courseSectionId, schoolId },
+      include: courseSectionInclude,
     });
 
     if (!courseSection) {
@@ -253,6 +258,25 @@ export class CourseSectionsService {
     }
 
     return courseSection;
+  }
+
+  private async findSemesterInTenant(
+    schoolId: string,
+    semesterId: string,
+  ): Promise<Semester> {
+    const semester = await this.prisma.semester.findFirst({
+      where: { id: semesterId, schoolId },
+    });
+
+    if (!semester) {
+      throw new AppException(
+        'SEMESTER_NOT_FOUND',
+        'Không tìm thấy học kỳ',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    return semester;
   }
 
   private async validateHomeroomClassForYear(
@@ -269,7 +293,7 @@ export class CourseSectionsService {
     if (homeroomClass.academicYearId !== academicYearId) {
       throw new AppException(
         'TENANT_MISMATCH',
-        'Lớp hành chính không thuộc năm học đã chọn',
+        'Lớp hành chính không thuộc năm học của học kỳ đã chọn',
         HttpStatus.UNPROCESSABLE_ENTITY,
       );
     }
@@ -329,7 +353,7 @@ export class CourseSectionsService {
     ) {
       throw new AppException(
         'COURSE_SECTION_CODE_EXISTS',
-        'Mã lớp môn học đã tồn tại trong năm học',
+        'Mã lớp môn học đã tồn tại trong học kỳ',
         HttpStatus.CONFLICT,
       );
     }

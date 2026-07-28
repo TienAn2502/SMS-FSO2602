@@ -1,13 +1,18 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
+import { FilePurpose } from '@prisma/client';
 
 import { AppException } from '../../common/exceptions/app.exception';
 import { PrismaService } from '../../common/database/prisma.service';
+import { FilesService } from '../files/files.service';
 import { toSchoolResponse, type SchoolResponse } from './mappers/school.mapper';
 import type { UpdateSchoolInput } from './schemas/update-school.schema';
 
 @Injectable()
 export class SchoolsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly filesService: FilesService,
+  ) {}
 
   async getCurrent(schoolId: string): Promise<SchoolResponse> {
     const school = await this.findSchoolInTenant(schoolId);
@@ -19,6 +24,14 @@ export class SchoolsService {
     input: UpdateSchoolInput,
   ): Promise<SchoolResponse> {
     await this.findSchoolInTenant(schoolId);
+
+    if (input.logoFileId) {
+      await this.filesService.assertFileInTenant(
+        schoolId,
+        input.logoFileId,
+        FilePurpose.SCHOOL_LOGO,
+      );
+    }
 
     const school = await this.prisma.school.update({
       where: { id: schoolId },

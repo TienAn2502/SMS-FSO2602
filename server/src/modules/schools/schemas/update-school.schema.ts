@@ -7,6 +7,7 @@ export const updateSchoolSchema = z.object({
   email: z.email('Email không đúng định dạng').nullable().optional(),
   phone: z.string().max(20).nullable().optional(),
   address: z.string().nullable().optional(),
+  logoFileId: z.uuid('Logo file ID không hợp lệ').nullable().optional(),
 });
 
 export type UpdateSchoolInput = z.infer<typeof updateSchoolSchema>;

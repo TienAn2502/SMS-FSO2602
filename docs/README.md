@@ -11,16 +11,16 @@ Hệ thống quản trị trường học đa tenant (SaaS), tập trung MVP: qu
 | [database/](./database/) | Schema, migration, seed |
 | [api/](./api/) | Quy ước REST API và endpoint theo sprint |
 | [decisions/](./decisions/) | Architecture Decision Records (ADR) |
-| [sprints/](./sprints/) | Kế hoạch triển khai theo sprint ([Sprint 1](./sprints/sprint-1-plan.md), [Sprint 2](./sprints/sprint-2-plan.md)) |
+| [sprints/](./sprints/) | Kế hoạch triển khai theo sprint ([Sprint 1](./sprints/sprint-1-plan.md) … [Sprint 5](./sprints/sprint-5-plan.md)) |
 
 ## Trạng thái dự án
 
 | Hạng mục | Trạng thái |
 |----------|------------|
-| Sprint hiện tại | **Sprint 2** – Khung học vụ (năm học, khối, môn, lớp) |
-| Frontend | `client/` – React + Vite (Sprint 1 ✅) |
-| Backend | `server/` – NestJS (Sprint 1 ✅) |
-| Database | Neon PostgreSQL + Prisma (Sprint 1: `schools`, `users`; Sprint 2: +7 bảng học vụ) |
+| Sprint hiện tại | **Sprint 5** – Điểm danh (Phase 5A ✅ schema + seed) |
+| Frontend | `client/` – React + Vite (Sprint 1–4 ✅) |
+| Backend | `server/` – NestJS (Sprint 1–4 ✅; Sprint 5: schema điểm danh) |
+| Database | Neon PostgreSQL + Prisma (Sprint 1–4 ✅; Sprint 5: +attendance_*) |
 | Tạo trường đầu tiên | Seed data (MVP) |
 
 ## Quyết định đã chốt

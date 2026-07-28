@@ -1,0 +1,3684 @@
+{
+  "info": {
+    "name": "CodeFarm Nestjs — Missing Requests",
+    "description": "Import vào collection CodeFarm, folder Nestjs. Hoặc chạy: POSTMAN_API_KEY=PMAK-xxx node server/scripts/sync-postman-nestjs.mjs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "API_BASE_URL",
+      "value": "http://localhost:3000"
+    }
+  ],
+  "item": [
+    {
+      "name": "auth",
+      "id": "8b78f80f-625c-4349-8570-0b55e8d179ac",
+      "item": [
+        {
+          "name": "login",
+          "id": "b996c7bf-8162-4b9a-b1cc-df59ed0c541b",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/auth/login",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "email",
+                  "value": "admin@demo.edu.vn",
+                  "type": "text",
+                  "uuid": "a60801bf-0b41-4134-a559-d96363418f4e"
+                },
+                {
+                  "key": "password",
+                  "value": "Admin@123456",
+                  "type": "text",
+                  "uuid": "84d41268-d034-4d28-8170-43191bfef7ac"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "refresh",
+          "id": "4b7f2dc2-2c27-4e48-97fb-407c2734afaa",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/auth/refresh",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "refresh"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "logout",
+          "id": "0121d1e3-726e-4b4d-8515-e4265db27311",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/auth/logout",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "logout"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "me",
+          "id": "5889aabd-dbd7-4022-86b2-9a52a55f1e3a",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/auth/me",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "schools",
+      "id": "cd7fe013-a7e1-4d11-8ec9-0c8b0e81b104",
+      "item": [
+        {
+          "name": "current school",
+          "id": "89007aec-d886-4931-b7b4-73f4d42e0d50",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/schools/current",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "schools",
+                "current"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update current school",
+          "id": "ce83c04e-3720-41a6-abff-73367842b1da",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/schools/current",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "schools",
+                "current"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "name",
+                  "value": "Trường THPT Demo",
+                  "type": "text",
+                  "uuid": "0a3f6142-daa5-42d5-9034-2fa4b5034528"
+                },
+                {
+                  "key": "shortName",
+                  "value": "THPT Demo",
+                  "type": "text",
+                  "uuid": "3d08cec3-f07a-4ddd-a6ca-472bce7e37e4"
+                },
+                {
+                  "key": "schoolType",
+                  "value": "THPT",
+                  "type": "text",
+                  "uuid": "cc7b3e90-3b2f-42b4-b4b4-5e7511efa9bc"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "academic-years",
+      "id": "e12b5c19-e24c-4e9f-b2fa-9902547d4c4b",
+      "item": [
+        {
+          "name": "all academic years",
+          "id": "6c800ae2-125d-45fe-b85a-54391ab1fecd",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/academic-years",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "academic-years"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "current academic year",
+          "id": "f4e8c687-3781-42f9-8e70-3a1fa0968803",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/academic-years/current",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "academic-years",
+                "current"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "specific academic year",
+          "id": "f345162d-ea37-4c45-98f0-cac102b154db",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/academic-years/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "academic-years",
+                ":id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "new academic year",
+          "id": "d1bda683-f207-42ff-8778-666f71af6ae9",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/academic-years",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "academic-years"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "name",
+                  "value": "Năm học 2025-2026",
+                  "type": "text",
+                  "uuid": "4b345705-a1e7-4d26-8dd2-b65e027056c8"
+                },
+                {
+                  "key": "code",
+                  "value": "2025-2026",
+                  "type": "text",
+                  "uuid": "e15c1834-b39e-4b80-9886-23045a17756d"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2025-08-01",
+                  "type": "text",
+                  "uuid": "1fcc672e-c381-4204-a2c7-773c3c1dd9f1"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2026-05-31",
+                  "type": "text",
+                  "uuid": "ebddb258-92ae-4adc-94bb-e6b7bee3c5d8"
+                },
+                {
+                  "key": "isCurrent",
+                  "value": "false",
+                  "type": "text",
+                  "uuid": "e67a346d-f0c3-460d-a9ca-0ea358d5f206"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "set current academic year",
+          "id": "cefa22ba-55c4-4db0-81ae-469377ba129a",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/academic-years/:id/set-current",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "academic-years",
+                ":id",
+                "set-current"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update academic year status",
+          "id": "b461ff94-bf8c-48fc-8b7a-f36f7db13f20",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/academic-years/:id/status",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "academic-years",
+                ":id",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "status",
+                  "value": "ACTIVE",
+                  "type": "text",
+                  "uuid": "4e735b5a-e648-4d8f-b5f8-5555ecd903eb"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update academic year",
+          "id": "b29cc321-32ad-4691-bfef-641dc27fb60d",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/academic-years/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "academic-years",
+                ":id"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "name",
+                  "value": "Năm học 2025-2026 (cập nhật)",
+                  "type": "text",
+                  "uuid": "24ccecbd-7f8f-4d9d-bf99-2499c763bebd"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "semesters",
+      "id": "c1edb5e6-43a4-40af-b869-2181f90e21a8",
+      "item": [
+        {
+          "name": "all semesters by year",
+          "id": "76e0b43f-9160-42da-b5df-94b3ee22ab7c",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/academic-years/:yearId/semesters",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "academic-years",
+                ":yearId",
+                "semesters"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "current semester by year",
+          "id": "39e5875c-a9b2-4e41-881f-d6b4c7b4b624",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/academic-years/:yearId/semesters/current",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "academic-years",
+                ":yearId",
+                "semesters",
+                "current"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "current semester (school)",
+          "id": "a3bfc951-041d-40ce-8bf9-1931c5e598ce",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/semesters/current",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "semesters",
+                "current"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "specific semester",
+          "id": "69cbf00f-e808-477b-ae5d-e5dd619a823d",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/academic-years/:yearId/semesters/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "academic-years",
+                ":yearId",
+                "semesters",
+                ":id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "new semester",
+          "id": "6aa98164-688c-49ba-8cf8-493dc2f74ee7",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/academic-years/:yearId/semesters",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "academic-years",
+                ":yearId",
+                "semesters"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "name",
+                  "value": "Học kỳ 1",
+                  "type": "text",
+                  "uuid": "2ab78cc1-deb9-4bc6-98bd-dd9e0bd22631"
+                },
+                {
+                  "key": "code",
+                  "value": "HK1",
+                  "type": "text",
+                  "uuid": "4457890c-52d7-41e5-932e-0885488c0604"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2025-08-05",
+                  "type": "text",
+                  "uuid": "a06d5669-d217-407d-8086-564ddacb910a"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-12-31",
+                  "type": "text",
+                  "uuid": "cebc2a37-bfa8-4f9e-a766-315052b9353a"
+                },
+                {
+                  "key": "isCurrent",
+                  "value": "true",
+                  "type": "text",
+                  "uuid": "bdb8b560-5634-4a89-a2e0-b78bd5df59b2"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "set current semester",
+          "id": "958ddf8a-8895-4c03-96d6-0ca5cccccd61",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/academic-years/:yearId/semesters/:id/set-current",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "academic-years",
+                ":yearId",
+                "semesters",
+                ":id",
+                "set-current"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update semester status",
+          "id": "d45ad9a3-a0ea-4c82-acc1-e6fe28bba711",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/academic-years/:yearId/semesters/:id/status",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "academic-years",
+                ":yearId",
+                "semesters",
+                ":id",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "status",
+                  "value": "ACTIVE",
+                  "type": "text",
+                  "uuid": "2f650e83-df92-4e76-8ddf-3269b85e85ba"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update semester",
+          "id": "2bdac041-8c54-4672-b40a-da638aba1e0a",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/academic-years/:yearId/semesters/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "academic-years",
+                ":yearId",
+                "semesters",
+                ":id"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "name",
+                  "value": "Học kỳ 1 (cập nhật)",
+                  "type": "text",
+                  "uuid": "6d438369-5c34-4294-acb4-04e1787a73cf"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "grade-levels",
+      "id": "6f985ff0-7234-463a-8e6f-763b745a1f93",
+      "item": [
+        {
+          "name": "all grade levels",
+          "id": "581e09b7-78d2-4d31-8cde-18eae371de24",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/grade-levels",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "grade-levels"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "specific grade level",
+          "id": "47bf5772-903d-4b0f-972b-a5df8f0ff8e1",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/grade-levels/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "grade-levels",
+                ":id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "new grade level",
+          "id": "86b30ed1-6f64-4d96-9491-609ab64416b9",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/grade-levels",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "grade-levels"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "name",
+                  "value": "Khối 10",
+                  "type": "text",
+                  "uuid": "9a3619e6-1e38-4ebb-a12c-75a2dfd4e475"
+                },
+                {
+                  "key": "code",
+                  "value": "10",
+                  "type": "text",
+                  "uuid": "4509698f-e317-4e3a-8720-acf1720c6ac0"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "10",
+                  "type": "text",
+                  "uuid": "782b8854-376d-4164-b883-dc9d4438582e"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update grade level",
+          "id": "cdde2b24-9d74-4aec-b36f-ca69cad54822",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/grade-levels/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "grade-levels",
+                ":id"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "name",
+                  "value": "Khối 10 (cập nhật)",
+                  "type": "text",
+                  "uuid": "9c687754-a19e-4825-a75f-f4c67caab529"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "subjects",
+      "id": "81af5663-5c1e-4d90-b5b6-4a12843ac177",
+      "item": [
+        {
+          "name": "all subjects",
+          "id": "20925319-912e-43c6-8c72-094c0cfa6030",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/subjects",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "subjects"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "specific subject",
+          "id": "a3538f08-c37b-4bff-aa8d-a81d8462947f",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/subjects/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "subjects",
+                ":id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "new subject",
+          "id": "6caa31c7-060f-450f-bcab-a6afc6805d82",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/subjects",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "subjects"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "name",
+                  "value": "Toán học",
+                  "type": "text",
+                  "uuid": "aafd73d6-afcc-441b-9cec-8236203d74d0"
+                },
+                {
+                  "key": "code",
+                  "value": "TOAN",
+                  "type": "text",
+                  "uuid": "082e0c7b-2011-448c-9ed6-da5ac81987d1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update subject status",
+          "id": "13e48da1-5319-41a1-8773-aebe520ef33d",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/subjects/:id/status",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "subjects",
+                ":id",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "status",
+                  "value": "ACTIVE",
+                  "type": "text",
+                  "uuid": "c8d0675f-8a97-4e1b-aca1-574907d45429"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update subject",
+          "id": "0e8bb35e-b0ca-42ad-84f2-09a47649da97",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/subjects/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "subjects",
+                ":id"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "name",
+                  "value": "Toán học (cập nhật)",
+                  "type": "text",
+                  "uuid": "eb0ece94-ccab-46d7-afb3-7f24bff91f81"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "homeroom-classes",
+      "id": "ceec80b8-51f5-44a8-9ed2-a403539fed03",
+      "item": [
+        {
+          "name": "all homeroom classes",
+          "id": "052f6ef3-2561-4b75-bc3b-56e470aadd24",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/homeroom-classes",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "homeroom-classes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "specific homeroom class",
+          "id": "d83a3052-b724-4b3f-8337-42f3d39ca640",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/homeroom-classes/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "homeroom-classes",
+                ":id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "new homeroom class",
+          "id": "9e21a3fb-4ed0-4386-a1f0-97baaebc9a10",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/homeroom-classes",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "homeroom-classes"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "academicYearId",
+                  "value": "",
+                  "type": "text",
+                  "uuid": "0c036c4d-a006-46d8-aa3c-f998c1141303"
+                },
+                {
+                  "key": "gradeLevelId",
+                  "value": "",
+                  "type": "text",
+                  "uuid": "eec692ae-26f2-4618-81d2-ddff393681a3"
+                },
+                {
+                  "key": "name",
+                  "value": "10A1",
+                  "type": "text",
+                  "uuid": "e33335f8-bf01-4335-9180-cca873bfc14e"
+                },
+                {
+                  "key": "code",
+                  "value": "10A1",
+                  "type": "text",
+                  "uuid": "5a5d241b-3904-48d8-8fd3-7527c176b5c6"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update homeroom class status",
+          "id": "a1ac6d0b-4834-448c-89b9-6eab8c873879",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/homeroom-classes/:id/status",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "homeroom-classes",
+                ":id",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "status",
+                  "value": "ACTIVE",
+                  "type": "text",
+                  "uuid": "8f06292c-45ea-4396-9f28-01735f9805e1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update homeroom class",
+          "id": "1f378a95-d773-4718-915a-b988708e18b7",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/homeroom-classes/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "homeroom-classes",
+                ":id"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "name",
+                  "value": "10A1 (cập nhật)",
+                  "type": "text",
+                  "uuid": "d0855a06-16be-4fc2-adba-991877a90f85"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "course-sections",
+      "id": "4dbd1a14-11d8-4b22-ba0a-0b8111ffc79d",
+      "item": [
+        {
+          "name": "all course sections",
+          "id": "62aadeb4-44da-4707-9ec1-b69718bc3a92",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/course-sections",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "course-sections"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "specific course section",
+          "id": "d40891b2-f375-49dc-b472-731e2129fd92",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/course-sections/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "course-sections",
+                ":id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "new course section",
+          "id": "c6d3a8b7-1e0b-46c7-b731-fa8a6ed42e89",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/course-sections",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "course-sections"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "semesterId",
+                  "value": "",
+                  "type": "text",
+                  "uuid": "ea664b87-7ff9-4bef-b32c-f6c4ce76f27d"
+                },
+                {
+                  "key": "homeroomClassId",
+                  "value": "",
+                  "type": "text",
+                  "uuid": "44159a4b-46d8-4991-987c-0d399776c3a4"
+                },
+                {
+                  "key": "gradeLevelSubjectId",
+                  "value": "",
+                  "type": "text",
+                  "uuid": "59c5d684-7aed-4b88-afb2-165965b6e55d"
+                },
+                {
+                  "key": "name",
+                  "value": "Toán học 10A1",
+                  "type": "text",
+                  "uuid": "4bcbdf74-482b-45e7-88d9-a7ef3ddb44a0"
+                },
+                {
+                  "key": "code",
+                  "value": "TOAN-10A1",
+                  "type": "text",
+                  "uuid": "a9b683ff-630c-413f-a8b1-0cb6a9bf51ec"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update course section status",
+          "id": "64a87eab-aea3-43a4-b44e-2cf6c53272e9",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/course-sections/:id/status",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "course-sections",
+                ":id",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "status",
+                  "value": "ACTIVE",
+                  "type": "text",
+                  "uuid": "1ce97fb5-8b29-416c-91bb-633ee601004a"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update course section",
+          "id": "4ea2773c-5490-4476-8a63-f2d7b610252b",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/course-sections/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "course-sections",
+                ":id"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "name",
+                  "value": "Toán học 10A1 (cập nhật)",
+                  "type": "text",
+                  "uuid": "fcfb371a-f05a-4699-8f79-b74b7938a2c3"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "students",
+      "id": "747e7057-e9a6-4199-ae75-348c4d55cb52",
+      "item": [
+        {
+          "name": "all students",
+          "id": "3f04e10b-2dd3-45bf-9316-413683bf6701",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/students",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "students"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "specific student",
+          "id": "6a4e44f4-43b9-4d86-b362-6ec03bf9eff3",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/students/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "students",
+                ":id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "new student profile",
+          "id": "474235fb-8e81-45a6-8fa7-7a5f1e1f9e57",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/students",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "students"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "fullName",
+                  "value": "Nguyễn Văn A",
+                  "type": "text",
+                  "uuid": "5b7b74dd-160c-4b10-be4e-595e464ae4c2"
+                },
+                {
+                  "key": "dateOfBirth",
+                  "value": "2010-01-15",
+                  "type": "text",
+                  "uuid": "1827e9a8-993b-47b5-9ee8-c48b014e4c28"
+                },
+                {
+                  "key": "gender",
+                  "value": "MALE",
+                  "type": "text",
+                  "uuid": "3dca2a24-e44a-46a0-a973-779cb0aeb335"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update student status",
+          "id": "4f297f59-22b2-4680-87d3-a02c98376ee6",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/students/:id/status",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "students",
+                ":id",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "status",
+                  "value": "ACTIVE",
+                  "type": "text",
+                  "uuid": "cf789a58-e0e0-44fd-b09a-8f2b2828ba34"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "link student to user account",
+          "id": "94d20888-9e8b-4813-bff3-c451cc819776",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/students/:id/link-user",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "students",
+                ":id",
+                "link-user"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "userId",
+                  "value": "",
+                  "type": "text",
+                  "uuid": "1b4290d3-a216-4431-ad73-93288c3c5574"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update student profile",
+          "id": "e710b192-d10f-4210-bfa1-17af4ea100b1",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/students/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "students",
+                ":id"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "fullName",
+                  "value": "Nguyễn Văn A (cập nhật)",
+                  "type": "text",
+                  "uuid": "129cc435-2329-4648-b051-6d9a4d384886"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "student enrollments by student",
+          "id": "2238084a-40bd-4b1b-83b4-894dda64a8ca",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/students/:studentId/enrollments",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "students",
+                ":studentId",
+                "enrollments"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "student-enrollments",
+      "id": "787fc93f-8ce4-4cab-85e8-5daaeb0af6f2",
+      "item": [
+        {
+          "name": "all student enrollments",
+          "id": "e79b7f38-9551-4681-9194-7e5b58cc900a",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/student-enrollments",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "student-enrollments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "specific student enrollment",
+          "id": "8aea4430-bc3f-49ba-a463-dbbe76f648b8",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/student-enrollments/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "student-enrollments",
+                ":id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "new student enrollment",
+          "id": "fb7f1a27-57b0-4c3b-902a-9b9972dabbf4",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/student-enrollments",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "student-enrollments"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "studentId",
+                  "value": "",
+                  "type": "text",
+                  "uuid": "7cacf756-0402-4baf-bb6b-bdc804dc6f67"
+                },
+                {
+                  "key": "semesterId",
+                  "value": "",
+                  "type": "text",
+                  "uuid": "31993623-5edb-485d-96ab-469cd2c39b05"
+                },
+                {
+                  "key": "homeroomClassId",
+                  "value": "",
+                  "type": "text",
+                  "uuid": "d8196c60-53e9-4fcb-b03a-f332117e3440"
+                },
+                {
+                  "key": "enrolledAt",
+                  "value": "2025-08-05",
+                  "type": "text",
+                  "uuid": "f44fbf62-57e5-4c5b-b331-4fa09c5997c0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "transfer enrollment",
+          "id": "92c95ba0-13ac-40eb-8cc6-c1da83838af9",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/student-enrollments/:id/transfer",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "student-enrollments",
+                ":id",
+                "transfer"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "targetHomeroomClassId",
+                  "value": "",
+                  "type": "text",
+                  "uuid": "68a5f58f-7233-4d8e-ad7d-25591c5ad55c"
+                },
+                {
+                  "key": "transferredAt",
+                  "value": "2025-12-16",
+                  "type": "text",
+                  "uuid": "a3cd70d7-1e9e-45d8-9605-91b26531faee"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "withdraw enrollment",
+          "id": "c1f0dce4-3344-4e19-8f95-03460630bfc0",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/student-enrollments/:id/withdraw",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "student-enrollments",
+                ":id",
+                "withdraw"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "leftAt",
+                  "value": "2025-12-31",
+                  "type": "text",
+                  "uuid": "3fc23a4f-2c27-49ec-8a2a-964494a69107"
+                },
+                {
+                  "key": "note",
+                  "value": "Rút khỏi lớp",
+                  "type": "text",
+                  "uuid": "7180c9b6-bec4-4a57-b59e-ac3c32ec8327"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "teachers",
+      "id": "53b41023-fedc-49dc-9653-e98471d2b352",
+      "item": [
+        {
+          "name": "all teachers",
+          "id": "47d1c50e-0fd9-4edd-968a-270c27c98968",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/teachers",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teachers"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "specific teacher",
+          "id": "069a80c0-861a-48d6-87af-459e640c048d",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/teachers/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teachers",
+                ":id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "new teacher profile",
+          "id": "267bf4bd-b13d-4f10-9361-49bc8882ed59",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/teachers",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teachers"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "fullName",
+                  "value": "Nguyễn Văn Giáo Viên",
+                  "type": "text",
+                  "uuid": "02adecb1-599e-4f93-9285-619446c226ec"
+                },
+                {
+                  "key": "phone",
+                  "value": "0901234567",
+                  "type": "text",
+                  "uuid": "3e7e2b58-be24-4414-8dd0-b3fc4cb562ed"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update teacher status",
+          "id": "2c153eff-f8f8-47d1-9d71-7a3f6287c0b7",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/teachers/:id/status",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teachers",
+                ":id",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "status",
+                  "value": "ACTIVE",
+                  "type": "text",
+                  "uuid": "459b69b5-660f-4cf3-9308-e6e61998a68a"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "link teacher to user account",
+          "id": "162b3a59-ff9b-4a35-b07d-e490f1379996",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/teachers/:id/link-user",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teachers",
+                ":id",
+                "link-user"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "userId",
+                  "value": "",
+                  "type": "text",
+                  "uuid": "cb340bf1-9eec-4ad1-9998-b502d5bb0dba"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "create user for teacher",
+          "id": "237499d5-5d53-462a-a2c0-94b4fe587d0c",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/teachers/:id/create-user",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teachers",
+                ":id",
+                "create-user"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "email",
+                  "value": "teacher@demo.edu.vn",
+                  "type": "text",
+                  "uuid": "e9ac9370-298b-4898-8f8c-4d866b110759"
+                },
+                {
+                  "key": "password",
+                  "value": "Demo@123456",
+                  "type": "text",
+                  "uuid": "2196444d-88df-4bb6-8b7d-fb4cbfc800ec"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update teacher profile",
+          "id": "e9e3dd46-a26e-46bb-a93a-24bbb148f842",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/teachers/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teachers",
+                ":id"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "fullName",
+                  "value": "Nguyễn Văn Giáo Viên (cập nhật)",
+                  "type": "text",
+                  "uuid": "fc77685c-7f5e-4fb1-acae-de7b34b9581a"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "teaching assignments by teacher",
+          "id": "0b59aa43-4a19-423c-8e34-c22142b9afaa",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/teachers/:teacherId/teaching-assignments",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teachers",
+                ":teacherId",
+                "teaching-assignments"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "teaching-assignments",
+      "id": "f7a6c9ee-db96-47f7-a40f-dfaacc986503",
+      "item": [
+        {
+          "name": "all teaching assignments",
+          "id": "585bd7e6-edf7-40c5-b0ff-c428c9ed3c6b",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/teaching-assignments",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teaching-assignments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "specific teaching assignment",
+          "id": "1a9cbf1c-9032-41be-b2a4-2f0badb15fbe",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/teaching-assignments/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teaching-assignments",
+                ":id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "new teaching assignment",
+          "id": "cd2cbc01-1fad-4617-90e9-6a4cfa421a59",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/teaching-assignments",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teaching-assignments"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "teacherId",
+                  "value": "",
+                  "type": "text",
+                  "uuid": "c5cf0fdc-a0ea-4b84-bfa0-62f7c8761db5"
+                },
+                {
+                  "key": "courseSectionId",
+                  "value": "",
+                  "type": "text",
+                  "uuid": "87bc503b-fb90-477c-b027-1e39b73ea7c5"
+                },
+                {
+                  "key": "assignAt",
+                  "value": "2025-08-01",
+                  "type": "text",
+                  "uuid": "176f7f28-945f-4223-8525-acbcf8f05247"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update teaching assignment status",
+          "id": "5561c335-b083-4f79-b288-3a05b0bb69fc",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/teaching-assignments/:id/status",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teaching-assignments",
+                ":id",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "status",
+                  "value": "ACTIVE",
+                  "type": "text",
+                  "uuid": "dd91ed71-b90c-4296-93a2-f2d08f79eb8a"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "users",
+      "id": "fee6ece4-cad9-463d-a96c-7b6e2abd88fa",
+      "item": [
+        {
+          "name": "all users",
+          "id": "9a255608-0507-4801-a2ea-42da9f6f43bb",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/users",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "specific user",
+          "id": "18e630e2-a017-4bef-b3c6-0e38cb83e039",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/users/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                ":id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "new user",
+          "id": "626aef5a-27dc-4fb4-bfbb-cd3b8b4fa741",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/users",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "email",
+                  "value": "user@demo.edu.vn",
+                  "type": "text",
+                  "uuid": "a2ddc048-a449-4312-90ac-28dcda18066e"
+                },
+                {
+                  "key": "password",
+                  "value": "Demo@123456",
+                  "type": "text",
+                  "uuid": "d1ea5f40-5064-4969-a4e7-4983519f2847"
+                },
+                {
+                  "key": "fullName",
+                  "value": "Nguyễn Văn User",
+                  "type": "text",
+                  "uuid": "42476da0-0a0d-4e1c-8998-c5240aa18eeb"
+                },
+                {
+                  "key": "role",
+                  "value": "SCHOOL_ADMIN",
+                  "type": "text",
+                  "uuid": "4d9f9220-b30c-47b3-a26d-6975b1bdfae2"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update user status",
+          "id": "16766cb0-fd13-4b1a-9252-513adfc4fa8e",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/users/:id/status",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                ":id",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "status",
+                  "value": "ACTIVE",
+                  "type": "text",
+                  "uuid": "3d104f26-831a-4e82-a9b2-21951cc883f8"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update user",
+          "id": "eb3caa27-b4f6-4a20-abe0-547ec14afd81",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/users/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                ":id"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "fullName",
+                  "value": "Nguyễn Văn User (cập nhật)",
+                  "type": "text",
+                  "uuid": "66822271-1971-4546-921d-d0b7d0c7a154"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "health",
+      "id": "3ebf9d40-44b3-4a4c-b85f-592385e48fed",
+      "item": [
+        {
+          "name": "health check",
+          "id": "b2fd8c66-c090-40f7-b8a5-28941edbba9b",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/health",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "health"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "files",
+      "id": "e7d3f6a5-6446-492e-b42c-a0562a542f79",
+      "item": [
+        {
+          "name": "upload file",
+          "id": "058a2cb8-c360-4cec-b601-628abde2a820",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "purpose",
+                  "value": "STUDENT_AVATAR",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/files/upload",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "files",
+                "upload"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "file metadata",
+          "id": "b5b522d1-37a5-4bad-acfa-c3e19583c003",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/files/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "files",
+                ":id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "file signed url",
+          "id": "f9182d03-0ffd-4e62-9818-1efca8002b71",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/files/:id/url",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "files",
+                ":id",
+                "url"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete file",
+          "id": "994a16cd-e181-4e8a-8861-9de1f6430ea9",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/files/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "files",
+                ":id"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "parents",
+      "id": "98b00600-55ee-4b00-9d2f-724b163d7403",
+      "item": [
+        {
+          "name": "all parents",
+          "id": "ed532134-c580-45d6-90e3-cc8cb0dd9938",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/parents",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "parents"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "specific parent",
+          "id": "c37f957d-3c3f-4d17-9d78-0025e9e59716",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/parents/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "parents",
+                ":id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "new parent profile",
+          "id": "352f36d9-f18e-4b91-8693-7968456fdacb",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/parents",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "parents"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "fullName",
+                  "value": "Nguyễn Văn Phụ Huynh",
+                  "type": "text",
+                  "uuid": "faaa1d89-fd20-4641-82b1-0ddcd00f3678"
+                },
+                {
+                  "key": "phone",
+                  "value": "0901234567",
+                  "type": "text",
+                  "uuid": "ce7c7b7d-0825-4062-98ef-14b50202cfa8"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update parent profile",
+          "id": "3e8c4629-37bf-4e44-9788-ec4d78c660aa",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/parents/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "parents",
+                ":id"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "fullName",
+                  "value": "Nguyễn Văn Phụ Huynh (cập nhật)",
+                  "type": "text",
+                  "uuid": "be4ef84a-9651-4b8a-9bdf-6efc32a14e3a"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update parent status",
+          "id": "06462491-8069-47fc-85e6-24ff43e3489d",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/parents/:id/status",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "parents",
+                ":id",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "status",
+                  "value": "ACTIVE",
+                  "type": "text",
+                  "uuid": "269d44a4-7f26-4b88-8efe-af3c480cb968"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "link parent to user account",
+          "id": "d777f6a1-02dc-4dcb-8c5e-1640fd4e984f",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/parents/:id/link-user",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "parents",
+                ":id",
+                "link-user"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "userId",
+                  "value": "",
+                  "type": "text",
+                  "uuid": "54ffc7e3-b800-4ee2-94d5-34715954e6bf"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "create user for parent",
+          "id": "13bcb12f-e107-498c-9108-bbfb62bf8ff6",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/parents/:id/create-user",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "parents",
+                ":id",
+                "create-user"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "email",
+                  "value": "parent@demo.edu.vn",
+                  "type": "text",
+                  "uuid": "811712c9-26fc-45ff-b9c1-ab883280cbff"
+                },
+                {
+                  "key": "password",
+                  "value": "Demo@123456",
+                  "type": "text",
+                  "uuid": "062d0bb5-8a7b-45b3-9198-e570c31abab8"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "link student to parent",
+          "id": "0c8d02be-0db6-453c-8041-e67bdbb3b248",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/parents/:id/link-student",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "parents",
+                ":id",
+                "link-student"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "studentId",
+                  "value": "",
+                  "type": "text",
+                  "uuid": "653c4bd7-d2a8-43ba-89bd-27046bb4ee19"
+                },
+                {
+                  "key": "relationship",
+                  "value": "FATHER",
+                  "type": "text",
+                  "uuid": "caa1b6eb-8800-4c50-9ced-2727c2b5bf51"
+                },
+                {
+                  "key": "isPrimaryContact",
+                  "value": "true",
+                  "type": "text",
+                  "uuid": "03f79f06-e986-4de3-ae8e-92a3e4ec2392"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "unlink student from parent",
+          "id": "961cd2ce-db88-4e14-8851-2652d1c3f861",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/parents/:id/students/:studentId",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "parents",
+                ":id",
+                "students",
+                ":studentId"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "portal",
+      "id": "493f111f-5dc7-4895-aa75-6c3fd773af55",
+      "item": [
+        {
+          "name": "portal me",
+          "id": "1d7eece7-778c-4915-8e5d-4eb001e6b36f",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/portal/me",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portal",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "my homeroom classes",
+          "id": "a9b73b59-0367-4282-84c5-1736605b6d47",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/portal/my-homeroom-classes",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portal",
+                "my-homeroom-classes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "my homeroom class students",
+          "id": "695df187-2128-4acc-a258-cbba195913d4",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/portal/my-homeroom-classes/:id/students",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portal",
+                "my-homeroom-classes",
+                ":id",
+                "students"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "my teaching assignments",
+          "id": "77f90415-823a-4c48-8e5f-3497b6eb8939",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/portal/my-teaching-assignments",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portal",
+                "my-teaching-assignments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "my timetable",
+          "id": "ee080cb7-b0c7-43a4-ad41-afbaab872bf5",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/portal/my-timetable",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portal",
+                "my-timetable"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "my student profile",
+          "id": "e6136192-9655-407a-b433-4fa4b3ef0e6c",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/portal/my-student-profile",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portal",
+                "my-student-profile"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "my class timetable",
+          "id": "eb5077b1-8130-4ef7-9146-fe6af3ad1b1c",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/portal/my-class-timetable",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portal",
+                "my-class-timetable"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "my children",
+          "id": "83922e64-aa2f-47ce-a8b5-9276e05b1530",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/portal/my-children",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portal",
+                "my-children"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "my attendance classes",
+          "id": "642de0df-e213-4b49-851b-b99e13498b2c",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/portal/my-attendance-classes",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portal",
+                "my-attendance-classes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "create attendance session",
+          "id": "a34deebe-6852-4f82-9964-b9092c8fb6d3",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/portal/attendance-sessions",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portal",
+                "attendance-sessions"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "courseSectionId",
+                  "value": "",
+                  "type": "text",
+                  "uuid": "60da5daa-7a66-4b06-a527-134863fdacdd"
+                },
+                {
+                  "key": "sessionDate",
+                  "value": "2025-09-01",
+                  "type": "text",
+                  "uuid": "27b29863-d256-4fbf-8b2a-7ee4b779cdd1"
+                },
+                {
+                  "key": "periodNumber",
+                  "value": "1",
+                  "type": "text",
+                  "uuid": "6d2ec315-2ae1-43bc-af28-9eff88ba2cdf"
+                },
+                {
+                  "key": "note",
+                  "value": "Tiết 1 sáng",
+                  "type": "text",
+                  "uuid": "4e81ede0-2509-48e7-a78b-8307a2b03a8c"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "bulk upsert portal attendance records",
+          "id": "bb138201-28bb-48f0-9ace-188f43506cda",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"initMissingStudents\": true,\n  \"records\": [\n    {\n      \"studentId\": \"\",\n      \"status\": \"ABSENT\",\n      \"note\": \"Không phép\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/portal/attendance-sessions/:id/records",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portal",
+                "attendance-sessions",
+                ":id",
+                "records"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "close attendance session",
+          "id": "040784a6-5dbd-41e7-b73e-7b65cb52b045",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/portal/attendance-sessions/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portal",
+                "attendance-sessions",
+                ":id"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "status",
+                  "value": "CLOSED",
+                  "type": "text",
+                  "uuid": "623cc1ad-407f-49da-a7fb-f18402fa3a9a"
+                },
+                {
+                  "key": "note",
+                  "value": "Đã hoàn tất điểm danh",
+                  "type": "text",
+                  "uuid": "c2732831-5858-429f-8311-7306934aba34"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "my attendance",
+          "id": "f84531de-1274-4420-b96b-adfd20df9cfc",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/portal/my-attendance",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portal",
+                "my-attendance"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "my child attendance",
+          "id": "1423c8e9-187f-4d0c-bf4a-44db3ef08b59",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/portal/my-children/:studentId/attendance",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portal",
+                "my-children",
+                ":studentId",
+                "attendance"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "timetable",
+      "id": "8af0d71d-3be0-45bf-b7d1-539742153f00",
+      "item": [
+        {
+          "name": "all timetable entries",
+          "id": "cfcc882e-e4f7-470c-bb9d-8ff0cc414221",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/timetable-entries",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "timetable-entries"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "specific timetable entry",
+          "id": "056d7bfd-79a5-44de-beeb-9e2dae691f72",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/timetable-entries/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "timetable-entries",
+                ":id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "new timetable entry",
+          "id": "fbfd0e18-9629-412c-b357-20e4703c4335",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/timetable-entries",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "timetable-entries"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "courseSectionId",
+                  "value": "",
+                  "type": "text",
+                  "uuid": "75ba5d21-03f0-4b2d-9897-fc8dc9ddc334"
+                },
+                {
+                  "key": "teacherId",
+                  "value": "",
+                  "type": "text",
+                  "uuid": "3c6bbe21-a8b0-4d92-8ec8-fed5b0a2b233"
+                },
+                {
+                  "key": "dayOfWeek",
+                  "value": "1",
+                  "type": "text",
+                  "uuid": "0e51ae12-32cb-4ffc-8087-e4494f4d4b89"
+                },
+                {
+                  "key": "periodNumber",
+                  "value": "1",
+                  "type": "text",
+                  "uuid": "8eaa58e5-6ce1-4e34-ab92-e8c813161716"
+                },
+                {
+                  "key": "room",
+                  "value": "A101",
+                  "type": "text",
+                  "uuid": "dbb83126-162c-4d7a-a735-63f8ff5330d3"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update timetable entry",
+          "id": "eea1c804-2704-4690-860b-72a6db217de3",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/timetable-entries/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "timetable-entries",
+                ":id"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "dayOfWeek",
+                  "value": "2",
+                  "type": "text",
+                  "uuid": "8e2f8772-273b-4903-8f31-89f6c923b645"
+                },
+                {
+                  "key": "periodNumber",
+                  "value": "3",
+                  "type": "text",
+                  "uuid": "a7ef2781-798a-4489-b429-04808dc1560f"
+                },
+                {
+                  "key": "room",
+                  "value": "B202",
+                  "type": "text",
+                  "uuid": "96ea5998-f676-47fd-abca-f8a00b5e8daf"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete timetable entry",
+          "id": "f0514f07-0bac-4302-bb44-c8834ba9ffe1",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/timetable-entries/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "timetable-entries",
+                ":id"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "courses-section",
+      "id": "09929c75-3feb-4a84-b390-dc744b691126",
+      "item": [
+        {
+          "name": "timetable entries by course section",
+          "id": "8396a9e7-a436-4a73-86f7-9216808120e1",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/course-sections/:courseSectionId/timetable-entries",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "course-sections",
+                ":courseSectionId",
+                "timetable-entries"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "attendance-sessions",
+      "id": "34c4c38b-dcb4-404f-ad4f-6885573acf99",
+      "item": [
+        {
+          "name": "all attendance sessions",
+          "id": "01658b68-0a65-49d2-b2a7-fb6c5090515e",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/attendance-sessions",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "attendance-sessions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "specific attendance session",
+          "id": "f8a9e8c2-139e-44e2-a4d0-82d60ccefc72",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/attendance-sessions/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "attendance-sessions",
+                ":id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "new attendance session",
+          "id": "b341648e-9725-4519-aff3-8e6fc17ad95f",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/attendance-sessions",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "attendance-sessions"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "courseSectionId",
+                  "value": "",
+                  "type": "text",
+                  "uuid": "a9e81dc0-5692-4305-8bdb-72285d1940f6"
+                },
+                {
+                  "key": "teacherId",
+                  "value": "",
+                  "type": "text",
+                  "uuid": "285f4070-255f-47b4-88bb-d2e42f11160f"
+                },
+                {
+                  "key": "sessionDate",
+                  "value": "2025-09-01",
+                  "type": "text",
+                  "uuid": "e76fcb0d-115e-40ca-b97a-442e3182b740"
+                },
+                {
+                  "key": "periodNumber",
+                  "value": "1",
+                  "type": "text",
+                  "uuid": "3a0008c1-815a-4f49-9032-e141e338fc70"
+                },
+                {
+                  "key": "timetableEntryId",
+                  "value": "",
+                  "type": "text",
+                  "uuid": "cac9dd30-3c69-43fc-86d0-6202f40730a8"
+                },
+                {
+                  "key": "note",
+                  "value": "Tiết 1 sáng",
+                  "type": "text",
+                  "uuid": "681dba21-9d38-4c16-aeb9-763d949d70ff"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update attendance session",
+          "id": "19030a30-d1f3-4ed1-8dcc-4929a71bde22",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/attendance-sessions/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "attendance-sessions",
+                ":id"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "status",
+                  "value": "CLOSED",
+                  "type": "text",
+                  "uuid": "0573e74a-c759-41de-b667-a4d33b50b677"
+                },
+                {
+                  "key": "note",
+                  "value": "Đã hoàn tất điểm danh",
+                  "type": "text",
+                  "uuid": "6e9c69ef-41e1-48fc-a255-1be758b2dbdb"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "bulk upsert attendance records",
+          "id": "950f6c05-1865-45b3-bbea-ff88a81c42a4",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"initMissingStudents\": true,\n  \"records\": [\n    {\n      \"studentId\": \"\",\n      \"status\": \"PRESENT\"\n    },\n    {\n      \"studentId\": \"\",\n      \"status\": \"ABSENT\",\n      \"note\": \"Không phép\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/attendance-sessions/:id/records",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "attendance-sessions",
+                ":id",
+                "records"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "attendance-records",
+      "id": "c8affe90-569e-4d49-a154-c4259055ce79",
+      "item": [
+        {
+          "name": "update attendance record",
+          "id": "3ab2b0fc-9b74-4afc-8f7c-91919fa5675f",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/attendance-records/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "attendance-records",
+                ":id"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "status",
+                  "value": "ABSENT",
+                  "type": "text",
+                  "uuid": "8a6b43ca-affc-4225-a89d-5b78ac7ac55d"
+                },
+                {
+                  "key": "note",
+                  "value": "Vắng không phép",
+                  "type": "text",
+                  "uuid": "1c52d438-87fa-447a-abf4-4ad8ddc69ed7"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

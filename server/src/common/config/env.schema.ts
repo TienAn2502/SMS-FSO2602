@@ -20,6 +20,12 @@ export const envSchema = z.object({
     .transform((v) => v === 'true'),
   COOKIE_SAME_SITE: z.enum(['lax', 'strict', 'none']).default('lax'),
   CORS_ORIGIN: z.string().url('CORS_ORIGIN phải là URL hợp lệ'),
+  R2_ACCOUNT_ID: z.string().min(1, 'R2_ACCOUNT_ID là bắt buộc'),
+  R2_ACCESS_KEY_ID: z.string().min(1, 'R2_ACCESS_KEY_ID là bắt buộc'),
+  R2_SECRET_ACCESS_KEY: z.string().min(1, 'R2_SECRET_ACCESS_KEY là bắt buộc'),
+  R2_BUCKET: z.string().min(1, 'R2_BUCKET là bắt buộc'),
+  R2_SIGNED_URL_EXPIRES_SEC: z.coerce.number().int().positive().default(900),
+  R2_MAX_FILE_SIZE_BYTES: z.coerce.number().int().positive().default(2_097_152),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

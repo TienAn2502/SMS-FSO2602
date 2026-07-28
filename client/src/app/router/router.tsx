@@ -11,8 +11,26 @@ import { CourseSectionsPage } from '@/features/course-sections/pages/course-sect
 import { DashboardPage } from '@/features/dashboard/pages/dashboard-page';
 import { GradeLevelsPage } from '@/features/grade-levels/pages/grade-levels-page';
 import { HomeroomClassesPage } from '@/features/homeroom-classes/pages/homeroom-classes-page';
+import { ParentDetailPage } from '@/features/parents/pages/parent-detail-page';
+import { ParentsPage } from '@/features/parents/pages/parents-page';
+import { AttendanceSessionDetailPage } from '@/features/attendance/pages/attendance-session-detail-page';
+import { AttendanceSessionsPage } from '@/features/attendance/pages/attendance-sessions-page';
+import { PortalAttendancePage } from '@/features/portal/pages/portal-attendance-page';
+import { PortalChildAttendancePage } from '@/features/portal/pages/portal-child-attendance-page';
+import { PortalMyAttendancePage } from '@/features/portal/pages/portal-my-attendance-page';
+import { PortalDashboardPage } from '@/features/portal/pages/portal-dashboard-page';
+import { PortalMyChildrenPage } from '@/features/portal/pages/portal-my-children-page';
+import { PortalMyClassPage } from '@/features/portal/pages/portal-my-class-page';
+import { PortalMyProfilePage } from '@/features/portal/pages/portal-my-profile-page';
+import { PortalMySchedulePage } from '@/features/portal/pages/portal-my-schedule-page';
 import { SchoolSettingsPage } from '@/features/schools/pages/school-settings-page';
+import { StudentDetailPage } from '@/features/students/pages/student-detail-page';
+import { StudentsPage } from '@/features/students/pages/students-page';
 import { SubjectsPage } from '@/features/subjects/pages/subjects-page';
+import { TeacherDetailPage } from '@/features/teachers/pages/teacher-detail-page';
+import { TeachersPage } from '@/features/teachers/pages/teachers-page';
+import { TeachingAssignmentsPage } from '@/features/teaching-assignments/pages/teaching-assignments-page';
+import { TimetablePage } from '@/features/timetable/pages/timetable-page';
 import { UsersPage } from '@/features/users/pages/users-page';
 
 export const router = createBrowserRouter([
@@ -88,6 +106,150 @@ export const router = createBrowserRouter([
         element: (
           <RoleGate roles={['SCHOOL_ADMIN']}>
             <CourseSectionsPage />
+          </RoleGate>
+        ),
+      },
+      {
+        path: ROUTES.students.slice(1),
+        element: (
+          <RoleGate roles={['SCHOOL_ADMIN']}>
+            <StudentsPage />
+          </RoleGate>
+        ),
+      },
+      {
+        path: `${ROUTES.students.slice(1)}/:id`,
+        element: (
+          <RoleGate roles={['SCHOOL_ADMIN']}>
+            <StudentDetailPage />
+          </RoleGate>
+        ),
+      },
+      {
+        path: ROUTES.teachers.slice(1),
+        element: (
+          <RoleGate roles={['SCHOOL_ADMIN']}>
+            <TeachersPage />
+          </RoleGate>
+        ),
+      },
+      {
+        path: `${ROUTES.teachers.slice(1)}/:id`,
+        element: (
+          <RoleGate roles={['SCHOOL_ADMIN']}>
+            <TeacherDetailPage />
+          </RoleGate>
+        ),
+      },
+      {
+        path: ROUTES.teachingAssignments.slice(1),
+        element: (
+          <RoleGate roles={['SCHOOL_ADMIN']}>
+            <TeachingAssignmentsPage />
+          </RoleGate>
+        ),
+      },
+      {
+        path: ROUTES.timetable.slice(1),
+        element: (
+          <RoleGate roles={['SCHOOL_ADMIN']}>
+            <TimetablePage />
+          </RoleGate>
+        ),
+      },
+      {
+        path: ROUTES.parents.slice(1),
+        element: (
+          <RoleGate roles={['SCHOOL_ADMIN']}>
+            <ParentsPage />
+          </RoleGate>
+        ),
+      },
+      {
+        path: `${ROUTES.parents.slice(1)}/:id`,
+        element: (
+          <RoleGate roles={['SCHOOL_ADMIN']}>
+            <ParentDetailPage />
+          </RoleGate>
+        ),
+      },
+      {
+        path: ROUTES.attendanceSessions.slice(1),
+        element: (
+          <RoleGate roles={['SCHOOL_ADMIN']}>
+            <AttendanceSessionsPage />
+          </RoleGate>
+        ),
+      },
+      {
+        path: `${ROUTES.attendanceSessions.slice(1)}/:id`,
+        element: (
+          <RoleGate roles={['SCHOOL_ADMIN']}>
+            <AttendanceSessionDetailPage />
+          </RoleGate>
+        ),
+      },
+      {
+        path: ROUTES.portal.slice(1),
+        element: (
+          <RoleGate roles={['TEACHER', 'STUDENT', 'PARENT']}>
+            <PortalDashboardPage />
+          </RoleGate>
+        ),
+      },
+      {
+        path: ROUTES.portalMyClass.slice(1),
+        element: (
+          <RoleGate roles={['TEACHER']}>
+            <PortalMyClassPage />
+          </RoleGate>
+        ),
+      },
+      {
+        path: ROUTES.portalMySchedule.slice(1),
+        element: (
+          <RoleGate roles={['TEACHER']}>
+            <PortalMySchedulePage />
+          </RoleGate>
+        ),
+      },
+      {
+        path: ROUTES.portalMyProfile.slice(1),
+        element: (
+          <RoleGate roles={['STUDENT']}>
+            <PortalMyProfilePage />
+          </RoleGate>
+        ),
+      },
+      {
+        path: ROUTES.portalMyChildren.slice(1),
+        element: (
+          <RoleGate roles={['PARENT']}>
+            <PortalMyChildrenPage />
+          </RoleGate>
+        ),
+      },
+      {
+        path: `${ROUTES.portalMyChildren.slice(1)}/:studentId/attendance`,
+        element: (
+          <RoleGate roles={['PARENT']}>
+            <PortalChildAttendancePage />
+          </RoleGate>
+        ),
+      },
+      {
+        path: ROUTES.portalAttendance.slice(1),
+        element: (
+          <RoleGate roles={['TEACHER']}>
+            <PortalAttendancePage />
+          </RoleGate>
+        ),
+      },
+      {
+        path: ROUTES.portalMyAttendance.slice(1),
+        element: (
+          <RoleGate roles={['STUDENT']}>
+            <PortalMyAttendancePage />
           </RoleGate>
         ),
       },

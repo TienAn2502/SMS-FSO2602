@@ -25,10 +25,10 @@ schools
   ├──< homeroom_classes
   │      ├── academic_year_id    → academic_years
   │      ├── grade_level_id      → grade_levels
-  │      └── homeroom_teacher_id → users (nullable, TEACHER)
+  │      └── homeroom_teacher_id → teachers (nullable, GVCN)
   │
   └──< course_sections
-         ├── academic_year_id        → academic_years
+         ├── semester_id             → semesters
          ├── homeroom_class_id       → homeroom_classes (nullable)
          └── grade_level_subject_id  → grade_level_subjects
 ```
@@ -174,7 +174,7 @@ Lớp hành chính (VD: 10A1, 11B2).
 | name | VARCHAR(100) | NOT NULL | VD: `10A1` |
 | code | VARCHAR(20) | NOT NULL | Mã lớp |
 | capacity | INTEGER | | Sĩ số tối đa (optional) |
-| homeroom_teacher_id | UUID | FK → users, nullable | GVCN (user role TEACHER) |
+| homeroom_teacher_id | UUID | FK → teachers, nullable | GVCN (hồ sơ giáo viên ACTIVE) |
 | status | AcademicEntityStatus | NOT NULL, DEFAULT ACTIVE | |
 | created_at | TIMESTAMPTZ | NOT NULL | |
 | updated_at | TIMESTAMPTZ | NOT NULL | |
@@ -192,7 +192,7 @@ Lớp môn học (VD: Toán 10A1).
 |-----|------|-----------|-------|
 | id | UUID | PK | |
 | school_id | UUID | FK → schools, NOT NULL | |
-| academic_year_id | UUID | FK → academic_years, NOT NULL | |
+| semester_id | UUID | FK → semesters, NOT NULL | Học kỳ |
 | homeroom_class_id | UUID | FK → homeroom_classes, nullable | Lớp HC (optional) |
 | grade_level_subject_id | UUID | FK → grade_level_subjects, NOT NULL | Môn + khối |
 | name | VARCHAR(100) | NOT NULL | VD: `Toán 10A1` |
@@ -203,13 +203,13 @@ Lớp môn học (VD: Toán 10A1).
 
 **Unique:**
 
-- `(school_id, academic_year_id, code)`
-- `(homeroom_class_id, grade_level_subject_id)` — mỗi lớp HC + môn-khối chỉ một lớp môn (NULL homeroom cho phép lớp ghép)
+- `(school_id, semester_id, code)`
+- `(homeroom_class_id, grade_level_subject_id, semester_id)` — mỗi lớp HC + môn-khối chỉ một lớp môn trong cùng học kỳ (NULL homeroom cho phép lớp ghép)
 
-**Index:** `school_id`, `academic_year_id`, `homeroom_class_id`, `grade_level_subject_id`
+**Index:** `school_id`, `semester_id`, `homeroom_class_id`, `grade_level_subject_id`
 
 > GV bộ môn gán qua `teaching_assignments` (Sprint 4).  
-> Không có `semester_id` — lớp môn tồn tại cả năm học.
+> Lớp môn gắn theo **học kỳ** — cùng lớp HC có thể có lớp môn riêng cho HK1/HK2.
 
 ---
 
@@ -233,7 +233,7 @@ Lớp môn học (VD: Toán 10A1).
 | Môn | TOAN, VAN, ANH |
 | grade_level_subjects | Khối 10 × 3 môn (is_required = true) |
 | Lớp HC | 10A1 (GVCN: teacher1@demo.edu.vn) |
-| Lớp môn | TOAN-10A1, VAN-10A1, ANH-10A1 |
+| Lớp môn | TOAN-10A1, VAN-10A1, ANH-10A1 (HK1) |
 
 Chi tiết: [migrations-and-seed.md](./migrations-and-seed.md)
 
@@ -254,6 +254,6 @@ Các bảng Sprint 3+ (chưa triển khai):
 
 1. Mọi FK phải cùng `school_id` (validate ở service layer)
 2. Không hard-delete nếu có bản ghi con phụ thuộc — dùng `status = INACTIVE`
-3. `homeroom_teacher_id` chỉ trỏ tới `users` có `role = TEACHER` cùng trường
+3. `homeroom_teacher_id` trỏ tới `teachers.id` ACTIVE cùng trường (xem ADR 011)
 4. `is_current` được set qua endpoint riêng hoặc transaction (unset cũ → set mới)
 5. Tạo `course_sections` phải validate `grade_level_subject.grade_level_id` khớp `homeroom_class.grade_level_id` (khi có lớp HC)

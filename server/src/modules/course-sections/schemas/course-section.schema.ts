@@ -6,6 +6,7 @@ import { paginationSchema } from '../../../common/schemas/shared.schema';
 export const listCourseSectionsQuerySchema = paginationSchema.extend({
   search: z.string().trim().optional(),
   status: academicEntityStatusSchema.optional(),
+  semesterId: z.string().uuid().optional(),
   academicYearId: z.string().uuid().optional(),
   homeroomClassId: z.string().uuid().optional(),
   subjectId: z.string().uuid().optional(),
@@ -19,7 +20,7 @@ export type ListCourseSectionsQuery = z.infer<
 
 export const createCourseSectionSchema = z
   .object({
-    academicYearId: z.string().uuid('Năm học không hợp lệ'),
+    semesterId: z.string().uuid('Học kỳ không hợp lệ'),
     subjectId: z.string().uuid('Môn học không hợp lệ'),
     homeroomClassId: z.string().uuid().nullable().optional(),
     gradeLevelId: z.string().uuid().optional(),

@@ -6,7 +6,7 @@ export interface AuthContextValue {
   session: AuthSession | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (input: LoginInput) => Promise<void>;
+  login: (input: LoginInput) => Promise<AuthSession>;
   logout: () => Promise<void>;
   refetch: () => Promise<void>;
 }

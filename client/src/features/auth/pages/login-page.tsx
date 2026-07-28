@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { Link, Navigate, useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
-import { ROUTES } from '@/app/router/routes';
+import { ROUTES, getDefaultRouteForRole } from '@/app/router/routes';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -27,7 +27,7 @@ import {
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const { login, isAuthenticated, isLoading } = useAuth();
+  const { login, isAuthenticated, isLoading, session } = useAuth();
 
   const {
     register,
@@ -45,15 +45,15 @@ export function LoginPage() {
     return <LoadingState message='Đang kiểm tra phiên đăng nhập...' />;
   }
 
-  if (isAuthenticated) {
-    return <Navigate to={ROUTES.home} replace />;
+  if (isAuthenticated && session) {
+    return <Navigate to={getDefaultRouteForRole(session.user.role)} replace />;
   }
 
   const onSubmit = handleSubmit(async (values) => {
     try {
-      await login(values);
+      const newSession = await login(values);
       toast.success('Đăng nhập thành công');
-      navigate(ROUTES.home, { replace: true });
+      navigate(getDefaultRouteForRole(newSession.user.role), { replace: true });
     } catch (error) {
       const apiError = getApiError(error);
       toast.error(

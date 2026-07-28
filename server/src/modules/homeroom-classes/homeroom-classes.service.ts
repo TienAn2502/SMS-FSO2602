@@ -2,8 +2,7 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import {
   Prisma,
   type HomeroomClass,
-  UserRole,
-  UserStatus,
+  AcademicEntityStatus,
 } from '@prisma/client';
 
 import { AppException } from '../../common/exceptions/app.exception';
@@ -200,12 +199,11 @@ export class HomeroomClassesService {
     schoolId: string,
     teacherId: string,
   ): Promise<void> {
-    const teacher = await this.prisma.user.findFirst({
+    const teacher = await this.prisma.teacher.findFirst({
       where: {
         id: teacherId,
         schoolId,
-        role: UserRole.TEACHER,
-        status: UserStatus.ACTIVE,
+        status: AcademicEntityStatus.ACTIVE,
       },
     });
 
