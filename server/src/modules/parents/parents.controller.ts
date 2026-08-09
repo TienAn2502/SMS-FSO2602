@@ -14,13 +14,13 @@ import {
 import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 
-import type { AuthenticatedUser } from '../../common/auth/auth.types';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { TenantGuard } from '../../common/guards/tenant.guard';
-import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import { uuidParamSchema } from '../../common/schemas/shared.schema';
+import type { AuthenticatedUser } from '@/common/auth/auth.types';
+import { CurrentUser } from '@/common/decorators/current-user.decorator';
+import { Roles } from '@/common/decorators/roles.decorator';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { TenantGuard } from '@/common/guards/tenant.guard';
+import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe';
+import { uuidParamSchema } from '@/common/schemas/shared.schema';
 import {
   createParentSchema,
   createParentUserSchema,
@@ -36,8 +36,8 @@ import {
   type ListParentsQuery,
   type UpdateParentInput,
   type UpdateParentStatusInput,
-} from './schemas/parent.schema';
-import { ParentsService } from './parents.service';
+} from '@/modules/parents/schemas/parent.schema';
+import { ParentsService } from '@/modules/parents/parents.service';
 
 @ApiTags('Parents')
 @ApiCookieAuth('access_token')
@@ -132,6 +132,7 @@ export class ParentsController {
     };
   }
 
+  // Dành cho đã có hồ sơ phụ huynh nhưng chưa có tài khoản đăng nhập
   @Post(':id/create-user')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Tạo tài khoản và gắn vào hồ sơ phụ huynh' })

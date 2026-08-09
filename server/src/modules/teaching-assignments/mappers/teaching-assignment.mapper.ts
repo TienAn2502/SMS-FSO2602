@@ -5,7 +5,7 @@ import type {
   TeachingAssignment,
 } from '@prisma/client';
 
-import { toIsoDateString } from '../../../common/schemas/academic.schema';
+import { toIsoDateString } from '@/common/schemas/academic.schema';
 
 type TeachingAssignmentWithRelations = TeachingAssignment & {
   teacher: Pick<Teacher, 'id' | 'fullName'>;

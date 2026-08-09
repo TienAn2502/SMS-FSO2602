@@ -13,14 +13,14 @@ import {
 import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 
-import type { AuthenticatedUser } from '../../common/auth/auth.types';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { TenantGuard } from '../../common/guards/tenant.guard';
-import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import { uuidParamSchema } from '../../common/schemas/shared.schema';
-import { HomeroomClassesService } from './homeroom-classes.service';
+import type { AuthenticatedUser } from '@/common/auth/auth.types';
+import { CurrentUser } from '@/common/decorators/current-user.decorator';
+import { Roles } from '@/common/decorators/roles.decorator';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { TenantGuard } from '@/common/guards/tenant.guard';
+import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe';
+import { uuidParamSchema } from '@/common/schemas/shared.schema';
+import { HomeroomClassesService } from '@/modules/homeroom-classes/homeroom-classes.service';
 import {
   createHomeroomClassSchema,
   listHomeroomClassesQuerySchema,
@@ -30,7 +30,7 @@ import {
   type ListHomeroomClassesQuery,
   type UpdateHomeroomClassInput,
   type UpdateHomeroomClassStatusInput,
-} from './schemas/homeroom-class.schema';
+} from '@/modules/homeroom-classes/schemas/homeroom-class.schema';
 
 @ApiTags('Homeroom Classes')
 @ApiCookieAuth('access_token')
@@ -43,6 +43,12 @@ export class HomeroomClassesController {
   ) {}
 
   @Get()
+  @Roles(
+    UserRole.SCHOOL_ADMIN,
+    UserRole.STUDENT,
+    UserRole.TEACHER,
+    UserRole.PARENT,
+  )
   @ApiOperation({ summary: 'Danh sách lớp hành chính' })
   async list(
     @CurrentUser() user: AuthenticatedUser,
@@ -63,6 +69,12 @@ export class HomeroomClassesController {
   }
 
   @Get(':id')
+  @Roles(
+    UserRole.SCHOOL_ADMIN,
+    UserRole.STUDENT,
+    UserRole.TEACHER,
+    UserRole.PARENT,
+  )
   @ApiOperation({ summary: 'Chi tiết lớp hành chính' })
   findById(
     @CurrentUser() user: AuthenticatedUser,

@@ -3,8 +3,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import type { App } from 'supertest/types';
 
-import { AppModule } from '../src/app.module';
-import { setupApp } from '../src/setup-app';
+import { AppModule } from '@/app.module';
+import { setupApp } from '@/setup-app';
 
 describe('Academic structure API (e2e)', () => {
   let app: INestApplication<App>;
@@ -70,6 +70,50 @@ describe('Academic structure API (e2e)', () => {
         homeroomClassId: '00000000-0000-4000-8000-000000000003',
         name: 'Toán 10A1',
         code: 'TOAN-10A1',
+      })
+      .expect(401);
+
+    const body = res.body as { success: boolean; code: string };
+    expect(body.success).toBe(false);
+    expect(body.code).toBe('UNAUTHORIZED');
+  });
+
+  it('POST /api/v1/course-sections/copy-from-semester without auth returns 401', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/api/v1/course-sections/copy-from-semester')
+      .send({
+        sourceSemesterId: '00000000-0000-4000-8000-000000000001',
+        targetSemesterId: '00000000-0000-4000-8000-000000000002',
+      })
+      .expect(401);
+
+    const body = res.body as { success: boolean; code: string };
+    expect(body.success).toBe(false);
+    expect(body.code).toBe('UNAUTHORIZED');
+  });
+
+  it('GET /api/v1/academic-years/:yearId/semesters/:targetId/preparation/status without auth returns 401', async () => {
+    const res = await request(app.getHttpServer())
+      .get(
+        '/api/v1/academic-years/00000000-0000-4000-8000-000000000010/semesters/00000000-0000-4000-8000-000000000002/preparation/status',
+      )
+      .query({
+        sourceSemesterId: '00000000-0000-4000-8000-000000000001',
+      })
+      .expect(401);
+
+    const body = res.body as { success: boolean; code: string };
+    expect(body.success).toBe(false);
+    expect(body.code).toBe('UNAUTHORIZED');
+  });
+
+  it('POST /api/v1/academic-years/:yearId/semesters/:targetId/preparation/prepare-from-source without auth returns 401', async () => {
+    const res = await request(app.getHttpServer())
+      .post(
+        '/api/v1/academic-years/00000000-0000-4000-8000-000000000010/semesters/00000000-0000-4000-8000-000000000002/preparation/prepare-from-source',
+      )
+      .send({
+        sourceSemesterId: '00000000-0000-4000-8000-000000000001',
       })
       .expect(401);
 

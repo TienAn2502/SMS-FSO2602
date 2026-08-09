@@ -8,10 +8,11 @@ Hệ thống quản trị trường học đa tenant (SaaS), tập trung MVP: qu
 |---------|----------|
 | [setup/](./setup/) | Hướng dẫn cài đặt và chạy local |
 | [architecture/](./architecture/) | Kiến trúc hệ thống, multi-tenancy, authentication |
+| [flows/](./flows/) | Luồng nghiệp vụ (tổng kết HK/năm, …) |
 | [database/](./database/) | Schema, migration, seed |
 | [api/](./api/) | Quy ước REST API và endpoint theo sprint |
 | [decisions/](./decisions/) | Architecture Decision Records (ADR) |
-| [sprints/](./sprints/) | Kế hoạch triển khai theo sprint ([Sprint 1](./sprints/sprint-1-plan.md) … [Sprint 5](./sprints/sprint-5-plan.md)) |
+| [sprints/](./sprints/) | Kế hoạch triển khai theo sprint ([Sprint 1](./sprints/sprint-1-plan.md) … [Sprint 8](./sprints/sprint-8-plan.md)) |
 
 ## Trạng thái dự án
 
@@ -53,7 +54,7 @@ Tạo trường (seed)
 → Tạo thời khóa biểu thủ công
 → Điểm danh
 → Nhập điểm
-→ Tổng kết
+→ Tổng kết ([luồng chi tiết](./flows/grade-summaries.md))
 → Xét lên lớp
 → Xuất báo cáo
 ```

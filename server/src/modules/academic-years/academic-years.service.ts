@@ -1,29 +1,29 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { Prisma, type AcademicYear } from '@prisma/client';
 
-import { AppException } from '../../common/exceptions/app.exception';
-import { PrismaService } from '../../common/database/prisma.service';
-import type { PrismaTransactionClient } from '../../common/database/prisma-transaction.type';
+import { AppException } from '@/common/exceptions/app.exception';
+import { PrismaService } from '@/common/database/prisma.service';
+import type { PrismaTransactionClient } from '@/common/database/prisma-transaction.type';
 import {
   parseIsoDate,
   toIsoDateString,
-} from '../../common/schemas/academic.schema';
-import type { PaginationMeta } from '../../common/types/api-response.types';
+} from '@/common/schemas/academic.schema';
+import type { PaginationMeta } from '@/common/types/api-response.types';
 import {
   buildPaginationMeta,
   getSkip,
-} from '../../common/utils/pagination.util';
-import { validateDateRangeOrThrow } from '../../common/utils/date-range.util';
+} from '@/common/utils/pagination.util';
+import { validateDateRangeOrThrow } from '@/common/utils/date-range.util';
 import {
   toAcademicYearResponse,
   type AcademicYearResponse,
-} from './mappers/academic-year.mapper';
+} from '@/modules/academic-years/mappers/academic-year.mapper';
 import type {
   CreateAcademicYearInput,
   ListAcademicYearsQuery,
   UpdateAcademicYearInput,
   UpdateAcademicYearStatusInput,
-} from './schemas/academic-year.schema';
+} from '@/modules/academic-years/schemas/academic-year.schema';
 
 @Injectable()
 export class AcademicYearsService {
@@ -197,6 +197,7 @@ export class AcademicYearsService {
 
     const academicYear = await this.prisma.$transaction(
       async (tx: PrismaTransactionClient) => {
+        //  Không được ngừng năm học khi đang có lớp học hoạt động
         if (input.status === 'INACTIVE') {
           await this.assertAcademicYearHasNoClasses(
             tx,
@@ -271,6 +272,7 @@ export class AcademicYearsService {
     });
   }
 
+  // Kiểm tra năm học có lớp học không
   private async assertAcademicYearHasNoClasses(
     tx: PrismaTransactionClient,
     schoolId: string,
@@ -292,6 +294,7 @@ export class AcademicYearsService {
     }
   }
 
+  // Xử lý lỗi unique violation khi tạo năm học có mã năm học đã tồn tại
   private handleUniqueViolation(error: unknown): void {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&

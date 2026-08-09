@@ -172,7 +172,10 @@ function ensureFolder(nestjsRoot, folderName, newRequests) {
 
 const ATTENDANCE_SESSION_REQUESTS = [
   makeRequest('all attendance sessions', 'GET', ['attendance-sessions']),
-  makeRequest('specific attendance session', 'GET', ['attendance-sessions', ':id']),
+  makeRequest('specific attendance session', 'GET', [
+    'attendance-sessions',
+    ':id',
+  ]),
   makeRequest('new attendance session', 'POST', ['attendance-sessions'], {
     bodyFields: [
       { key: 'courseSectionId', value: '' },
@@ -183,12 +186,17 @@ const ATTENDANCE_SESSION_REQUESTS = [
       { key: 'note', value: 'Tiết 1 sáng' },
     ],
   }),
-  makeRequest('update attendance session', 'PATCH', ['attendance-sessions', ':id'], {
-    bodyFields: [
-      { key: 'status', value: 'CLOSED' },
-      { key: 'note', value: 'Đã hoàn tất điểm danh' },
-    ],
-  }),
+  makeRequest(
+    'update attendance session',
+    'PATCH',
+    ['attendance-sessions', ':id'],
+    {
+      bodyFields: [
+        { key: 'status', value: 'CLOSED' },
+        { key: 'note', value: 'Đã hoàn tất điểm danh' },
+      ],
+    },
+  ),
   {
     name: 'bulk upsert attendance records',
     id: randomUUID(),
@@ -217,18 +225,76 @@ const ATTENDANCE_SESSION_REQUESTS = [
 ];
 
 const ATTENDANCE_RECORD_REQUESTS = [
-  makeRequest('update attendance record', 'PATCH', ['attendance-records', ':id'], {
-    bodyFields: [
-      { key: 'status', value: 'ABSENT' },
-      { key: 'note', value: 'Vắng không phép' },
-    ],
-  }),
+  makeRequest(
+    'update attendance record',
+    'PATCH',
+    ['attendance-records', ':id'],
+    {
+      bodyFields: [
+        { key: 'status', value: 'ABSENT' },
+        { key: 'note', value: 'Vắng không phép' },
+      ],
+    },
+  ),
+];
+
+const ASSESSMENT_REQUESTS = [
+  makeRequest('all assessments', 'GET', ['assessments']),
+  makeRequest('specific assessment', 'GET', ['assessments', ':id']),
+];
+
+const PORTAL_GRADEBOOK_REQUESTS = [
+  makeJsonRequest(
+    'create portal assessment',
+    'POST',
+    ['portal', 'assessments'],
+    {
+      courseSectionId: '',
+      type: 'REGULAR',
+      name: 'KT 15 phút lần 1',
+      assessmentDate: '2025-09-15',
+      note: 'Chương 1',
+    },
+  ),
+  makeRequest('get portal assessment', 'GET', ['portal', 'assessments', ':id']),
+  makeRequest('initialize portal assessment scores', 'POST', [
+    'portal',
+    'assessments',
+    ':id',
+    'scores',
+    'initialize',
+  ]),
+  makeJsonRequest(
+    'bulk upsert portal assessment scores',
+    'PUT',
+    ['portal', 'assessments', ':id', 'scores'],
+    {
+      scores: [
+        { studentId: '', score: 8.5 },
+        { studentId: '', score: 7, note: 'Làm bài chậm' },
+      ],
+    },
+  ),
+  makeJsonRequest(
+    'close portal assessment',
+    'PATCH',
+    ['portal', 'assessments', ':id'],
+    {
+      status: 'CLOSED',
+      note: 'Đã khóa điểm',
+    },
+  ),
+  makeRequest('my scores grid', 'GET', ['portal', 'my-scores', 'grid']),
+  makeRequest('my child scores', 'GET', [
+    'portal',
+    'my-children',
+    ':studentId',
+    'scores',
+  ]),
 ];
 
 const NEW_FOLDERS = {
-  health: [
-    makeRequest('health check', 'GET', ['health']),
-  ],
+  health: [makeRequest('health check', 'GET', ['health'])],
 
   files: [
     {
@@ -264,27 +330,44 @@ const NEW_FOLDERS = {
       ],
     }),
     makeRequest('update parent profile', 'PATCH', ['parents', ':id'], {
-      bodyFields: [{ key: 'fullName', value: 'Nguyễn Văn Phụ Huynh (cập nhật)' }],
+      bodyFields: [
+        { key: 'fullName', value: 'Nguyễn Văn Phụ Huynh (cập nhật)' },
+      ],
     }),
     makeRequest('update parent status', 'PATCH', ['parents', ':id', 'status'], {
       bodyFields: [{ key: 'status', value: 'ACTIVE' }],
     }),
-    makeRequest('link parent to user account', 'POST', ['parents', ':id', 'link-user'], {
-      bodyFields: [{ key: 'userId', value: '' }],
-    }),
-    makeRequest('create user for parent', 'POST', ['parents', ':id', 'create-user'], {
-      bodyFields: [
-        { key: 'email', value: 'parent@demo.edu.vn' },
-        { key: 'password', value: 'Demo@123456' },
-      ],
-    }),
-    makeRequest('link student to parent', 'POST', ['parents', ':id', 'link-student'], {
-      bodyFields: [
-        { key: 'studentId', value: '' },
-        { key: 'relationship', value: 'FATHER' },
-        { key: 'isPrimaryContact', value: 'true' },
-      ],
-    }),
+    makeRequest(
+      'link parent to user account',
+      'POST',
+      ['parents', ':id', 'link-user'],
+      {
+        bodyFields: [{ key: 'userId', value: '' }],
+      },
+    ),
+    makeRequest(
+      'create user for parent',
+      'POST',
+      ['parents', ':id', 'create-user'],
+      {
+        bodyFields: [
+          { key: 'email', value: 'parent@demo.edu.vn' },
+          { key: 'password', value: 'Demo@123456' },
+        ],
+      },
+    ),
+    makeRequest(
+      'link student to parent',
+      'POST',
+      ['parents', ':id', 'link-student'],
+      {
+        bodyFields: [
+          { key: 'studentId', value: '' },
+          { key: 'relationship', value: 'FATHER' },
+          { key: 'isPrimaryContact', value: 'true' },
+        ],
+      },
+    ),
     makeRequest('unlink student from parent', 'DELETE', [
       'parents',
       ':id',
@@ -295,29 +378,43 @@ const NEW_FOLDERS = {
 
   portal: [
     makeRequest('portal me', 'GET', ['portal', 'me']),
-    makeRequest('my homeroom classes', 'GET', ['portal', 'my-homeroom-classes']),
+    makeRequest('my homeroom classes', 'GET', [
+      'portal',
+      'my-homeroom-classes',
+    ]),
     makeRequest('my homeroom class students', 'GET', [
       'portal',
       'my-homeroom-classes',
       ':id',
       'students',
     ]),
-    makeRequest('my teaching assignments', 'GET', ['portal', 'my-teaching-assignments']),
+    makeRequest('my teaching assignments', 'GET', [
+      'portal',
+      'my-teaching-assignments',
+    ]),
     makeRequest('my timetable', 'GET', ['portal', 'my-timetable'], {
       bodyFields: [],
     }),
     makeRequest('my student profile', 'GET', ['portal', 'my-student-profile']),
     makeRequest('my class timetable', 'GET', ['portal', 'my-class-timetable']),
     makeRequest('my children', 'GET', ['portal', 'my-children']),
-    makeRequest('my attendance classes', 'GET', ['portal', 'my-attendance-classes']),
-    makeRequest('create attendance session', 'POST', ['portal', 'attendance-sessions'], {
-      bodyFields: [
-        { key: 'courseSectionId', value: '' },
-        { key: 'sessionDate', value: '2025-09-01' },
-        { key: 'periodNumber', value: '1' },
-        { key: 'note', value: 'Tiết 1 sáng' },
-      ],
-    }),
+    makeRequest('my attendance classes', 'GET', [
+      'portal',
+      'my-attendance-classes',
+    ]),
+    makeRequest(
+      'create attendance session',
+      'POST',
+      ['portal', 'attendance-sessions'],
+      {
+        bodyFields: [
+          { key: 'courseSectionId', value: '' },
+          { key: 'sessionDate', value: '2025-09-01' },
+          { key: 'periodNumber', value: '1' },
+          { key: 'note', value: 'Tiết 1 sáng' },
+        ],
+      },
+    ),
     {
       name: 'bulk upsert portal attendance records',
       id: randomUUID(),
@@ -330,7 +427,9 @@ const NEW_FOLDERS = {
           raw: JSON.stringify(
             {
               initMissingStudents: true,
-              records: [{ studentId: '', status: 'ABSENT', note: 'Không phép' }],
+              records: [
+                { studentId: '', status: 'ABSENT', note: 'Không phép' },
+              ],
             },
             null,
             2,
@@ -340,12 +439,17 @@ const NEW_FOLDERS = {
       },
       response: [],
     },
-    makeRequest('close attendance session', 'PATCH', ['portal', 'attendance-sessions', ':id'], {
-      bodyFields: [
-        { key: 'status', value: 'CLOSED' },
-        { key: 'note', value: 'Đã hoàn tất điểm danh' },
-      ],
-    }),
+    makeRequest(
+      'close attendance session',
+      'PATCH',
+      ['portal', 'attendance-sessions', ':id'],
+      {
+        bodyFields: [
+          { key: 'status', value: 'CLOSED' },
+          { key: 'note', value: 'Đã hoàn tất điểm danh' },
+        ],
+      },
+    ),
     makeRequest('my attendance', 'GET', ['portal', 'my-attendance']),
     makeRequest('my child attendance', 'GET', [
       'portal',
@@ -353,6 +457,7 @@ const NEW_FOLDERS = {
       ':studentId',
       'attendance',
     ]),
+    ...PORTAL_GRADEBOOK_REQUESTS,
   ],
 };
 
@@ -392,17 +497,30 @@ const ACADEMIC_YEAR_REQUESTS = [
       { key: 'isCurrent', value: 'false' },
     ],
   }),
-  makeRequest('set current academic year', 'PATCH', ['academic-years', ':id', 'set-current']),
-  makeRequest('update academic year status', 'PATCH', ['academic-years', ':id', 'status'], {
-    bodyFields: [{ key: 'status', value: 'ACTIVE' }],
-  }),
+  makeRequest('set current academic year', 'PATCH', [
+    'academic-years',
+    ':id',
+    'set-current',
+  ]),
+  makeRequest(
+    'update academic year status',
+    'PATCH',
+    ['academic-years', ':id', 'status'],
+    {
+      bodyFields: [{ key: 'status', value: 'ACTIVE' }],
+    },
+  ),
   makeRequest('update academic year', 'PATCH', ['academic-years', ':id'], {
     bodyFields: [{ key: 'name', value: 'Năm học 2025-2026 (cập nhật)' }],
   }),
 ];
 
 const SEMESTER_REQUESTS = [
-  makeRequest('all semesters by year', 'GET', ['academic-years', ':yearId', 'semesters']),
+  makeRequest('all semesters by year', 'GET', [
+    'academic-years',
+    ':yearId',
+    'semesters',
+  ]),
   makeRequest('current semester by year', 'GET', [
     'academic-years',
     ':yearId',
@@ -410,16 +528,26 @@ const SEMESTER_REQUESTS = [
     'current',
   ]),
   makeRequest('current semester (school)', 'GET', ['semesters', 'current']),
-  makeRequest('specific semester', 'GET', ['academic-years', ':yearId', 'semesters', ':id']),
-  makeRequest('new semester', 'POST', ['academic-years', ':yearId', 'semesters'], {
-    bodyFields: [
-      { key: 'name', value: 'Học kỳ 1' },
-      { key: 'code', value: 'HK1' },
-      { key: 'startDate', value: '2025-08-05' },
-      { key: 'endDate', value: '2025-12-31' },
-      { key: 'isCurrent', value: 'true' },
-    ],
-  }),
+  makeRequest('specific semester', 'GET', [
+    'academic-years',
+    ':yearId',
+    'semesters',
+    ':id',
+  ]),
+  makeRequest(
+    'new semester',
+    'POST',
+    ['academic-years', ':yearId', 'semesters'],
+    {
+      bodyFields: [
+        { key: 'name', value: 'Học kỳ 1' },
+        { key: 'code', value: 'HK1' },
+        { key: 'startDate', value: '2025-08-05' },
+        { key: 'endDate', value: '2025-12-31' },
+        { key: 'isCurrent', value: 'true' },
+      ],
+    },
+  ),
   makeRequest('set current semester', 'PATCH', [
     'academic-years',
     ':yearId',
@@ -427,18 +555,22 @@ const SEMESTER_REQUESTS = [
     ':id',
     'set-current',
   ]),
-  makeRequest('update semester status', 'PATCH', [
-    'academic-years',
-    ':yearId',
-    'semesters',
-    ':id',
-    'status',
-  ], {
-    bodyFields: [{ key: 'status', value: 'ACTIVE' }],
-  }),
-  makeRequest('update semester', 'PATCH', ['academic-years', ':yearId', 'semesters', ':id'], {
-    bodyFields: [{ key: 'name', value: 'Học kỳ 1 (cập nhật)' }],
-  }),
+  makeRequest(
+    'update semester status',
+    'PATCH',
+    ['academic-years', ':yearId', 'semesters', ':id', 'status'],
+    {
+      bodyFields: [{ key: 'status', value: 'ACTIVE' }],
+    },
+  ),
+  makeRequest(
+    'update semester',
+    'PATCH',
+    ['academic-years', ':yearId', 'semesters', ':id'],
+    {
+      bodyFields: [{ key: 'name', value: 'Học kỳ 1 (cập nhật)' }],
+    },
+  ),
 ];
 
 const GRADE_LEVEL_REQUESTS = [
@@ -484,9 +616,14 @@ const HOMEROOM_CLASS_REQUESTS = [
       { key: 'code', value: '10A1' },
     ],
   }),
-  makeRequest('update homeroom class status', 'PATCH', ['homeroom-classes', ':id', 'status'], {
-    bodyFields: [{ key: 'status', value: 'ACTIVE' }],
-  }),
+  makeRequest(
+    'update homeroom class status',
+    'PATCH',
+    ['homeroom-classes', ':id', 'status'],
+    {
+      bodyFields: [{ key: 'status', value: 'ACTIVE' }],
+    },
+  ),
   makeRequest('update homeroom class', 'PATCH', ['homeroom-classes', ':id'], {
     bodyFields: [{ key: 'name', value: '10A1 (cập nhật)' }],
   }),
@@ -504,9 +641,14 @@ const COURSE_SECTION_CRUD_REQUESTS = [
       { key: 'code', value: 'TOAN-10A1' },
     ],
   }),
-  makeRequest('update course section status', 'PATCH', ['course-sections', ':id', 'status'], {
-    bodyFields: [{ key: 'status', value: 'ACTIVE' }],
-  }),
+  makeRequest(
+    'update course section status',
+    'PATCH',
+    ['course-sections', ':id', 'status'],
+    {
+      bodyFields: [{ key: 'status', value: 'ACTIVE' }],
+    },
+  ),
   makeRequest('update course section', 'PATCH', ['course-sections', ':id'], {
     bodyFields: [{ key: 'name', value: 'Toán học 10A1 (cập nhật)' }],
   }),
@@ -525,18 +667,30 @@ const STUDENT_REQUESTS = [
   makeRequest('update student status', 'PATCH', ['students', ':id', 'status'], {
     bodyFields: [{ key: 'status', value: 'ACTIVE' }],
   }),
-  makeRequest('link student to user account', 'POST', ['students', ':id', 'link-user'], {
-    bodyFields: [{ key: 'userId', value: '' }],
-  }),
+  makeRequest(
+    'link student to user account',
+    'POST',
+    ['students', ':id', 'link-user'],
+    {
+      bodyFields: [{ key: 'userId', value: '' }],
+    },
+  ),
   makeRequest('update student profile', 'PATCH', ['students', ':id'], {
     bodyFields: [{ key: 'fullName', value: 'Nguyễn Văn A (cập nhật)' }],
   }),
-  makeRequest('student enrollments by student', 'GET', ['students', ':studentId', 'enrollments']),
+  makeRequest('student enrollments by student', 'GET', [
+    'students',
+    ':studentId',
+    'enrollments',
+  ]),
 ];
 
 const STUDENT_ENROLLMENT_REQUESTS = [
   makeRequest('all student enrollments', 'GET', ['student-enrollments']),
-  makeRequest('specific student enrollment', 'GET', ['student-enrollments', ':id']),
+  makeRequest('specific student enrollment', 'GET', [
+    'student-enrollments',
+    ':id',
+  ]),
   makeRequest('new student enrollment', 'POST', ['student-enrollments'], {
     bodyFields: [
       { key: 'studentId', value: '' },
@@ -545,18 +699,28 @@ const STUDENT_ENROLLMENT_REQUESTS = [
       { key: 'enrolledAt', value: '2025-08-05' },
     ],
   }),
-  makeRequest('transfer enrollment', 'POST', ['student-enrollments', ':id', 'transfer'], {
-    bodyFields: [
-      { key: 'targetHomeroomClassId', value: '' },
-      { key: 'transferredAt', value: '2025-12-16' },
-    ],
-  }),
-  makeRequest('withdraw enrollment', 'PATCH', ['student-enrollments', ':id', 'withdraw'], {
-    bodyFields: [
-      { key: 'leftAt', value: '2025-12-31' },
-      { key: 'note', value: 'Rút khỏi lớp' },
-    ],
-  }),
+  makeRequest(
+    'transfer enrollment',
+    'POST',
+    ['student-enrollments', ':id', 'transfer'],
+    {
+      bodyFields: [
+        { key: 'targetHomeroomClassId', value: '' },
+        { key: 'transferredAt', value: '2025-12-16' },
+      ],
+    },
+  ),
+  makeRequest(
+    'withdraw enrollment',
+    'PATCH',
+    ['student-enrollments', ':id', 'withdraw'],
+    {
+      bodyFields: [
+        { key: 'leftAt', value: '2025-12-31' },
+        { key: 'note', value: 'Rút khỏi lớp' },
+      ],
+    },
+  ),
 ];
 
 const TEACHER_REQUESTS = [
@@ -571,15 +735,25 @@ const TEACHER_REQUESTS = [
   makeRequest('update teacher status', 'PATCH', ['teachers', ':id', 'status'], {
     bodyFields: [{ key: 'status', value: 'ACTIVE' }],
   }),
-  makeRequest('link teacher to user account', 'POST', ['teachers', ':id', 'link-user'], {
-    bodyFields: [{ key: 'userId', value: '' }],
-  }),
-  makeRequest('create user for teacher', 'POST', ['teachers', ':id', 'create-user'], {
-    bodyFields: [
-      { key: 'email', value: 'teacher@demo.edu.vn' },
-      { key: 'password', value: 'Demo@123456' },
-    ],
-  }),
+  makeRequest(
+    'link teacher to user account',
+    'POST',
+    ['teachers', ':id', 'link-user'],
+    {
+      bodyFields: [{ key: 'userId', value: '' }],
+    },
+  ),
+  makeRequest(
+    'create user for teacher',
+    'POST',
+    ['teachers', ':id', 'create-user'],
+    {
+      bodyFields: [
+        { key: 'email', value: 'teacher@demo.edu.vn' },
+        { key: 'password', value: 'Demo@123456' },
+      ],
+    },
+  ),
   makeRequest('update teacher profile', 'PATCH', ['teachers', ':id'], {
     bodyFields: [{ key: 'fullName', value: 'Nguyễn Văn Giáo Viên (cập nhật)' }],
   }),
@@ -592,7 +766,10 @@ const TEACHER_REQUESTS = [
 
 const TEACHING_ASSIGNMENT_REQUESTS = [
   makeRequest('all teaching assignments', 'GET', ['teaching-assignments']),
-  makeRequest('specific teaching assignment', 'GET', ['teaching-assignments', ':id']),
+  makeRequest('specific teaching assignment', 'GET', [
+    'teaching-assignments',
+    ':id',
+  ]),
   makeRequest('new teaching assignment', 'POST', ['teaching-assignments'], {
     bodyFields: [
       { key: 'teacherId', value: '' },
@@ -600,9 +777,14 @@ const TEACHING_ASSIGNMENT_REQUESTS = [
       { key: 'assignAt', value: '2025-08-01' },
     ],
   }),
-  makeRequest('update teaching assignment status', 'PATCH', ['teaching-assignments', ':id', 'status'], {
-    bodyFields: [{ key: 'status', value: 'ACTIVE' }],
-  }),
+  makeRequest(
+    'update teaching assignment status',
+    'PATCH',
+    ['teaching-assignments', ':id', 'status'],
+    {
+      bodyFields: [{ key: 'status', value: 'ACTIVE' }],
+    },
+  ),
 ];
 
 const USER_REQUESTS = [
@@ -673,16 +855,21 @@ const ALL_SYNC_FOLDERS = {
   'courses-section': COURSE_SECTION_REQUESTS,
   'attendance-sessions': ATTENDANCE_SESSION_REQUESTS,
   'attendance-records': ATTENDANCE_RECORD_REQUESTS,
+  assessments: ASSESSMENT_REQUESTS,
 };
 
 function exportMissingJson() {
-  const outputPath = join(__dirname, '../../docs/postman/nestjs-missing-requests.json');
+  const outputPath = join(
+    __dirname,
+    '../../docs/postman/nestjs-missing-requests.json',
+  );
   const collection = {
     info: {
       name: 'CodeFarm Nestjs — Missing Requests',
       description:
         'Import vào collection CodeFarm, folder Nestjs. Hoặc chạy: POSTMAN_API_KEY=PMAK-xxx node server/scripts/sync-postman-nestjs.mjs',
-      schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
+      schema:
+        'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
     },
     variable: [{ key: 'API_BASE_URL', value: 'http://localhost:3000' }],
     item: Object.entries(ALL_SYNC_FOLDERS).map(([name, requests]) =>
@@ -714,14 +901,18 @@ async function main() {
 
   const summary = [];
 
-  summary.push(...ensureFolder(nestjsRoot, 'auth', AUTH_REQUESTS).map((n) => `auth/${n}`));
+  summary.push(
+    ...ensureFolder(nestjsRoot, 'auth', AUTH_REQUESTS).map((n) => `auth/${n}`),
+  );
 
   for (const [folderName, requests] of Object.entries(ALL_SYNC_FOLDERS)) {
     if (folderName === 'auth') {
       continue;
     }
     summary.push(
-      ...ensureFolder(nestjsRoot, folderName, requests).map((n) => `${folderName}/${n}`),
+      ...ensureFolder(nestjsRoot, folderName, requests).map(
+        (n) => `${folderName}/${n}`,
+      ),
     );
   }
 
@@ -748,9 +939,7 @@ async function main() {
   for (const line of summary) {
     console.log(`  + ${line}`);
   }
-  console.log(
-    `\nOpen: https://go.postman.co/collection/${COLLECTION_UID}`,
-  );
+  console.log(`\nOpen: https://go.postman.co/collection/${COLLECTION_UID}`);
 }
 
 if (EXPORT_JSON) {

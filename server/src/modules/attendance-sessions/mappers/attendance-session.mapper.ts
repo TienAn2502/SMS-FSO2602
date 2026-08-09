@@ -7,7 +7,7 @@ import type {
   Teacher,
 } from '@prisma/client';
 
-import { toIsoDateString } from '../../../common/schemas/academic.schema';
+import { toIsoDateString } from '@/common/schemas/academic.schema';
 
 type AttendanceRecordWithStudent = AttendanceRecord & {
   student: Pick<Student, 'id' | 'fullName'>;

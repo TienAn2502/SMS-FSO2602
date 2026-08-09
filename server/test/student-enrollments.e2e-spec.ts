@@ -3,8 +3,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import type { App } from 'supertest/types';
 
-import { AppModule } from '../src/app.module';
-import { setupApp } from '../src/setup-app';
+import { AppModule } from '@/app.module';
+import { setupApp } from '@/setup-app';
 
 describe('Student Enrollments API (e2e)', () => {
   let app: INestApplication<App>;
@@ -83,6 +83,46 @@ describe('Student Enrollments API (e2e)', () => {
         '/api/v1/student-enrollments/00000000-0000-4000-8000-000000000001/withdraw',
       )
       .send({ leftAt: '2025-12-20' })
+      .expect(401);
+
+    const body = res.body as { success: boolean; code: string };
+    expect(body.success).toBe(false);
+    expect(body.code).toBe('UNAUTHORIZED');
+  });
+
+  it('POST /api/v1/student-enrollments/copy-from-semester without auth returns 401', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/api/v1/student-enrollments/copy-from-semester')
+      .send({
+        sourceSemesterId: '00000000-0000-4000-8000-000000000001',
+        targetSemesterId: '00000000-0000-4000-8000-000000000002',
+      })
+      .expect(401);
+
+    const body = res.body as { success: boolean; code: string };
+    expect(body.success).toBe(false);
+    expect(body.code).toBe('UNAUTHORIZED');
+  });
+
+  it('POST /api/v1/student-enrollments/close-semester without auth returns 401', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/api/v1/student-enrollments/close-semester')
+      .send({
+        semesterId: '00000000-0000-4000-8000-000000000001',
+      })
+      .expect(401);
+
+    const body = res.body as { success: boolean; code: string };
+    expect(body.success).toBe(false);
+    expect(body.code).toBe('UNAUTHORIZED');
+  });
+
+  it('POST /api/v1/student-enrollments/sync-stale without auth returns 401', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/api/v1/student-enrollments/sync-stale')
+      .send({
+        academicYearId: '00000000-0000-4000-8000-000000000001',
+      })
       .expect(401);
 
     const body = res.body as { success: boolean; code: string };

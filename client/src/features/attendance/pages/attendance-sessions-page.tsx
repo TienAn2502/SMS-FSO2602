@@ -17,6 +17,7 @@ import {
   type AttendanceSession,
 } from '@/features/attendance/api/attendance-api';
 import { AttendanceSessionStatusBadge } from '@/features/attendance/components/attendance-status-badges';
+import { AttendanceExportActions } from '@/features/attendance/components/attendance-export-actions';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { formatDateVi } from '@/lib/date-format';
 import { selectClassName } from '@/lib/form-styles';
@@ -104,8 +105,12 @@ export function AttendanceSessionsPage() {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className='flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between'>
           <CardTitle className='text-base'>Bộ lọc</CardTitle>
+          <AttendanceExportActions
+            sessionDate={sessionDateFilter || undefined}
+            status={statusFilter === 'ALL' ? undefined : statusFilter}
+          />
         </CardHeader>
         <CardContent className='flex flex-wrap gap-4'>
           <div className='space-y-1'>

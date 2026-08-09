@@ -3,8 +3,8 @@ import { z } from 'zod';
 import {
   academicEntityStatusSchema,
   isoDateSchema,
-} from '../../../common/schemas/academic.schema';
-import { paginationSchema } from '../../../common/schemas/shared.schema';
+} from '@/common/schemas/academic.schema';
+import { paginationSchema } from '@/common/schemas/shared.schema';
 
 export const listAcademicYearsQuerySchema = paginationSchema.extend({
   status: academicEntityStatusSchema.optional(),

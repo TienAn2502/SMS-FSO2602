@@ -3,10 +3,11 @@ import { z } from 'zod';
 import {
   academicEntityStatusSchema,
   isoDateSchema,
-} from '../../../common/schemas/academic.schema';
-import { paginationSchema } from '../../../common/schemas/shared.schema';
+} from '@/common/schemas/academic.schema';
+import { paginationSchema } from '@/common/schemas/shared.schema';
 
 export const listTeachingAssignmentsQuerySchema = paginationSchema.extend({
+  search: z.string().trim().optional(),
   teacherId: z.uuid().optional(),
   courseSectionId: z.uuid().optional(),
   semesterId: z.uuid().optional(),
@@ -53,4 +54,13 @@ export const updateTeachingAssignmentStatusSchema = z
 
 export type UpdateTeachingAssignmentStatusInput = z.infer<
   typeof updateTeachingAssignmentStatusSchema
+>;
+
+export const copySemesterTeachingAssignmentsSchema = z.object({
+  sourceSemesterId: z.uuid('Học kỳ nguồn không hợp lệ'),
+  targetSemesterId: z.uuid('Học kỳ đích không hợp lệ'),
+});
+
+export type CopySemesterTeachingAssignmentsInput = z.infer<
+  typeof copySemesterTeachingAssignmentsSchema
 >;

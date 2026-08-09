@@ -4,11 +4,11 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import type { Request } from 'express';
 
-import type { EnvConfig } from '../../config/env.schema';
-import { PrismaService } from '../../database/prisma.service';
-import { AppException } from '../../exceptions/app.exception';
-import { AUTH_COOKIE, JWT_ACCESS_STRATEGY } from '../auth.constants';
-import type { AccessTokenPayload, AuthenticatedUser } from '../auth.types';
+import type { EnvConfig } from '@/common/config/env.schema';
+import { PrismaService } from '@/common/database/prisma.service';
+import { AppException } from '@/common/exceptions/app.exception';
+import { AUTH_COOKIE, JWT_ACCESS_STRATEGY } from '@/common/auth/auth.constants';
+import type { AccessTokenPayload, AuthenticatedUser } from '@/common/auth/auth.types';
 
 @Injectable()
 export class JwtAccessStrategy extends PassportStrategy(

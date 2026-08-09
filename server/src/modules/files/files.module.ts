@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 
-import { AuthModule } from '../auth/auth.module';
-import { FilesController } from './files.controller';
-import { FilesService } from './files.service';
-import { R2Service } from './r2.service';
+import { AuthModule } from '@/modules/auth/auth.module';
+import { FilesController } from '@/modules/files/files.controller';
+import { FilesService } from '@/modules/files/files.service';
+import { R2Service } from '@/modules/files/r2.service';
 
 @Module({
   imports: [AuthModule],

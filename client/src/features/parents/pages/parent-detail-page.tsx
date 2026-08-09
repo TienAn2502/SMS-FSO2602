@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 
 import { ROUTES } from '@/app/router/routes';
+import { ProvisionLoginAccountSection } from '@/components/common/provision-login-account-section';
 import { ErrorState } from '@/components/feedback/error-state';
 import { LoadingState } from '@/components/feedback/loading-state';
 import { Button } from '@/components/ui/button';
@@ -28,11 +29,6 @@ import { selectClassName } from '@/lib/form-styles';
 const profileSchema = z.object({
   fullName: z.string().trim().min(1),
   phone: z.string().optional(),
-});
-
-const accountSchema = z.object({
-  email: z.email(),
-  password: z.string().min(8),
 });
 
 const linkSchema = z.object({
@@ -65,11 +61,6 @@ export function ParentDetailPage() {
     },
   });
 
-  const accountForm = useForm({
-    resolver: zodResolver(accountSchema),
-    defaultValues: { email: '', password: '' },
-  });
-
   const linkForm = useForm({
     resolver: zodResolver(linkSchema),
     defaultValues: { relationship: 'FATHER' as const, isPrimaryContact: false },
@@ -88,15 +79,15 @@ export function ParentDetailPage() {
   });
 
   const createUserMutation = useMutation({
-    mutationFn: (values: z.infer<typeof accountSchema>) => createParentUser(id, values),
+    mutationFn: (values: { email: string; password: string }) =>
+      createParentUser(id, values),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['parents', id] });
-      toast.success('Tạo tài khoản thành công');
-      accountForm.reset();
+      toast.success('Cấp tài khoản thành công');
     },
     onError: (error) => {
       const apiError = getApiError(error);
-      toast.error(getErrorMessage(apiError?.code, apiError?.message ?? 'Tạo tài khoản thất bại'));
+      toast.error(getErrorMessage(apiError?.code, apiError?.message ?? 'Cấp tài khoản thất bại'));
     },
   });
 
@@ -127,7 +118,12 @@ export function ParentDetailPage() {
 
   if (parentQuery.isLoading) return <LoadingState />;
   if (parentQuery.isError || !parentQuery.data) {
-    return <ErrorState message='Không tải được hồ sơ phụ huynh' onRetry={() => void parentQuery.refetch()} />;
+    return (
+      <ErrorState
+        message='Không tải được hồ sơ phụ huynh'
+        onRetry={() => void parentQuery.refetch()}
+      />
+    );
   }
 
   const parent = parentQuery.data;
@@ -135,63 +131,90 @@ export function ParentDetailPage() {
   return (
     <div className='space-y-6'>
       <div>
-        <Link to={ROUTES.parents} className='text-sm text-muted-foreground hover:text-foreground'>← Danh sách phụ huynh</Link>
+        <Link
+          to={ROUTES.parents}
+          className='text-sm text-muted-foreground hover:text-foreground'
+        >
+          ← Danh sách phụ huynh
+        </Link>
         <h1 className='mt-2 text-2xl font-semibold'>{parent.fullName}</h1>
       </div>
 
-      <div className='grid gap-6 lg:grid-cols-2'>
-        <Card>
-          <CardHeader><CardTitle>Hồ sơ</CardTitle></CardHeader>
-          <CardContent>
-            <form className='space-y-4' onSubmit={profileForm.handleSubmit((v) => updateMutation.mutate(v))}>
-              <div className='space-y-2'><Label>Họ tên</Label><Input {...profileForm.register('fullName')} /></div>
-              <div className='space-y-2'><Label>SĐT</Label><Input {...profileForm.register('phone')} /></div>
-              <p className='text-sm text-muted-foreground'>Email: {parent.userEmail ?? 'Chưa có tài khoản'}</p>
-              <Button type='submit' disabled={updateMutation.isPending}>Lưu</Button>
-            </form>
-          </CardContent>
-        </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Hồ sơ</CardTitle>
+        </CardHeader>
+        <CardContent className='space-y-4'>
+          <form
+            className='space-y-4'
+            onSubmit={profileForm.handleSubmit((values) => updateMutation.mutate(values))}
+          >
+            <div className='space-y-2'>
+              <Label>Họ tên</Label>
+              <Input {...profileForm.register('fullName')} />
+            </div>
+            <div className='space-y-2'>
+              <Label>SĐT</Label>
+              <Input {...profileForm.register('phone')} />
+            </div>
+            <Button type='submit' disabled={updateMutation.isPending}>
+              Lưu hồ sơ
+            </Button>
+          </form>
 
-        {!parent.userId ? (
-          <Card>
-            <CardHeader><CardTitle>Tạo tài khoản</CardTitle></CardHeader>
-            <CardContent>
-              <form className='space-y-4' onSubmit={accountForm.handleSubmit((v) => createUserMutation.mutate(v))}>
-                <div className='space-y-2'><Label>Email</Label><Input type='email' {...accountForm.register('email')} /></div>
-                <div className='space-y-2'><Label>Mật khẩu</Label><Input type='password' {...accountForm.register('password')} /></div>
-                <Button type='submit' disabled={createUserMutation.isPending}>Tạo tài khoản</Button>
-              </form>
-            </CardContent>
-          </Card>
-        ) : null}
-      </div>
+          <ProvisionLoginAccountSection
+            userEmail={parent.userEmail}
+            hasAccount={Boolean(parent.userId)}
+            onProvision={(values) => createUserMutation.mutate(values)}
+            isPending={createUserMutation.isPending}
+          />
+        </CardContent>
+      </Card>
 
       <Card>
-        <CardHeader><CardTitle>Con đã liên kết</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Con đã liên kết</CardTitle>
+        </CardHeader>
         <CardContent className='space-y-4'>
           {parent.linkedStudents.length === 0 ? (
             <p className='text-sm text-muted-foreground'>Chưa gắn học sinh.</p>
           ) : (
             <ul className='space-y-2'>
               {parent.linkedStudents.map((link) => (
-                <li key={link.id} className='flex items-center justify-between rounded-md border px-3 py-2 text-sm'>
+                <li
+                  key={link.id}
+                  className='flex items-center justify-between rounded-md border px-3 py-2 text-sm'
+                >
                   <span>
                     {link.studentFullName}
-                    <span className='ml-2 text-muted-foreground'>({PARENT_RELATIONSHIP_LABELS[link.relationship]})</span>
+                    <span className='ml-2 text-muted-foreground'>
+                      ({PARENT_RELATIONSHIP_LABELS[link.relationship]})
+                    </span>
                   </span>
-                  <Button variant='outline' size='sm' onClick={() => unlinkMutation.mutate(link.studentId)}>Gỡ</Button>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={() => unlinkMutation.mutate(link.studentId)}
+                  >
+                    Gỡ
+                  </Button>
                 </li>
               ))}
             </ul>
           )}
 
-          <form className='grid gap-4 md:grid-cols-3 border-t pt-4' onSubmit={linkForm.handleSubmit((v) => linkMutation.mutate(v))}>
+          <form
+            className='grid gap-4 border-t pt-4 md:grid-cols-3'
+            onSubmit={linkForm.handleSubmit((values) => linkMutation.mutate(values))}
+          >
             <div className='space-y-2'>
               <Label>Học sinh</Label>
               <select className={selectClassName} {...linkForm.register('studentId')}>
                 <option value=''>— Chọn —</option>
-                {studentsQuery.data?.items.map((s) => (
-                  <option key={s.id} value={s.id}>{s.fullName}</option>
+                {studentsQuery.data?.items.map((student) => (
+                  <option key={student.id} value={student.id}>
+                    {student.fullName}
+                  </option>
                 ))}
               </select>
             </div>
@@ -199,7 +222,9 @@ export function ParentDetailPage() {
               <Label>Quan hệ</Label>
               <select className={selectClassName} {...linkForm.register('relationship')}>
                 {Object.entries(PARENT_RELATIONSHIP_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
                 ))}
               </select>
             </div>
@@ -208,7 +233,9 @@ export function ParentDetailPage() {
                 <input type='checkbox' {...linkForm.register('isPrimaryContact')} />
                 Liên hệ chính
               </label>
-              <Button type='submit' disabled={linkMutation.isPending}>Gắn</Button>
+              <Button type='submit' disabled={linkMutation.isPending}>
+                Gắn
+              </Button>
             </div>
           </form>
         </CardContent>

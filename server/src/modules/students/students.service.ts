@@ -1,28 +1,26 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { Prisma, UserRole, UserStatus } from '@prisma/client';
 
-import { AppException } from '../../common/exceptions/app.exception';
-import { PrismaService } from '../../common/database/prisma.service';
-import { parseIsoDate } from '../../common/schemas/academic.schema';
-import type { PaginationMeta } from '../../common/types/api-response.types';
-import {
-  buildPaginationMeta,
-  getSkip,
-} from '../../common/utils/pagination.util';
-import { PasswordService } from '../../common/utils/password.service';
+import { AppException } from '@/common/exceptions/app.exception';
+import { PrismaService } from '@/common/database/prisma.service';
+import { STUDENT_YEAR_ENROLLMENT_STATUSES } from '@/common/utils/enrollment-status.util';
+import { parseIsoDate } from '@/common/schemas/academic.schema';
+import type { PaginationMeta } from '@/common/types/api-response.types';
+import { buildPaginationMeta, getSkip } from '@/common/utils/pagination.util';
+import { PasswordService } from '@/common/utils/password.service';
 import {
   studentInclude,
   toStudentResponse,
   type StudentResponse,
-} from './mappers/student.mapper';
+} from '@/modules/students/mappers/student.mapper';
 import type {
   CreateStudentInput,
-  // CreateStudentUserInput,
+  CreateStudentUserInput,
   LinkStudentUserInput,
   ListStudentsQuery,
   UpdateStudentInput,
   UpdateStudentStatusInput,
-} from './schemas/student.schema';
+} from '@/modules/students/schemas/student.schema';
 
 @Injectable()
 export class StudentsService {
@@ -62,7 +60,7 @@ export class StudentsService {
         ? {
             enrollments: {
               some: {
-                status: 'ACTIVE',
+                status: { in: STUDENT_YEAR_ENROLLMENT_STATUSES },
                 ...(query.homeroomClassId
                   ? { homeroomClassId: query.homeroomClassId }
                   : {}),
@@ -113,6 +111,7 @@ export class StudentsService {
     schoolId: string,
     input: CreateStudentInput,
   ): Promise<StudentResponse> {
+    // nếu có account thì tạo cả hồ sơ (table student) và tài khoản (table user)
     if (input.account) {
       return this.createWithAccount(schoolId, input);
     }
@@ -207,56 +206,56 @@ export class StudentsService {
     }
   }
 
-  // async createUser(
-  //   schoolId: string,
-  //   studentId: string,
-  //   input: CreateStudentUserInput,
-  // ): Promise<StudentResponse> {
-  //   const student = await this.findStudentInTenant(schoolId, studentId);
+  async createUser(
+    schoolId: string,
+    studentId: string,
+    input: CreateStudentUserInput,
+  ): Promise<StudentResponse> {
+    const student = await this.findStudentInTenant(schoolId, studentId);
 
-  //   if (student.userId) {
-  //     throw new AppException(
-  //       'USER_ALREADY_LINKED',
-  //       'Học sinh đã được gắn tài khoản',
-  //       HttpStatus.CONFLICT,
-  //     );
-  //   }
+    if (student.userId) {
+      throw new AppException(
+        'USER_ALREADY_LINKED',
+        'Học sinh đã được gắn tài khoản',
+        HttpStatus.CONFLICT,
+      );
+    }
 
-  //   const existingEmail = await this.prisma.user.findUnique({
-  //     where: { email: input.email },
-  //   });
+    const existingEmail = await this.prisma.user.findUnique({
+      where: { email: input.email },
+    });
 
-  //   if (existingEmail) {
-  //     throw new AppException(
-  //       'EMAIL_ALREADY_EXISTS',
-  //       'Email đã được sử dụng',
-  //       HttpStatus.CONFLICT,
-  //     );
-  //   }
+    if (existingEmail) {
+      throw new AppException(
+        'EMAIL_ALREADY_EXISTS',
+        'Email đã được sử dụng',
+        HttpStatus.CONFLICT,
+      );
+    }
 
-  //   const passwordHash = await this.passwordService.hash(input.password);
+    const passwordHash = await this.passwordService.hash(input.password);
 
-  //   const updated = await this.prisma.$transaction(async (tx) => {
-  //     const user = await tx.user.create({
-  //       data: {
-  //         email: input.email,
-  //         passwordHash,
-  //         fullName: student.fullName,
-  //         role: UserRole.STUDENT,
-  //         schoolId,
-  //         status: UserStatus.ACTIVE,
-  //       },
-  //     });
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          email: input.email,
+          passwordHash,
+          fullName: student.fullName,
+          role: UserRole.STUDENT,
+          schoolId,
+          status: UserStatus.ACTIVE,
+        },
+      });
 
-  //     return tx.student.update({
-  //       where: { id: studentId },
-  //       data: { userId: user.id },
-  //       include: studentInclude,
-  //     });
-  //   });
+      return tx.student.update({
+        where: { id: studentId },
+        data: { userId: user.id },
+        include: studentInclude,
+      });
+    });
 
-  //   return toStudentResponse(updated);
-  // }
+    return toStudentResponse(updated);
+  }
 
   private async createWithAccount(
     schoolId: string,

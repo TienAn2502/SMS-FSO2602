@@ -1,16 +1,18 @@
 import { z } from 'zod';
 
-import { isoDateSchema } from '../../../common/schemas/academic.schema';
-import { paginationSchema } from '../../../common/schemas/shared.schema';
-import { bulkUpsertAttendanceRecordsSchema } from '../../attendance-records/schemas/attendance-record.schema';
-import { periodNumberSchema } from '../../attendance-sessions/schemas/attendance-session.schema';
+import { isoDateSchema } from '@/common/schemas/academic.schema';
+import { paginationSchema } from '@/common/schemas/shared.schema';
+import { bulkUpsertAttendanceRecordsSchema } from '@/modules/attendance-records/schemas/attendance-record.schema';
+import { periodNumberSchema } from '@/modules/attendance-sessions/schemas/attendance-session.schema';
 
 export const portalMyAttendanceQuerySchema = paginationSchema.extend({
   semesterId: z.uuid().optional(),
   includeAllSemesters: z.coerce.boolean().optional().default(false),
 });
 
-export type PortalMyAttendanceQuery = z.infer<typeof portalMyAttendanceQuerySchema>;
+export type PortalMyAttendanceQuery = z.infer<
+  typeof portalMyAttendanceQuerySchema
+>;
 
 export const portalCreateAttendanceSessionSchema = z.object({
   courseSectionId: z.uuid('Lớp môn không hợp lệ'),

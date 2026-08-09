@@ -13,11 +13,11 @@
   "item": [
     {
       "name": "auth",
-      "id": "8b78f80f-625c-4349-8570-0b55e8d179ac",
+      "id": "f4436376-4169-4169-a11c-617e3df23234",
       "item": [
         {
           "name": "login",
-          "id": "b996c7bf-8162-4b9a-b1cc-df59ed0c541b",
+          "id": "b75150de-3712-4046-bfe6-9fcd07fd062c",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -43,13 +43,13 @@
                   "key": "email",
                   "value": "admin@demo.edu.vn",
                   "type": "text",
-                  "uuid": "a60801bf-0b41-4134-a559-d96363418f4e"
+                  "uuid": "8cd92143-5b1e-4c94-9b22-e307244c1171"
                 },
                 {
                   "key": "password",
                   "value": "Admin@123456",
                   "type": "text",
-                  "uuid": "84d41268-d034-4d28-8170-43191bfef7ac"
+                  "uuid": "b2887285-95a4-407e-ba10-27f81071e501"
                 }
               ]
             }
@@ -58,7 +58,7 @@
         },
         {
           "name": "refresh",
-          "id": "4b7f2dc2-2c27-4e48-97fb-407c2734afaa",
+          "id": "1e9dbcb2-7552-4f1a-800e-7605c5e62c2f",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -82,7 +82,7 @@
         },
         {
           "name": "logout",
-          "id": "0121d1e3-726e-4b4d-8515-e4265db27311",
+          "id": "531f5199-0042-4b56-afc6-2cf45241ea72",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -106,7 +106,7 @@
         },
         {
           "name": "me",
-          "id": "5889aabd-dbd7-4022-86b2-9a52a55f1e3a",
+          "id": "028198ab-93a5-449f-a6c2-4cfdee6b5361",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -132,11 +132,11 @@
     },
     {
       "name": "schools",
-      "id": "cd7fe013-a7e1-4d11-8ec9-0c8b0e81b104",
+      "id": "0e835042-9df7-490d-8a45-d403751a156d",
       "item": [
         {
           "name": "current school",
-          "id": "89007aec-d886-4931-b7b4-73f4d42e0d50",
+          "id": "7ae8de3f-43da-464e-a0fc-b8a6fd580f95",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -160,7 +160,7 @@
         },
         {
           "name": "update current school",
-          "id": "ce83c04e-3720-41a6-abff-73367842b1da",
+          "id": "3df228f6-5ad7-4426-a385-d8a1665f3cd8",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -186,19 +186,19 @@
                   "key": "name",
                   "value": "Trường THPT Demo",
                   "type": "text",
-                  "uuid": "0a3f6142-daa5-42d5-9034-2fa4b5034528"
+                  "uuid": "318df9bc-86eb-4714-85d3-826ca56d0cc0"
                 },
                 {
                   "key": "shortName",
                   "value": "THPT Demo",
                   "type": "text",
-                  "uuid": "3d08cec3-f07a-4ddd-a6ca-472bce7e37e4"
+                  "uuid": "5bdb05fd-3847-4479-a702-e3ff2d072c45"
                 },
                 {
                   "key": "schoolType",
                   "value": "THPT",
                   "type": "text",
-                  "uuid": "cc7b3e90-3b2f-42b4-b4b4-5e7511efa9bc"
+                  "uuid": "ffdc4ec7-cc49-4280-a07a-ec71814da4fc"
                 }
               ]
             }
@@ -209,11 +209,11 @@
     },
     {
       "name": "academic-years",
-      "id": "e12b5c19-e24c-4e9f-b2fa-9902547d4c4b",
+      "id": "4c6fbaee-1e61-4154-bf1b-ce2e18144fd0",
       "item": [
         {
           "name": "all academic years",
-          "id": "6c800ae2-125d-45fe-b85a-54391ab1fecd",
+          "id": "bebf8660-a8e4-4b62-a72d-ec10e5107e6a",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -236,7 +236,7 @@
         },
         {
           "name": "current academic year",
-          "id": "f4e8c687-3781-42f9-8e70-3a1fa0968803",
+          "id": "be0e451b-8ede-4b17-b031-053d0d4f080e",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -260,7 +260,7 @@
         },
         {
           "name": "specific academic year",
-          "id": "f345162d-ea37-4c45-98f0-cac102b154db",
+          "id": "f9ff599b-95f9-4634-b938-bf1cfa3aa425",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -284,7 +284,7 @@
         },
         {
           "name": "new academic year",
-          "id": "d1bda683-f207-42ff-8778-666f71af6ae9",
+          "id": "ae721fb1-2b25-4c01-800e-6d0edca85761",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -309,31 +309,31 @@
                   "key": "name",
                   "value": "Năm học 2025-2026",
                   "type": "text",
-                  "uuid": "4b345705-a1e7-4d26-8dd2-b65e027056c8"
+                  "uuid": "53356453-c627-42db-b6f8-b0740a3b4b7b"
                 },
                 {
                   "key": "code",
                   "value": "2025-2026",
                   "type": "text",
-                  "uuid": "e15c1834-b39e-4b80-9886-23045a17756d"
+                  "uuid": "4721161d-6d08-4046-8788-91d04f6910fd"
                 },
                 {
                   "key": "startDate",
                   "value": "2025-08-01",
                   "type": "text",
-                  "uuid": "1fcc672e-c381-4204-a2c7-773c3c1dd9f1"
+                  "uuid": "c229db9f-2669-4577-ab36-5f927f45ba29"
                 },
                 {
                   "key": "endDate",
                   "value": "2026-05-31",
                   "type": "text",
-                  "uuid": "ebddb258-92ae-4adc-94bb-e6b7bee3c5d8"
+                  "uuid": "963538db-d992-402f-8a21-b04ca9064680"
                 },
                 {
                   "key": "isCurrent",
                   "value": "false",
                   "type": "text",
-                  "uuid": "e67a346d-f0c3-460d-a9ca-0ea358d5f206"
+                  "uuid": "83ad5ef1-0475-4aef-81fd-41d3095eef84"
                 }
               ]
             }
@@ -342,7 +342,7 @@
         },
         {
           "name": "set current academic year",
-          "id": "cefa22ba-55c4-4db0-81ae-469377ba129a",
+          "id": "c305397b-9a18-41b2-9c0f-3e7f1df8f03d",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -367,7 +367,7 @@
         },
         {
           "name": "update academic year status",
-          "id": "b461ff94-bf8c-48fc-8b7a-f36f7db13f20",
+          "id": "aa5fd20e-1b21-4e61-b1c9-09d2fbe4b292",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -394,7 +394,7 @@
                   "key": "status",
                   "value": "ACTIVE",
                   "type": "text",
-                  "uuid": "4e735b5a-e648-4d8f-b5f8-5555ecd903eb"
+                  "uuid": "7e0e689d-44f8-42d6-a733-836c767b1efe"
                 }
               ]
             }
@@ -403,7 +403,7 @@
         },
         {
           "name": "update academic year",
-          "id": "b29cc321-32ad-4691-bfef-641dc27fb60d",
+          "id": "3b97c359-d805-46e7-be19-55d08ec9f976",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -429,7 +429,7 @@
                   "key": "name",
                   "value": "Năm học 2025-2026 (cập nhật)",
                   "type": "text",
-                  "uuid": "24ccecbd-7f8f-4d9d-bf99-2499c763bebd"
+                  "uuid": "095d0c23-78c8-4f06-bdad-eceb867f44e9"
                 }
               ]
             }
@@ -440,11 +440,11 @@
     },
     {
       "name": "semesters",
-      "id": "c1edb5e6-43a4-40af-b869-2181f90e21a8",
+      "id": "32f476c2-76a9-4ac0-aea7-40d84af340d1",
       "item": [
         {
           "name": "all semesters by year",
-          "id": "76e0b43f-9160-42da-b5df-94b3ee22ab7c",
+          "id": "b8ecfeaa-81ef-4ec1-8f1a-1eb7c6986870",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -469,7 +469,7 @@
         },
         {
           "name": "current semester by year",
-          "id": "39e5875c-a9b2-4e41-881f-d6b4c7b4b624",
+          "id": "05c9b04b-3bdd-4f06-9481-0bc1237c4f32",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -495,7 +495,7 @@
         },
         {
           "name": "current semester (school)",
-          "id": "a3bfc951-041d-40ce-8bf9-1931c5e598ce",
+          "id": "767d98e3-27e5-4c7c-b326-5fdbeea69b83",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -519,7 +519,7 @@
         },
         {
           "name": "specific semester",
-          "id": "69cbf00f-e808-477b-ae5d-e5dd619a823d",
+          "id": "8e780610-6f3e-47ef-801e-44b36628aec0",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -545,7 +545,7 @@
         },
         {
           "name": "new semester",
-          "id": "6aa98164-688c-49ba-8cf8-493dc2f74ee7",
+          "id": "cc3e7753-6a54-4e4d-a0f0-2c1461739249",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -572,31 +572,31 @@
                   "key": "name",
                   "value": "Học kỳ 1",
                   "type": "text",
-                  "uuid": "2ab78cc1-deb9-4bc6-98bd-dd9e0bd22631"
+                  "uuid": "522b75a8-af1a-4108-b857-83511577b0d8"
                 },
                 {
                   "key": "code",
                   "value": "HK1",
                   "type": "text",
-                  "uuid": "4457890c-52d7-41e5-932e-0885488c0604"
+                  "uuid": "982700ed-d4ce-46b4-a0a7-07af727c99cf"
                 },
                 {
                   "key": "startDate",
                   "value": "2025-08-05",
                   "type": "text",
-                  "uuid": "a06d5669-d217-407d-8086-564ddacb910a"
+                  "uuid": "c3d668f0-7df1-48f2-be66-b43cbd08ec24"
                 },
                 {
                   "key": "endDate",
                   "value": "2025-12-31",
                   "type": "text",
-                  "uuid": "cebc2a37-bfa8-4f9e-a766-315052b9353a"
+                  "uuid": "c17a629b-0191-4074-885b-905e2af71880"
                 },
                 {
                   "key": "isCurrent",
                   "value": "true",
                   "type": "text",
-                  "uuid": "bdb8b560-5634-4a89-a2e0-b78bd5df59b2"
+                  "uuid": "95d85f61-ab6b-475b-b9a3-590fb00395f8"
                 }
               ]
             }
@@ -605,7 +605,7 @@
         },
         {
           "name": "set current semester",
-          "id": "958ddf8a-8895-4c03-96d6-0ca5cccccd61",
+          "id": "259ff620-bc3e-4f8e-a0de-a490d7378d47",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -632,7 +632,7 @@
         },
         {
           "name": "update semester status",
-          "id": "d45ad9a3-a0ea-4c82-acc1-e6fe28bba711",
+          "id": "916478fe-e449-4219-8070-ea185c0c9865",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -661,7 +661,7 @@
                   "key": "status",
                   "value": "ACTIVE",
                   "type": "text",
-                  "uuid": "2f650e83-df92-4e76-8ddf-3269b85e85ba"
+                  "uuid": "6c11ede3-40d1-4b06-a7d0-a430c57e555d"
                 }
               ]
             }
@@ -670,7 +670,7 @@
         },
         {
           "name": "update semester",
-          "id": "2bdac041-8c54-4672-b40a-da638aba1e0a",
+          "id": "e089589b-9061-4809-9044-7852ba3475c9",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -698,7 +698,7 @@
                   "key": "name",
                   "value": "Học kỳ 1 (cập nhật)",
                   "type": "text",
-                  "uuid": "6d438369-5c34-4294-acb4-04e1787a73cf"
+                  "uuid": "6f8c5a47-b436-4111-ab9a-1d292d4ecf3f"
                 }
               ]
             }
@@ -709,11 +709,11 @@
     },
     {
       "name": "grade-levels",
-      "id": "6f985ff0-7234-463a-8e6f-763b745a1f93",
+      "id": "c50da926-3ae5-4100-bd19-1d59e761aaf1",
       "item": [
         {
           "name": "all grade levels",
-          "id": "581e09b7-78d2-4d31-8cde-18eae371de24",
+          "id": "20845d95-2dd3-402a-90de-be395b78bb2b",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -736,7 +736,7 @@
         },
         {
           "name": "specific grade level",
-          "id": "47bf5772-903d-4b0f-972b-a5df8f0ff8e1",
+          "id": "3e3262a4-8137-44b2-9038-4e4aa7592754",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -760,7 +760,7 @@
         },
         {
           "name": "new grade level",
-          "id": "86b30ed1-6f64-4d96-9491-609ab64416b9",
+          "id": "f21df5f6-0b23-4297-8fc0-5032867644ff",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -785,19 +785,19 @@
                   "key": "name",
                   "value": "Khối 10",
                   "type": "text",
-                  "uuid": "9a3619e6-1e38-4ebb-a12c-75a2dfd4e475"
+                  "uuid": "36448ec4-7747-4501-8676-482618624954"
                 },
                 {
                   "key": "code",
                   "value": "10",
                   "type": "text",
-                  "uuid": "4509698f-e317-4e3a-8720-acf1720c6ac0"
+                  "uuid": "ee370ba9-8bdb-4839-9fe5-886ae4deeeec"
                 },
                 {
                   "key": "sortOrder",
                   "value": "10",
                   "type": "text",
-                  "uuid": "782b8854-376d-4164-b883-dc9d4438582e"
+                  "uuid": "125d6f5e-1e25-4245-8963-ce8917241b53"
                 }
               ]
             }
@@ -806,7 +806,7 @@
         },
         {
           "name": "update grade level",
-          "id": "cdde2b24-9d74-4aec-b36f-ca69cad54822",
+          "id": "1b8e7bdb-a377-4f7b-8987-906ace1736b6",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -832,7 +832,7 @@
                   "key": "name",
                   "value": "Khối 10 (cập nhật)",
                   "type": "text",
-                  "uuid": "9c687754-a19e-4825-a75f-f4c67caab529"
+                  "uuid": "3c74d16c-f6d2-420d-a8eb-b33fb02f0650"
                 }
               ]
             }
@@ -843,11 +843,11 @@
     },
     {
       "name": "subjects",
-      "id": "81af5663-5c1e-4d90-b5b6-4a12843ac177",
+      "id": "70e0e96f-ae62-48e3-aab2-cdce108073c5",
       "item": [
         {
           "name": "all subjects",
-          "id": "20925319-912e-43c6-8c72-094c0cfa6030",
+          "id": "176b2f62-b6a2-4d14-b3ae-1991f19f7a7a",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -870,7 +870,7 @@
         },
         {
           "name": "specific subject",
-          "id": "a3538f08-c37b-4bff-aa8d-a81d8462947f",
+          "id": "1e79d874-56be-4723-8082-78f17fd9a2cc",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -894,7 +894,7 @@
         },
         {
           "name": "new subject",
-          "id": "6caa31c7-060f-450f-bcab-a6afc6805d82",
+          "id": "f39dfebe-2599-4ead-9e6d-46899aebcd3d",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -919,13 +919,13 @@
                   "key": "name",
                   "value": "Toán học",
                   "type": "text",
-                  "uuid": "aafd73d6-afcc-441b-9cec-8236203d74d0"
+                  "uuid": "9a80e92f-7cec-4966-a1ea-8b0390c46a50"
                 },
                 {
                   "key": "code",
                   "value": "TOAN",
                   "type": "text",
-                  "uuid": "082e0c7b-2011-448c-9ed6-da5ac81987d1"
+                  "uuid": "07c79b24-a78a-4042-8b26-ff566aa20413"
                 }
               ]
             }
@@ -934,7 +934,7 @@
         },
         {
           "name": "update subject status",
-          "id": "13e48da1-5319-41a1-8773-aebe520ef33d",
+          "id": "e9139fce-9894-44b4-848f-0c7083e97ddd",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -961,7 +961,7 @@
                   "key": "status",
                   "value": "ACTIVE",
                   "type": "text",
-                  "uuid": "c8d0675f-8a97-4e1b-aca1-574907d45429"
+                  "uuid": "bbddd3c6-d38c-4387-bb36-c52687109cdf"
                 }
               ]
             }
@@ -970,7 +970,7 @@
         },
         {
           "name": "update subject",
-          "id": "0e8bb35e-b0ca-42ad-84f2-09a47649da97",
+          "id": "3efe9e83-adc5-443c-aacb-66433d5aa7b0",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -996,7 +996,7 @@
                   "key": "name",
                   "value": "Toán học (cập nhật)",
                   "type": "text",
-                  "uuid": "eb0ece94-ccab-46d7-afb3-7f24bff91f81"
+                  "uuid": "3f7c36e7-314a-467b-b5a9-e3a6fb34e019"
                 }
               ]
             }
@@ -1007,11 +1007,11 @@
     },
     {
       "name": "homeroom-classes",
-      "id": "ceec80b8-51f5-44a8-9ed2-a403539fed03",
+      "id": "691820e6-186a-4ec9-90f0-fe8b5a35e169",
       "item": [
         {
           "name": "all homeroom classes",
-          "id": "052f6ef3-2561-4b75-bc3b-56e470aadd24",
+          "id": "4048185c-7015-44c0-a598-4708342578e3",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -1034,7 +1034,7 @@
         },
         {
           "name": "specific homeroom class",
-          "id": "d83a3052-b724-4b3f-8337-42f3d39ca640",
+          "id": "526acb0e-74f0-46fd-bf45-bcebeed9862c",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -1058,7 +1058,7 @@
         },
         {
           "name": "new homeroom class",
-          "id": "9e21a3fb-4ed0-4386-a1f0-97baaebc9a10",
+          "id": "65444a52-54a8-4186-b906-f129ae89b024",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -1083,25 +1083,25 @@
                   "key": "academicYearId",
                   "value": "",
                   "type": "text",
-                  "uuid": "0c036c4d-a006-46d8-aa3c-f998c1141303"
+                  "uuid": "925637e2-34db-41b8-8cbe-6f0a1439e02f"
                 },
                 {
                   "key": "gradeLevelId",
                   "value": "",
                   "type": "text",
-                  "uuid": "eec692ae-26f2-4618-81d2-ddff393681a3"
+                  "uuid": "3e692465-cf72-4e02-868a-f77fd7a11ed9"
                 },
                 {
                   "key": "name",
                   "value": "10A1",
                   "type": "text",
-                  "uuid": "e33335f8-bf01-4335-9180-cca873bfc14e"
+                  "uuid": "28689467-884c-449c-8f80-3d3b3f705c02"
                 },
                 {
                   "key": "code",
                   "value": "10A1",
                   "type": "text",
-                  "uuid": "5a5d241b-3904-48d8-8fd3-7527c176b5c6"
+                  "uuid": "4d9965da-7908-4116-afd5-c67f4d9bb9cf"
                 }
               ]
             }
@@ -1110,7 +1110,7 @@
         },
         {
           "name": "update homeroom class status",
-          "id": "a1ac6d0b-4834-448c-89b9-6eab8c873879",
+          "id": "704247aa-55b8-489d-99a5-c8024d351f23",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -1137,7 +1137,7 @@
                   "key": "status",
                   "value": "ACTIVE",
                   "type": "text",
-                  "uuid": "8f06292c-45ea-4396-9f28-01735f9805e1"
+                  "uuid": "52455f14-36a1-4d1e-8028-c01a6bca1ad0"
                 }
               ]
             }
@@ -1146,7 +1146,7 @@
         },
         {
           "name": "update homeroom class",
-          "id": "1f378a95-d773-4718-915a-b988708e18b7",
+          "id": "6757a2d2-ea5c-4217-9d41-d8d9fdc8943c",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -1172,7 +1172,7 @@
                   "key": "name",
                   "value": "10A1 (cập nhật)",
                   "type": "text",
-                  "uuid": "d0855a06-16be-4fc2-adba-991877a90f85"
+                  "uuid": "3fe81d9d-62bc-4b7c-bf23-96be7d9000e8"
                 }
               ]
             }
@@ -1183,11 +1183,11 @@
     },
     {
       "name": "course-sections",
-      "id": "4dbd1a14-11d8-4b22-ba0a-0b8111ffc79d",
+      "id": "85ad536c-23b7-4eca-81a3-0e753b72636f",
       "item": [
         {
           "name": "all course sections",
-          "id": "62aadeb4-44da-4707-9ec1-b69718bc3a92",
+          "id": "3891014d-de61-44f3-b716-927f3e328c7f",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -1210,7 +1210,7 @@
         },
         {
           "name": "specific course section",
-          "id": "d40891b2-f375-49dc-b472-731e2129fd92",
+          "id": "15f2766b-ce92-4b2e-be3a-de5a1e16bbe6",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -1234,7 +1234,7 @@
         },
         {
           "name": "new course section",
-          "id": "c6d3a8b7-1e0b-46c7-b731-fa8a6ed42e89",
+          "id": "2ad42b2d-8b35-4c51-aa2f-8e9802ba7caa",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -1259,31 +1259,31 @@
                   "key": "semesterId",
                   "value": "",
                   "type": "text",
-                  "uuid": "ea664b87-7ff9-4bef-b32c-f6c4ce76f27d"
+                  "uuid": "37b40f96-9af1-4cc9-ab90-d2936bd7716c"
                 },
                 {
                   "key": "homeroomClassId",
                   "value": "",
                   "type": "text",
-                  "uuid": "44159a4b-46d8-4991-987c-0d399776c3a4"
+                  "uuid": "65276174-adba-4393-9ccb-3bb1dea598e7"
                 },
                 {
                   "key": "gradeLevelSubjectId",
                   "value": "",
                   "type": "text",
-                  "uuid": "59c5d684-7aed-4b88-afb2-165965b6e55d"
+                  "uuid": "3030fa57-b92d-42d1-a4a1-abac640eea55"
                 },
                 {
                   "key": "name",
                   "value": "Toán học 10A1",
                   "type": "text",
-                  "uuid": "4bcbdf74-482b-45e7-88d9-a7ef3ddb44a0"
+                  "uuid": "8cc3985a-9774-43d0-8d67-95c3ac518063"
                 },
                 {
                   "key": "code",
                   "value": "TOAN-10A1",
                   "type": "text",
-                  "uuid": "a9b683ff-630c-413f-a8b1-0cb6a9bf51ec"
+                  "uuid": "85e23ec9-7737-4737-b61f-345647fe7f0d"
                 }
               ]
             }
@@ -1292,7 +1292,7 @@
         },
         {
           "name": "update course section status",
-          "id": "64a87eab-aea3-43a4-b44e-2cf6c53272e9",
+          "id": "114368bd-88d7-44c8-bc5e-7089f49d05f8",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -1319,7 +1319,7 @@
                   "key": "status",
                   "value": "ACTIVE",
                   "type": "text",
-                  "uuid": "1ce97fb5-8b29-416c-91bb-633ee601004a"
+                  "uuid": "4b144cbf-6ea1-4de2-9f48-91243efd24f5"
                 }
               ]
             }
@@ -1328,7 +1328,7 @@
         },
         {
           "name": "update course section",
-          "id": "4ea2773c-5490-4476-8a63-f2d7b610252b",
+          "id": "6d1ef7c9-0150-41f8-9a8d-77e97dcb5718",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -1354,7 +1354,7 @@
                   "key": "name",
                   "value": "Toán học 10A1 (cập nhật)",
                   "type": "text",
-                  "uuid": "fcfb371a-f05a-4699-8f79-b74b7938a2c3"
+                  "uuid": "c9516fd0-ac0d-4695-8a31-7ac93a159c21"
                 }
               ]
             }
@@ -1365,11 +1365,11 @@
     },
     {
       "name": "students",
-      "id": "747e7057-e9a6-4199-ae75-348c4d55cb52",
+      "id": "360dd281-2022-4406-89ba-a5f8da52ed50",
       "item": [
         {
           "name": "all students",
-          "id": "3f04e10b-2dd3-45bf-9316-413683bf6701",
+          "id": "ef39e644-12ca-4a26-80ae-e5321ad22dd6",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -1392,7 +1392,7 @@
         },
         {
           "name": "specific student",
-          "id": "6a4e44f4-43b9-4d86-b362-6ec03bf9eff3",
+          "id": "ead9cf4e-e8e7-4422-a892-a52e6b2cb4aa",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -1416,7 +1416,7 @@
         },
         {
           "name": "new student profile",
-          "id": "474235fb-8e81-45a6-8fa7-7a5f1e1f9e57",
+          "id": "731ded5b-4bf3-4213-9303-256fa3c3e0a3",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -1441,19 +1441,19 @@
                   "key": "fullName",
                   "value": "Nguyễn Văn A",
                   "type": "text",
-                  "uuid": "5b7b74dd-160c-4b10-be4e-595e464ae4c2"
+                  "uuid": "55d1709e-f330-410b-9041-c56fc45991ca"
                 },
                 {
                   "key": "dateOfBirth",
                   "value": "2010-01-15",
                   "type": "text",
-                  "uuid": "1827e9a8-993b-47b5-9ee8-c48b014e4c28"
+                  "uuid": "977bb482-ef83-4140-8e63-359d7d9fd1ac"
                 },
                 {
                   "key": "gender",
                   "value": "MALE",
                   "type": "text",
-                  "uuid": "3dca2a24-e44a-46a0-a973-779cb0aeb335"
+                  "uuid": "7a31554d-0c1a-4e0e-a6bd-c9daa5eb6cdc"
                 }
               ]
             }
@@ -1462,7 +1462,7 @@
         },
         {
           "name": "update student status",
-          "id": "4f297f59-22b2-4680-87d3-a02c98376ee6",
+          "id": "5f49922c-a7cc-4996-9735-14d8d0fda5ca",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -1489,7 +1489,7 @@
                   "key": "status",
                   "value": "ACTIVE",
                   "type": "text",
-                  "uuid": "cf789a58-e0e0-44fd-b09a-8f2b2828ba34"
+                  "uuid": "f8681264-8d11-4116-a17d-635c92ecc4a0"
                 }
               ]
             }
@@ -1498,7 +1498,7 @@
         },
         {
           "name": "link student to user account",
-          "id": "94d20888-9e8b-4813-bff3-c451cc819776",
+          "id": "26c796fd-b54c-476d-a75c-431a372c36a0",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -1525,7 +1525,7 @@
                   "key": "userId",
                   "value": "",
                   "type": "text",
-                  "uuid": "1b4290d3-a216-4431-ad73-93288c3c5574"
+                  "uuid": "7cf45dcc-f635-45c7-ab76-c77c92d2b8fb"
                 }
               ]
             }
@@ -1534,7 +1534,7 @@
         },
         {
           "name": "update student profile",
-          "id": "e710b192-d10f-4210-bfa1-17af4ea100b1",
+          "id": "5adf081f-ca26-4063-8a8f-de63cb0fcdd9",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -1560,7 +1560,7 @@
                   "key": "fullName",
                   "value": "Nguyễn Văn A (cập nhật)",
                   "type": "text",
-                  "uuid": "129cc435-2329-4648-b051-6d9a4d384886"
+                  "uuid": "05d9bd66-648c-49e0-8c8c-2929881e84c8"
                 }
               ]
             }
@@ -1569,7 +1569,7 @@
         },
         {
           "name": "student enrollments by student",
-          "id": "2238084a-40bd-4b1b-83b4-894dda64a8ca",
+          "id": "ba668f82-3262-44ec-8ebc-df96006307d0",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -1596,11 +1596,11 @@
     },
     {
       "name": "student-enrollments",
-      "id": "787fc93f-8ce4-4cab-85e8-5daaeb0af6f2",
+      "id": "a5321444-3114-4724-a46e-f0a275c77e83",
       "item": [
         {
           "name": "all student enrollments",
-          "id": "e79b7f38-9551-4681-9194-7e5b58cc900a",
+          "id": "3c4c9f5e-0d98-4e51-99e8-3745104e7346",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -1623,7 +1623,7 @@
         },
         {
           "name": "specific student enrollment",
-          "id": "8aea4430-bc3f-49ba-a463-dbbe76f648b8",
+          "id": "ca9b26f1-6d38-41d0-bfae-70a3654b4676",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -1647,7 +1647,7 @@
         },
         {
           "name": "new student enrollment",
-          "id": "fb7f1a27-57b0-4c3b-902a-9b9972dabbf4",
+          "id": "392d8312-688b-49f9-ae18-885e599b6f83",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -1672,25 +1672,25 @@
                   "key": "studentId",
                   "value": "",
                   "type": "text",
-                  "uuid": "7cacf756-0402-4baf-bb6b-bdc804dc6f67"
+                  "uuid": "f7eeb032-07ca-4294-ac3f-337a4e7f2053"
                 },
                 {
                   "key": "semesterId",
                   "value": "",
                   "type": "text",
-                  "uuid": "31993623-5edb-485d-96ab-469cd2c39b05"
+                  "uuid": "e4c2559e-279b-4d0f-9c71-75f5600b469e"
                 },
                 {
                   "key": "homeroomClassId",
                   "value": "",
                   "type": "text",
-                  "uuid": "d8196c60-53e9-4fcb-b03a-f332117e3440"
+                  "uuid": "1be020f8-7e12-4170-a548-924311459fe6"
                 },
                 {
                   "key": "enrolledAt",
                   "value": "2025-08-05",
                   "type": "text",
-                  "uuid": "f44fbf62-57e5-4c5b-b331-4fa09c5997c0"
+                  "uuid": "1cb30b5f-e8b9-4d53-861d-9148b44ed850"
                 }
               ]
             }
@@ -1699,7 +1699,7 @@
         },
         {
           "name": "transfer enrollment",
-          "id": "92c95ba0-13ac-40eb-8cc6-c1da83838af9",
+          "id": "5740d347-faad-4cf5-adfa-634fdd33cb6e",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -1726,13 +1726,13 @@
                   "key": "targetHomeroomClassId",
                   "value": "",
                   "type": "text",
-                  "uuid": "68a5f58f-7233-4d8e-ad7d-25591c5ad55c"
+                  "uuid": "e690c2b3-afee-43ed-81e8-29c882ae0b0a"
                 },
                 {
                   "key": "transferredAt",
                   "value": "2025-12-16",
                   "type": "text",
-                  "uuid": "a3cd70d7-1e9e-45d8-9605-91b26531faee"
+                  "uuid": "326f5892-0897-4bcf-8d47-deea03b62c23"
                 }
               ]
             }
@@ -1741,7 +1741,7 @@
         },
         {
           "name": "withdraw enrollment",
-          "id": "c1f0dce4-3344-4e19-8f95-03460630bfc0",
+          "id": "47d66b69-bd1f-49dc-b53d-569ef99f272e",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -1768,13 +1768,13 @@
                   "key": "leftAt",
                   "value": "2025-12-31",
                   "type": "text",
-                  "uuid": "3fc23a4f-2c27-49ec-8a2a-964494a69107"
+                  "uuid": "d815a078-3fa1-46cb-8c0d-04f4d22ccaf5"
                 },
                 {
                   "key": "note",
                   "value": "Rút khỏi lớp",
                   "type": "text",
-                  "uuid": "7180c9b6-bec4-4a57-b59e-ac3c32ec8327"
+                  "uuid": "cac52e2f-13da-49f7-b378-0ebf645be6d7"
                 }
               ]
             }
@@ -1785,11 +1785,11 @@
     },
     {
       "name": "teachers",
-      "id": "53b41023-fedc-49dc-9653-e98471d2b352",
+      "id": "ea585c3b-05d9-4b6d-9ede-bd8a002f8ea5",
       "item": [
         {
           "name": "all teachers",
-          "id": "47d1c50e-0fd9-4edd-968a-270c27c98968",
+          "id": "0448f0c5-238b-4d61-913b-aced0994960b",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -1812,7 +1812,7 @@
         },
         {
           "name": "specific teacher",
-          "id": "069a80c0-861a-48d6-87af-459e640c048d",
+          "id": "ed501104-30b1-4ad2-b9a7-926e67ff59e8",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -1836,7 +1836,7 @@
         },
         {
           "name": "new teacher profile",
-          "id": "267bf4bd-b13d-4f10-9361-49bc8882ed59",
+          "id": "2283b9ac-644d-4ae9-9878-f32b4ea2945f",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -1861,13 +1861,13 @@
                   "key": "fullName",
                   "value": "Nguyễn Văn Giáo Viên",
                   "type": "text",
-                  "uuid": "02adecb1-599e-4f93-9285-619446c226ec"
+                  "uuid": "c4eec073-3e5a-46d8-8e06-e19828aad4df"
                 },
                 {
                   "key": "phone",
                   "value": "0901234567",
                   "type": "text",
-                  "uuid": "3e7e2b58-be24-4414-8dd0-b3fc4cb562ed"
+                  "uuid": "c8d03810-71cf-4607-b91a-68798cd97eaf"
                 }
               ]
             }
@@ -1876,7 +1876,7 @@
         },
         {
           "name": "update teacher status",
-          "id": "2c153eff-f8f8-47d1-9d71-7a3f6287c0b7",
+          "id": "39814709-a531-4169-a875-642c019b04df",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -1903,7 +1903,7 @@
                   "key": "status",
                   "value": "ACTIVE",
                   "type": "text",
-                  "uuid": "459b69b5-660f-4cf3-9308-e6e61998a68a"
+                  "uuid": "0f1e7e6b-8072-48a8-8e03-ca4b15b56773"
                 }
               ]
             }
@@ -1912,7 +1912,7 @@
         },
         {
           "name": "link teacher to user account",
-          "id": "162b3a59-ff9b-4a35-b07d-e490f1379996",
+          "id": "d53f1e48-39f7-47b1-a5ea-21f59f0912d9",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -1939,7 +1939,7 @@
                   "key": "userId",
                   "value": "",
                   "type": "text",
-                  "uuid": "cb340bf1-9eec-4ad1-9998-b502d5bb0dba"
+                  "uuid": "28ffcdef-ea5d-4fc2-8d58-f9b5819f48a9"
                 }
               ]
             }
@@ -1948,7 +1948,7 @@
         },
         {
           "name": "create user for teacher",
-          "id": "237499d5-5d53-462a-a2c0-94b4fe587d0c",
+          "id": "04a6429d-02be-40d5-b4fa-706675d330eb",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -1975,13 +1975,13 @@
                   "key": "email",
                   "value": "teacher@demo.edu.vn",
                   "type": "text",
-                  "uuid": "e9ac9370-298b-4898-8f8c-4d866b110759"
+                  "uuid": "7352015f-7437-46a8-adec-89ca46bfcb3c"
                 },
                 {
                   "key": "password",
                   "value": "Demo@123456",
                   "type": "text",
-                  "uuid": "2196444d-88df-4bb6-8b7d-fb4cbfc800ec"
+                  "uuid": "25350a16-180f-40de-b763-0afe19258cb4"
                 }
               ]
             }
@@ -1990,7 +1990,7 @@
         },
         {
           "name": "update teacher profile",
-          "id": "e9e3dd46-a26e-46bb-a93a-24bbb148f842",
+          "id": "44725271-b974-40a4-b652-5cf15be2776b",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2016,7 +2016,7 @@
                   "key": "fullName",
                   "value": "Nguyễn Văn Giáo Viên (cập nhật)",
                   "type": "text",
-                  "uuid": "fc77685c-7f5e-4fb1-acae-de7b34b9581a"
+                  "uuid": "98683fc4-4af3-4382-983a-3bed8332a08b"
                 }
               ]
             }
@@ -2025,7 +2025,7 @@
         },
         {
           "name": "teaching assignments by teacher",
-          "id": "0b59aa43-4a19-423c-8e34-c22142b9afaa",
+          "id": "ca91c3a3-1e72-45c3-b882-89c2f255a195",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2052,11 +2052,11 @@
     },
     {
       "name": "teaching-assignments",
-      "id": "f7a6c9ee-db96-47f7-a40f-dfaacc986503",
+      "id": "00f546bf-65d7-44ee-920e-0d2ea5360159",
       "item": [
         {
           "name": "all teaching assignments",
-          "id": "585bd7e6-edf7-40c5-b0ff-c428c9ed3c6b",
+          "id": "72038a50-682d-4214-bb5d-68d485c3a037",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2079,7 +2079,7 @@
         },
         {
           "name": "specific teaching assignment",
-          "id": "1a9cbf1c-9032-41be-b2a4-2f0badb15fbe",
+          "id": "a3eb6a69-9b8d-42b1-84d3-e05800c82ac3",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2103,7 +2103,7 @@
         },
         {
           "name": "new teaching assignment",
-          "id": "cd2cbc01-1fad-4617-90e9-6a4cfa421a59",
+          "id": "92af83da-ef68-48d5-a1c9-ad81838b8ab9",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2128,19 +2128,19 @@
                   "key": "teacherId",
                   "value": "",
                   "type": "text",
-                  "uuid": "c5cf0fdc-a0ea-4b84-bfa0-62f7c8761db5"
+                  "uuid": "bfdf446e-45e8-47b8-8d55-538f7b90cd45"
                 },
                 {
                   "key": "courseSectionId",
                   "value": "",
                   "type": "text",
-                  "uuid": "87bc503b-fb90-477c-b027-1e39b73ea7c5"
+                  "uuid": "c25a486d-906a-41dc-954d-84cee6d69dec"
                 },
                 {
                   "key": "assignAt",
                   "value": "2025-08-01",
                   "type": "text",
-                  "uuid": "176f7f28-945f-4223-8525-acbcf8f05247"
+                  "uuid": "9ae83af7-d58f-4afc-af17-d0e64df81304"
                 }
               ]
             }
@@ -2149,7 +2149,7 @@
         },
         {
           "name": "update teaching assignment status",
-          "id": "5561c335-b083-4f79-b288-3a05b0bb69fc",
+          "id": "e75bd8e1-c45b-410f-85b0-007890d98035",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2176,7 +2176,7 @@
                   "key": "status",
                   "value": "ACTIVE",
                   "type": "text",
-                  "uuid": "dd91ed71-b90c-4296-93a2-f2d08f79eb8a"
+                  "uuid": "bc2a85b8-f6c9-4323-8ac2-ac91d79e1327"
                 }
               ]
             }
@@ -2187,11 +2187,11 @@
     },
     {
       "name": "users",
-      "id": "fee6ece4-cad9-463d-a96c-7b6e2abd88fa",
+      "id": "9d420922-971b-42ca-acff-d75b0e1a66be",
       "item": [
         {
           "name": "all users",
-          "id": "9a255608-0507-4801-a2ea-42da9f6f43bb",
+          "id": "7b9d51f4-5e65-48cd-9878-5d88bcb15e6f",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2214,7 +2214,7 @@
         },
         {
           "name": "specific user",
-          "id": "18e630e2-a017-4bef-b3c6-0e38cb83e039",
+          "id": "4d48addb-c63a-4888-bd19-afb678b604d4",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2238,7 +2238,7 @@
         },
         {
           "name": "new user",
-          "id": "626aef5a-27dc-4fb4-bfbb-cd3b8b4fa741",
+          "id": "b6a24751-cfb6-4eb0-9b2f-8cea29854ba8",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2263,25 +2263,25 @@
                   "key": "email",
                   "value": "user@demo.edu.vn",
                   "type": "text",
-                  "uuid": "a2ddc048-a449-4312-90ac-28dcda18066e"
+                  "uuid": "64675cfc-a06f-4b2f-ac1a-f2b79b065980"
                 },
                 {
                   "key": "password",
                   "value": "Demo@123456",
                   "type": "text",
-                  "uuid": "d1ea5f40-5064-4969-a4e7-4983519f2847"
+                  "uuid": "126193b9-ddc9-4559-9fd9-071598ea5a45"
                 },
                 {
                   "key": "fullName",
                   "value": "Nguyễn Văn User",
                   "type": "text",
-                  "uuid": "42476da0-0a0d-4e1c-8998-c5240aa18eeb"
+                  "uuid": "761dd38d-ec17-4729-90ec-f5c3e84fa648"
                 },
                 {
                   "key": "role",
                   "value": "SCHOOL_ADMIN",
                   "type": "text",
-                  "uuid": "4d9f9220-b30c-47b3-a26d-6975b1bdfae2"
+                  "uuid": "825e4ccc-c6b0-44b3-87c9-42dcfb3aa860"
                 }
               ]
             }
@@ -2290,7 +2290,7 @@
         },
         {
           "name": "update user status",
-          "id": "16766cb0-fd13-4b1a-9252-513adfc4fa8e",
+          "id": "e6bf1b58-cb91-4a92-a297-97eb8cba82b7",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2317,7 +2317,7 @@
                   "key": "status",
                   "value": "ACTIVE",
                   "type": "text",
-                  "uuid": "3d104f26-831a-4e82-a9b2-21951cc883f8"
+                  "uuid": "18066ea4-13b4-43ca-a96d-0495b641e701"
                 }
               ]
             }
@@ -2326,7 +2326,7 @@
         },
         {
           "name": "update user",
-          "id": "eb3caa27-b4f6-4a20-abe0-547ec14afd81",
+          "id": "0aa41e40-e100-49ac-8335-5ad7cff8cc37",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2352,7 +2352,7 @@
                   "key": "fullName",
                   "value": "Nguyễn Văn User (cập nhật)",
                   "type": "text",
-                  "uuid": "66822271-1971-4546-921d-d0b7d0c7a154"
+                  "uuid": "c6fbb32c-3224-4511-acbe-1b11dad9d68a"
                 }
               ]
             }
@@ -2363,11 +2363,11 @@
     },
     {
       "name": "health",
-      "id": "3ebf9d40-44b3-4a4c-b85f-592385e48fed",
+      "id": "aac817a1-5439-419d-885e-10883b170a1f",
       "item": [
         {
           "name": "health check",
-          "id": "b2fd8c66-c090-40f7-b8a5-28941edbba9b",
+          "id": "19a153e2-76e9-4bbd-85d9-81ffb6fc9100",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2392,11 +2392,11 @@
     },
     {
       "name": "files",
-      "id": "e7d3f6a5-6446-492e-b42c-a0562a542f79",
+      "id": "fe9adbab-4594-47be-85e3-717521f43121",
       "item": [
         {
           "name": "upload file",
-          "id": "058a2cb8-c360-4cec-b601-628abde2a820",
+          "id": "90f8b4cb-1879-4ab6-811b-688578432157",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2435,7 +2435,7 @@
         },
         {
           "name": "file metadata",
-          "id": "b5b522d1-37a5-4bad-acfa-c3e19583c003",
+          "id": "fdc2d570-c8e2-45c3-a358-fb395a1349b5",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2459,7 +2459,7 @@
         },
         {
           "name": "file signed url",
-          "id": "f9182d03-0ffd-4e62-9818-1efca8002b71",
+          "id": "03033e61-58b2-4d5d-a420-8cd6baae70e6",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2484,7 +2484,7 @@
         },
         {
           "name": "delete file",
-          "id": "994a16cd-e181-4e8a-8861-9de1f6430ea9",
+          "id": "85fb81e0-4385-400f-b171-46bf1adb2e20",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2510,11 +2510,11 @@
     },
     {
       "name": "parents",
-      "id": "98b00600-55ee-4b00-9d2f-724b163d7403",
+      "id": "a18d0827-f0a2-4c84-8dfd-ceacc896a12d",
       "item": [
         {
           "name": "all parents",
-          "id": "ed532134-c580-45d6-90e3-cc8cb0dd9938",
+          "id": "1158cf4e-3136-42e7-8e7b-4f3b75ebb9dd",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2537,7 +2537,7 @@
         },
         {
           "name": "specific parent",
-          "id": "c37f957d-3c3f-4d17-9d78-0025e9e59716",
+          "id": "98a9ccd2-d30f-465b-b5b2-df21d04e7f17",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2561,7 +2561,7 @@
         },
         {
           "name": "new parent profile",
-          "id": "352f36d9-f18e-4b91-8693-7968456fdacb",
+          "id": "658a1ae8-26d3-4989-b127-6c8edb6728c6",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2586,13 +2586,13 @@
                   "key": "fullName",
                   "value": "Nguyễn Văn Phụ Huynh",
                   "type": "text",
-                  "uuid": "faaa1d89-fd20-4641-82b1-0ddcd00f3678"
+                  "uuid": "39672b1f-f0b8-46c3-b914-fb60e1153a3a"
                 },
                 {
                   "key": "phone",
                   "value": "0901234567",
                   "type": "text",
-                  "uuid": "ce7c7b7d-0825-4062-98ef-14b50202cfa8"
+                  "uuid": "cfd34ab2-f5e0-48c7-8ad0-034c8bf31a0f"
                 }
               ]
             }
@@ -2601,7 +2601,7 @@
         },
         {
           "name": "update parent profile",
-          "id": "3e8c4629-37bf-4e44-9788-ec4d78c660aa",
+          "id": "0a2734ad-49a1-43f3-9afd-0bf7195f3977",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2627,7 +2627,7 @@
                   "key": "fullName",
                   "value": "Nguyễn Văn Phụ Huynh (cập nhật)",
                   "type": "text",
-                  "uuid": "be4ef84a-9651-4b8a-9bdf-6efc32a14e3a"
+                  "uuid": "81bf12b5-c901-488b-a2f8-08d8658f0a66"
                 }
               ]
             }
@@ -2636,7 +2636,7 @@
         },
         {
           "name": "update parent status",
-          "id": "06462491-8069-47fc-85e6-24ff43e3489d",
+          "id": "1409a187-6031-4135-bfb2-cf53babb1084",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2663,7 +2663,7 @@
                   "key": "status",
                   "value": "ACTIVE",
                   "type": "text",
-                  "uuid": "269d44a4-7f26-4b88-8efe-af3c480cb968"
+                  "uuid": "23f086d1-98af-4add-a0bd-fff40acbff62"
                 }
               ]
             }
@@ -2672,7 +2672,7 @@
         },
         {
           "name": "link parent to user account",
-          "id": "d777f6a1-02dc-4dcb-8c5e-1640fd4e984f",
+          "id": "366f34c5-f22f-4d35-9c0a-9ff53f1deb1f",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2699,7 +2699,7 @@
                   "key": "userId",
                   "value": "",
                   "type": "text",
-                  "uuid": "54ffc7e3-b800-4ee2-94d5-34715954e6bf"
+                  "uuid": "209afd0f-5f3a-4145-93f8-91bf42151821"
                 }
               ]
             }
@@ -2708,7 +2708,7 @@
         },
         {
           "name": "create user for parent",
-          "id": "13bcb12f-e107-498c-9108-bbfb62bf8ff6",
+          "id": "7a9fbafd-7414-479b-88f2-02f4d0332d52",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2735,13 +2735,13 @@
                   "key": "email",
                   "value": "parent@demo.edu.vn",
                   "type": "text",
-                  "uuid": "811712c9-26fc-45ff-b9c1-ab883280cbff"
+                  "uuid": "0d2b8dd1-9796-41c7-82cc-2980eacd4466"
                 },
                 {
                   "key": "password",
                   "value": "Demo@123456",
                   "type": "text",
-                  "uuid": "062d0bb5-8a7b-45b3-9198-e570c31abab8"
+                  "uuid": "bce770c8-c073-45c5-a22b-cf5080b588ac"
                 }
               ]
             }
@@ -2750,7 +2750,7 @@
         },
         {
           "name": "link student to parent",
-          "id": "0c8d02be-0db6-453c-8041-e67bdbb3b248",
+          "id": "1598e6a1-c449-4897-babc-9d7a02affe4a",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2777,19 +2777,19 @@
                   "key": "studentId",
                   "value": "",
                   "type": "text",
-                  "uuid": "653c4bd7-d2a8-43ba-89bd-27046bb4ee19"
+                  "uuid": "6f7744ec-6fd2-4d79-971b-b6dff721e3be"
                 },
                 {
                   "key": "relationship",
                   "value": "FATHER",
                   "type": "text",
-                  "uuid": "caa1b6eb-8800-4c50-9ced-2727c2b5bf51"
+                  "uuid": "9b8d0612-765f-46e0-9422-c062b6a296f4"
                 },
                 {
                   "key": "isPrimaryContact",
                   "value": "true",
                   "type": "text",
-                  "uuid": "03f79f06-e986-4de3-ae8e-92a3e4ec2392"
+                  "uuid": "8addbd28-5a1b-45bb-a1e9-32a378ef851d"
                 }
               ]
             }
@@ -2798,7 +2798,7 @@
         },
         {
           "name": "unlink student from parent",
-          "id": "961cd2ce-db88-4e14-8851-2652d1c3f861",
+          "id": "1828d7dd-0e93-47ee-89ae-f6ce582feba9",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2826,11 +2826,11 @@
     },
     {
       "name": "portal",
-      "id": "493f111f-5dc7-4895-aa75-6c3fd773af55",
+      "id": "bef99427-88dd-46fe-84a8-094ecb834587",
       "item": [
         {
           "name": "portal me",
-          "id": "1d7eece7-778c-4915-8e5d-4eb001e6b36f",
+          "id": "78efad1d-a032-4432-8618-49b2bb27e593",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2854,7 +2854,7 @@
         },
         {
           "name": "my homeroom classes",
-          "id": "a9b73b59-0367-4282-84c5-1736605b6d47",
+          "id": "a3c8a6f8-98fa-4d49-b712-8a18d39084dc",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2878,7 +2878,7 @@
         },
         {
           "name": "my homeroom class students",
-          "id": "695df187-2128-4acc-a258-cbba195913d4",
+          "id": "a3fb879d-1564-4922-a39c-a894df9ceba3",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2904,7 +2904,7 @@
         },
         {
           "name": "my teaching assignments",
-          "id": "77f90415-823a-4c48-8e5f-3497b6eb8939",
+          "id": "60d0cee3-c142-46c0-8962-4ca4de7a5245",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2928,7 +2928,7 @@
         },
         {
           "name": "my timetable",
-          "id": "ee080cb7-b0c7-43a4-ad41-afbaab872bf5",
+          "id": "202f9f60-0fd3-4b4d-9636-144dbe8d4951",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2952,7 +2952,7 @@
         },
         {
           "name": "my student profile",
-          "id": "e6136192-9655-407a-b433-4fa4b3ef0e6c",
+          "id": "881f292e-16c8-4f2f-bd76-b37f380ddd35",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -2976,7 +2976,7 @@
         },
         {
           "name": "my class timetable",
-          "id": "eb5077b1-8130-4ef7-9146-fe6af3ad1b1c",
+          "id": "f93999ec-7068-439a-96dc-77db47e81ef2",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -3000,7 +3000,7 @@
         },
         {
           "name": "my children",
-          "id": "83922e64-aa2f-47ce-a8b5-9276e05b1530",
+          "id": "2cf8b163-8fff-4744-9612-fbc3b1b41d4f",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -3024,7 +3024,7 @@
         },
         {
           "name": "my attendance classes",
-          "id": "642de0df-e213-4b49-851b-b99e13498b2c",
+          "id": "9a7d9769-4ea3-4be3-8369-07317e3ffe1b",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -3048,7 +3048,7 @@
         },
         {
           "name": "create attendance session",
-          "id": "a34deebe-6852-4f82-9964-b9092c8fb6d3",
+          "id": "bae7ec58-4086-48aa-9d05-eae2d04bead5",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -3074,25 +3074,25 @@
                   "key": "courseSectionId",
                   "value": "",
                   "type": "text",
-                  "uuid": "60da5daa-7a66-4b06-a527-134863fdacdd"
+                  "uuid": "a8d8c3ae-670e-461b-b236-526db50d7a8f"
                 },
                 {
                   "key": "sessionDate",
                   "value": "2025-09-01",
                   "type": "text",
-                  "uuid": "27b29863-d256-4fbf-8b2a-7ee4b779cdd1"
+                  "uuid": "0c1d2d6d-f384-4d4e-a2fa-599581aeb314"
                 },
                 {
                   "key": "periodNumber",
                   "value": "1",
                   "type": "text",
-                  "uuid": "6d2ec315-2ae1-43bc-af28-9eff88ba2cdf"
+                  "uuid": "ae703270-d022-476c-9a11-b93ae41f902f"
                 },
                 {
                   "key": "note",
                   "value": "Tiết 1 sáng",
                   "type": "text",
-                  "uuid": "4e81ede0-2509-48e7-a78b-8307a2b03a8c"
+                  "uuid": "f5eb7a42-d2b0-493a-9518-aac324d66823"
                 }
               ]
             }
@@ -3101,7 +3101,7 @@
         },
         {
           "name": "bulk upsert portal attendance records",
-          "id": "bb138201-28bb-48f0-9ace-188f43506cda",
+          "id": "0591fb79-4ad0-445b-9a87-468194d2b9e4",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -3136,7 +3136,7 @@
         },
         {
           "name": "close attendance session",
-          "id": "040784a6-5dbd-41e7-b73e-7b65cb52b045",
+          "id": "bb6c7909-5b92-4ca2-9ec9-13ae3910cb9b",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -3163,13 +3163,13 @@
                   "key": "status",
                   "value": "CLOSED",
                   "type": "text",
-                  "uuid": "623cc1ad-407f-49da-a7fb-f18402fa3a9a"
+                  "uuid": "70f019b3-bf9d-4163-897b-66c874b5c558"
                 },
                 {
                   "key": "note",
                   "value": "Đã hoàn tất điểm danh",
                   "type": "text",
-                  "uuid": "c2732831-5858-429f-8311-7306934aba34"
+                  "uuid": "f297df97-a99a-40f2-ac8c-890d9aaa407a"
                 }
               ]
             }
@@ -3178,7 +3178,7 @@
         },
         {
           "name": "my attendance",
-          "id": "f84531de-1274-4420-b96b-adfd20df9cfc",
+          "id": "c0113d46-7a36-4a39-a483-2e8533bb92ce",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -3202,7 +3202,7 @@
         },
         {
           "name": "my child attendance",
-          "id": "1423c8e9-187f-4d0c-bf4a-44db3ef08b59",
+          "id": "8d5d11b8-23d1-4b6c-809b-f1b5883320fe",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -3225,16 +3225,221 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "create portal assessment",
+          "id": "4eeed270-83fd-4a37-a25c-1557c05e3f2c",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseSectionId\": \"\",\n  \"type\": \"REGULAR\",\n  \"name\": \"KT 15 phút lần 1\",\n  \"assessmentDate\": \"2025-09-15\",\n  \"maxScore\": 10,\n  \"note\": \"Chương 1\"\n}"
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/portal/assessments",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portal",
+                "assessments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get portal assessment",
+          "id": "940352e5-a200-4e39-9a8b-c5f3022d5790",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/portal/assessments/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portal",
+                "assessments",
+                ":id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "initialize portal assessment scores",
+          "id": "e8f95319-b28e-4918-b57b-66a1ca8b5d39",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/portal/assessments/:id/scores/initialize",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portal",
+                "assessments",
+                ":id",
+                "scores",
+                "initialize"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "bulk upsert portal assessment scores",
+          "id": "c24b5ecc-c36b-494e-a8c7-09e4f535ea9d",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scores\": [\n    {\n      \"studentId\": \"\",\n      \"score\": 8.5\n    },\n    {\n      \"studentId\": \"\",\n      \"score\": 7,\n      \"note\": \"Làm bài chậm\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/portal/assessments/:id/scores",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portal",
+                "assessments",
+                ":id",
+                "scores"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "close portal assessment",
+          "id": "158b1b11-9bbb-4f2b-a68e-7f04e386468a",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CLOSED\",\n  \"note\": \"Đã khóa điểm\"\n}"
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/portal/assessments/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portal",
+                "assessments",
+                ":id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "my scores grid",
+          "id": "6294983d-8a28-4b2b-ad94-b510dd75db96",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/portal/my-scores/grid",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portal",
+                "my-scores",
+                "grid"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "my child scores",
+          "id": "38390090-481e-4a2c-bb6a-3fd22f4a472a",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/portal/my-children/:studentId/scores",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portal",
+                "my-children",
+                ":studentId",
+                "scores"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },
     {
       "name": "timetable",
-      "id": "8af0d71d-3be0-45bf-b7d1-539742153f00",
+      "id": "ab9fad01-5bb9-42e6-a59a-af16127524e2",
       "item": [
         {
           "name": "all timetable entries",
-          "id": "cfcc882e-e4f7-470c-bb9d-8ff0cc414221",
+          "id": "c54df417-175e-436a-8fc6-007e36638085",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -3257,7 +3462,7 @@
         },
         {
           "name": "specific timetable entry",
-          "id": "056d7bfd-79a5-44de-beeb-9e2dae691f72",
+          "id": "ec8332c4-227b-47d9-b263-221c4fb30790",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -3281,7 +3486,7 @@
         },
         {
           "name": "new timetable entry",
-          "id": "fbfd0e18-9629-412c-b357-20e4703c4335",
+          "id": "11de68a2-65bf-4318-b13a-45ab8bd7d692",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -3306,31 +3511,31 @@
                   "key": "courseSectionId",
                   "value": "",
                   "type": "text",
-                  "uuid": "75ba5d21-03f0-4b2d-9897-fc8dc9ddc334"
+                  "uuid": "a7dded80-ada2-4c61-9b0b-5e5c606e1cf7"
                 },
                 {
                   "key": "teacherId",
                   "value": "",
                   "type": "text",
-                  "uuid": "3c6bbe21-a8b0-4d92-8ec8-fed5b0a2b233"
+                  "uuid": "e01363c0-8431-435b-887b-50c9dae03d55"
                 },
                 {
                   "key": "dayOfWeek",
                   "value": "1",
                   "type": "text",
-                  "uuid": "0e51ae12-32cb-4ffc-8087-e4494f4d4b89"
+                  "uuid": "1d1f964c-7bd7-4bf9-ab39-4510b5dbd85e"
                 },
                 {
                   "key": "periodNumber",
                   "value": "1",
                   "type": "text",
-                  "uuid": "8eaa58e5-6ce1-4e34-ab92-e8c813161716"
+                  "uuid": "37291ee8-b916-4e50-b5ea-24dee8d1b975"
                 },
                 {
                   "key": "room",
                   "value": "A101",
                   "type": "text",
-                  "uuid": "dbb83126-162c-4d7a-a735-63f8ff5330d3"
+                  "uuid": "7206b485-1a4f-46d8-851d-abb35fbabb57"
                 }
               ]
             }
@@ -3339,7 +3544,7 @@
         },
         {
           "name": "update timetable entry",
-          "id": "eea1c804-2704-4690-860b-72a6db217de3",
+          "id": "99cbd909-d08e-4335-b93c-69c44f0127f3",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -3365,19 +3570,19 @@
                   "key": "dayOfWeek",
                   "value": "2",
                   "type": "text",
-                  "uuid": "8e2f8772-273b-4903-8f31-89f6c923b645"
+                  "uuid": "d87b0fcd-e8f1-4b2e-9408-cebf1709cc3a"
                 },
                 {
                   "key": "periodNumber",
                   "value": "3",
                   "type": "text",
-                  "uuid": "a7ef2781-798a-4489-b429-04808dc1560f"
+                  "uuid": "e1e297b2-8b1b-4c44-8f49-28e5f65f3a65"
                 },
                 {
                   "key": "room",
                   "value": "B202",
                   "type": "text",
-                  "uuid": "96ea5998-f676-47fd-abca-f8a00b5e8daf"
+                  "uuid": "cf560bca-4fbd-4ccb-9510-7232dfd160a4"
                 }
               ]
             }
@@ -3386,7 +3591,7 @@
         },
         {
           "name": "delete timetable entry",
-          "id": "f0514f07-0bac-4302-bb44-c8834ba9ffe1",
+          "id": "f87a4fc6-c906-49a5-b1eb-dc7cce997907",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -3412,11 +3617,11 @@
     },
     {
       "name": "courses-section",
-      "id": "09929c75-3feb-4a84-b390-dc744b691126",
+      "id": "6b966724-a200-46fd-a277-44259a3acc1b",
       "item": [
         {
           "name": "timetable entries by course section",
-          "id": "8396a9e7-a436-4a73-86f7-9216808120e1",
+          "id": "8490db9c-0473-4d0e-aaa0-57ceadee3a2c",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -3443,11 +3648,11 @@
     },
     {
       "name": "attendance-sessions",
-      "id": "34c4c38b-dcb4-404f-ad4f-6885573acf99",
+      "id": "f249d374-0eaa-4e35-b02e-0fda10e5647d",
       "item": [
         {
           "name": "all attendance sessions",
-          "id": "01658b68-0a65-49d2-b2a7-fb6c5090515e",
+          "id": "60a7107d-6a96-450a-8c32-d1e177d3c527",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -3470,7 +3675,7 @@
         },
         {
           "name": "specific attendance session",
-          "id": "f8a9e8c2-139e-44e2-a4d0-82d60ccefc72",
+          "id": "a7458cd4-04f1-42ce-a79d-851a0b7a0f87",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -3494,7 +3699,7 @@
         },
         {
           "name": "new attendance session",
-          "id": "b341648e-9725-4519-aff3-8e6fc17ad95f",
+          "id": "2505ebaa-4c58-4c6c-9504-6c5cb49c9569",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -3519,37 +3724,37 @@
                   "key": "courseSectionId",
                   "value": "",
                   "type": "text",
-                  "uuid": "a9e81dc0-5692-4305-8bdb-72285d1940f6"
+                  "uuid": "843a2e94-7ee4-4648-8899-345a0fdb8e30"
                 },
                 {
                   "key": "teacherId",
                   "value": "",
                   "type": "text",
-                  "uuid": "285f4070-255f-47b4-88bb-d2e42f11160f"
+                  "uuid": "201f0267-9106-43da-8d85-2a18217407ba"
                 },
                 {
                   "key": "sessionDate",
                   "value": "2025-09-01",
                   "type": "text",
-                  "uuid": "e76fcb0d-115e-40ca-b97a-442e3182b740"
+                  "uuid": "516187ac-9ef7-480e-b7f7-bd467e5f21d6"
                 },
                 {
                   "key": "periodNumber",
                   "value": "1",
                   "type": "text",
-                  "uuid": "3a0008c1-815a-4f49-9032-e141e338fc70"
+                  "uuid": "206d0891-7d75-43e0-b0cf-207869175b1c"
                 },
                 {
                   "key": "timetableEntryId",
                   "value": "",
                   "type": "text",
-                  "uuid": "cac9dd30-3c69-43fc-86d0-6202f40730a8"
+                  "uuid": "3d7cddbd-d087-4e48-8eda-31749f5ee062"
                 },
                 {
                   "key": "note",
                   "value": "Tiết 1 sáng",
                   "type": "text",
-                  "uuid": "681dba21-9d38-4c16-aeb9-763d949d70ff"
+                  "uuid": "dbfe0974-23ad-4937-96c0-e7a22e4ca521"
                 }
               ]
             }
@@ -3558,7 +3763,7 @@
         },
         {
           "name": "update attendance session",
-          "id": "19030a30-d1f3-4ed1-8dcc-4929a71bde22",
+          "id": "0fd83e97-89e8-4f83-8777-2d16b8ad5236",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -3584,13 +3789,13 @@
                   "key": "status",
                   "value": "CLOSED",
                   "type": "text",
-                  "uuid": "0573e74a-c759-41de-b667-a4d33b50b677"
+                  "uuid": "65882b3b-366f-457f-8dcf-6ecb19075fa3"
                 },
                 {
                   "key": "note",
                   "value": "Đã hoàn tất điểm danh",
                   "type": "text",
-                  "uuid": "6e9c69ef-41e1-48fc-a255-1be758b2dbdb"
+                  "uuid": "be3cccda-5471-4921-bdaa-ddbff4d374c0"
                 }
               ]
             }
@@ -3599,7 +3804,7 @@
         },
         {
           "name": "bulk upsert attendance records",
-          "id": "950f6c05-1865-45b3-bbea-ff88a81c42a4",
+          "id": "b433fd59-4b44-4da6-b644-a4359a8144ae",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -3635,11 +3840,11 @@
     },
     {
       "name": "attendance-records",
-      "id": "c8affe90-569e-4d49-a154-c4259055ce79",
+      "id": "a647f57c-4b0a-407e-8530-6dfd104c9f4e",
       "item": [
         {
           "name": "update attendance record",
-          "id": "3ab2b0fc-9b74-4afc-8f7c-91919fa5675f",
+          "id": "387cb743-4a95-4d71-a4fb-4ac39f9a06fb",
           "protocolProfileBehavior": {
             "disableBodyPruning": true
           },
@@ -3665,14 +3870,67 @@
                   "key": "status",
                   "value": "ABSENT",
                   "type": "text",
-                  "uuid": "8a6b43ca-affc-4225-a89d-5b78ac7ac55d"
+                  "uuid": "15c264b1-f1fd-42dd-b1fc-415ad3482023"
                 },
                 {
                   "key": "note",
                   "value": "Vắng không phép",
                   "type": "text",
-                  "uuid": "1c52d438-87fa-447a-abf4-4ad8ddc69ed7"
+                  "uuid": "8f38b398-d596-4c1f-acfd-c418e4a8c053"
                 }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "assessments",
+      "id": "11f51743-2510-48b2-9c6c-addc25d26120",
+      "item": [
+        {
+          "name": "all assessments",
+          "id": "54f46026-e663-4b88-ba72-b75aced468f4",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/assessments",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "assessments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "specific assessment",
+          "id": "5610d6da-fc93-4272-b28b-c4fbba5bc140",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/api/v1/assessments/:id",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "assessments",
+                ":id"
               ]
             }
           },

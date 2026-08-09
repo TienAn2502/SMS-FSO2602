@@ -3,8 +3,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import type { App } from 'supertest/types';
 
-import { AppModule } from '../src/app.module';
-import { setupApp } from '../src/setup-app';
+import { AppModule } from '@/app.module';
+import { setupApp } from '@/setup-app';
 
 describe('Academic API (e2e)', () => {
   let app: INestApplication<App>;

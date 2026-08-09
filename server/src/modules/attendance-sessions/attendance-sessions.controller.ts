@@ -1,25 +1,19 @@
-import {
-  Controller,
-  Get,
-  Param,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 
-import type { AuthenticatedUser } from '../../common/auth/auth.types';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { TenantGuard } from '../../common/guards/tenant.guard';
-import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import { uuidParamSchema } from '../../common/schemas/shared.schema';
+import type { AuthenticatedUser } from '@/common/auth/auth.types';
+import { CurrentUser } from '@/common/decorators/current-user.decorator';
+import { Roles } from '@/common/decorators/roles.decorator';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { TenantGuard } from '@/common/guards/tenant.guard';
+import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe';
+import { uuidParamSchema } from '@/common/schemas/shared.schema';
 import {
   listAttendanceSessionsQuerySchema,
   type ListAttendanceSessionsQuery,
-} from './schemas/attendance-session.schema';
-import { AttendanceSessionsService } from './attendance-sessions.service';
+} from '@/modules/attendance-sessions/schemas/attendance-session.schema';
+import { AttendanceSessionsService } from '@/modules/attendance-sessions/attendance-sessions.service';
 
 @ApiTags('Attendance Sessions')
 @ApiCookieAuth('access_token')
@@ -55,7 +49,9 @@ export class AttendanceSessionsController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Chi tiết phiên điểm danh (kèm bản ghi HS, chỉ xem)' })
+  @ApiOperation({
+    summary: 'Chi tiết phiên điểm danh (kèm bản ghi HS, chỉ xem)',
+  })
   async findById(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', new ZodValidationPipe(uuidParamSchema)) id: string,

@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 
 import { ROUTES } from '@/app/router/routes';
+import { CreateAccountFields } from '@/components/common/create-account-fields';
 import { DataTableGrid } from '@/components/common/data-table-grid';
 import { DataPagination } from '@/components/common/data-pagination';
 import { EmptyState } from '@/components/feedback/empty-state';
@@ -24,8 +25,14 @@ import {
   updateParentStatus,
   type Parent,
 } from '@/features/parents/api/parents-api';
+import { ParentsImportExportActions } from '@/features/parents/components/parents-import-export-actions';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { getApiError } from '@/lib/api';
+import {
+  buildOptionalAccountPayload,
+  createAccountFields,
+  refineCreateAccountFields,
+} from '@/lib/create-account-schema';
 import { getErrorMessage } from '@/lib/error-messages';
 import { ACADEMIC_STATUS_LABELS } from '@/lib/labels';
 import { cn } from '@/lib/utils';
@@ -33,10 +40,13 @@ import type { AcademicEntityStatus } from '@/types/api.types';
 
 const PAGE_SIZE = 20;
 
-const createSchema = z.object({
-  fullName: z.string().trim().min(1, 'Họ tên là bắt buộc'),
-  phone: z.string().optional(),
-});
+const createSchema = z
+  .object({
+    fullName: z.string().trim().min(1, 'Họ tên là bắt buộc'),
+    phone: z.string().optional(),
+    ...createAccountFields,
+  })
+  .superRefine(refineCreateAccountFields);
 
 export function ParentsPage() {
   const { session } = useAuth();
@@ -44,6 +54,7 @@ export function ParentsPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const debouncedSearch = useDebouncedValue(search, 300);
 
   const listQuery = useQuery({
@@ -53,8 +64,13 @@ export function ParentsPage() {
     placeholderData: keepPreviousData,
   });
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } =
-    useForm<z.infer<typeof createSchema>>({ resolver: zodResolver(createSchema) });
+  const { register, handleSubmit, reset, watch, formState: { errors, isSubmitting } } =
+    useForm<z.infer<typeof createSchema>>({
+      resolver: zodResolver(createSchema),
+      defaultValues: { createAccount: false },
+    });
+
+  const createAccount = watch('createAccount');
 
   const createMutation = useMutation({
     mutationFn: createParent,
@@ -137,7 +153,16 @@ export function ParentsPage() {
         <Card>
           <CardHeader><CardTitle>Tạo hồ sơ phụ huynh</CardTitle></CardHeader>
           <CardContent>
-            <form className='grid gap-4 md:grid-cols-2' onSubmit={handleSubmit((v) => createMutation.mutate(v))}>
+            <form
+              className='grid gap-4 md:grid-cols-2'
+              onSubmit={handleSubmit((values) =>
+                createMutation.mutate({
+                  fullName: values.fullName,
+                  phone: values.phone || undefined,
+                  ...buildOptionalAccountPayload(values),
+                }),
+              )}
+            >
               <div className='space-y-2'>
                 <Label>Họ tên</Label>
                 <Input {...register('fullName')} />
@@ -147,16 +172,36 @@ export function ParentsPage() {
                 <Label>SĐT</Label>
                 <Input {...register('phone')} />
               </div>
-              <div><Button type='submit' disabled={isSubmitting || createMutation.isPending}>Lưu</Button></div>
+              <CreateAccountFields
+                idPrefix='parent-create'
+                createAccount={Boolean(createAccount)}
+                register={register}
+                errors={errors}
+              />
+              <div className='md:col-span-2'>
+                <Button type='submit' disabled={isSubmitting || createMutation.isPending}>
+                  Tạo phụ huynh
+                </Button>
+              </div>
             </form>
           </CardContent>
         </Card>
       ) : null}
 
       <Card>
-        <CardHeader className='flex flex-row flex-wrap items-center justify-between gap-4'>
-          <CardTitle>Danh sách</CardTitle>
-          <Input className='max-w-xs' placeholder='Tìm tên, email...' value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
+        <CardHeader className='flex flex-col gap-4'>
+          <div className='flex flex-row flex-wrap items-center justify-between gap-4'>
+            <CardTitle>Danh sách</CardTitle>
+            <Input className='max-w-xs' placeholder='Tìm tên, email...' value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
+          </div>
+          <ParentsImportExportActions
+            exportFilters={{ search: debouncedSearch || undefined }}
+            importOpen={importOpen}
+            onImportOpenChange={setImportOpen}
+            onImportSuccess={() => {
+              void queryClient.invalidateQueries({ queryKey: ['parents'] });
+            }}
+          />
         </CardHeader>
         <CardContent>
           {listQuery.isLoading ? <LoadingState /> : null}

@@ -1,4 +1,4 @@
-import type { PaginationMeta } from '../types/api-response.types';
+import type { PaginationMeta } from '@/common/types/api-response.types';
 
 export function buildPaginationMeta(
   page: number,

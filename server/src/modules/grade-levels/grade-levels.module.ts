@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 
-import { GradeLevelsController } from './grade-levels.controller';
-import { GradeLevelsService } from './grade-levels.service';
+import { GradeLevelsController } from '@/modules/grade-levels/grade-levels.controller';
+import { GradeLevelsService } from '@/modules/grade-levels/grade-levels.service';
 
 @Module({
   controllers: [GradeLevelsController],

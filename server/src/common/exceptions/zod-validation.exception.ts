@@ -1,8 +1,8 @@
 import { HttpStatus } from '@nestjs/common';
 import type { ZodError } from 'zod';
 
-import { AppException } from './app.exception';
-import type { ApiErrorDetail } from '../types/api-response.types';
+import { AppException } from '@/common/exceptions/app.exception';
+import type { ApiErrorDetail } from '@/common/types/api-response.types';
 
 function mapZodError(error: ZodError): ApiErrorDetail[] {
   return error.issues.map((issue) => ({

@@ -14,22 +14,24 @@ import {
 import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 
-import type { AuthenticatedUser } from '../../common/auth/auth.types';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { TenantGuard } from '../../common/guards/tenant.guard';
-import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import { uuidParamSchema } from '../../common/schemas/shared.schema';
+import type { AuthenticatedUser } from '@/common/auth/auth.types';
+import { CurrentUser } from '@/common/decorators/current-user.decorator';
+import { Roles } from '@/common/decorators/roles.decorator';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { TenantGuard } from '@/common/guards/tenant.guard';
+import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe';
+import { uuidParamSchema } from '@/common/schemas/shared.schema';
 import {
   createTimetableEntrySchema,
   listTimetableEntriesQuerySchema,
+  timetableMatrixQuerySchema,
   updateTimetableEntrySchema,
   type CreateTimetableEntryInput,
   type ListTimetableEntriesQuery,
+  type TimetableMatrixQuery,
   type UpdateTimetableEntryInput,
-} from './schemas/timetable-entry.schema';
-import { TimetableEntriesService } from './timetable-entries.service';
+} from '@/modules/timetable-entries/schemas/timetable-entry.schema';
+import { TimetableEntriesService } from '@/modules/timetable-entries/timetable-entries.service';
 
 @ApiTags('Timetable Entries')
 @ApiCookieAuth('access_token')
@@ -59,6 +61,27 @@ export class TimetableEntriesController {
       success: true,
       data: result.items,
       meta: result.meta,
+      message: null,
+    };
+  }
+
+  @Get('matrix')
+  @ApiOperation({
+    summary: 'Thời khóa biểu dạng ma trận (không phân trang, tối đa 1000 tiết)',
+  })
+  async listMatrix(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query(new ZodValidationPipe(timetableMatrixQuerySchema))
+    query: TimetableMatrixQuery,
+  ) {
+    const data = await this.timetableEntriesService.listForMatrix(
+      user.activeSchoolId,
+      query,
+    );
+
+    return {
+      success: true,
+      data,
       message: null,
     };
   }

@@ -2,9 +2,9 @@ import { z } from 'zod';
 
 
 
-import { isoDateSchema } from '../../../common/schemas/academic.schema';
+import { isoDateSchema } from '@/common/schemas/academic.schema';
 
-import { paginationSchema } from '../../../common/schemas/shared.schema';
+import { paginationSchema } from '@/common/schemas/shared.schema';
 
 
 
@@ -15,6 +15,8 @@ export const enrollmentStatusSchema = z.enum([
   'TRANSFERRED',
 
   'WITHDRAWN',
+
+  'SEMESTER_COMPLETED',
 
   'COMPLETED',
 
@@ -107,6 +109,64 @@ export const withdrawStudentEnrollmentSchema = z.object({
 export type WithdrawStudentEnrollmentInput = z.infer<
 
   typeof withdrawStudentEnrollmentSchema
+
+>;
+
+
+
+export const copySemesterEnrollmentsSchema = z.object({
+
+  sourceSemesterId: z.uuid('Học kỳ nguồn không hợp lệ'),
+
+  targetSemesterId: z.uuid('Học kỳ đích không hợp lệ'),
+
+  enrolledAt: isoDateSchema.optional(),
+
+  note: z.string().trim().max(2000).optional(),
+
+  closeSourceSemester: z.boolean().optional(),
+
+});
+
+
+
+export type CopySemesterEnrollmentsInput = z.infer<
+
+  typeof copySemesterEnrollmentsSchema
+
+>;
+
+
+
+export const closeSemesterEnrollmentsSchema = z.object({
+
+  semesterId: z.uuid('Học kỳ không hợp lệ'),
+
+  leftAt: isoDateSchema.optional(),
+
+});
+
+
+
+export type CloseSemesterEnrollmentsInput = z.infer<
+
+  typeof closeSemesterEnrollmentsSchema
+
+>;
+
+
+
+export const syncStaleEnrollmentsSchema = z.object({
+
+  academicYearId: z.uuid('Năm học không hợp lệ'),
+
+});
+
+
+
+export type SyncStaleEnrollmentsInput = z.infer<
+
+  typeof syncStaleEnrollmentsSchema
 
 >;
 

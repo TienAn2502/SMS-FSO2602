@@ -1,26 +1,27 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { AcademicEntityStatus, Prisma } from '@prisma/client';
 
-import { AppException } from '../../common/exceptions/app.exception';
-import { PrismaService } from '../../common/database/prisma.service';
-import type { PaginationMeta } from '../../common/types/api-response.types';
+import { AppException } from '@/common/exceptions/app.exception';
+import { PrismaService } from '@/common/database/prisma.service';
+import type { PaginationMeta } from '@/common/types/api-response.types';
 import {
   buildPaginationMeta,
   getSkip,
-} from '../../common/utils/pagination.util';
-import { CourseSectionsService } from '../course-sections/course-sections.service';
-import { SemestersService } from '../semesters/semesters.service';
-import { TeachersService } from '../teachers/teachers.service';
+} from '@/common/utils/pagination.util';
+import { CourseSectionsService } from '@/modules/course-sections/course-sections.service';
+import { SemestersService } from '@/modules/semesters/semesters.service';
+import { TeachersService } from '@/modules/teachers/teachers.service';
 import {
   timetableEntryInclude,
   toTimetableEntryResponse,
   type TimetableEntryResponse,
-} from './mappers/timetable-entry.mapper';
+} from '@/modules/timetable-entries/mappers/timetable-entry.mapper';
 import type {
   CreateTimetableEntryInput,
   ListTimetableEntriesQuery,
+  TimetableMatrixQuery,
   UpdateTimetableEntryInput,
-} from './schemas/timetable-entry.schema';
+} from '@/modules/timetable-entries/schemas/timetable-entry.schema';
 
 @Injectable()
 export class TimetableEntriesService {
@@ -35,32 +36,7 @@ export class TimetableEntriesService {
     schoolId: string,
     query: ListTimetableEntriesQuery,
   ): Promise<{ items: TimetableEntryResponse[]; meta: PaginationMeta }> {
-    const semesterId = await this.resolveSemesterId(schoolId, query);
-
-    const where: Prisma.TimetableEntryWhereInput = {
-      schoolId,
-      ...(semesterId ? { semesterId } : {}),
-      ...(query.courseSectionId
-        ? { courseSectionId: query.courseSectionId }
-        : {}),
-      ...(query.teacherId ? { teacherId: query.teacherId } : {}),
-      ...(query.dayOfWeek !== undefined ? { dayOfWeek: query.dayOfWeek } : {}),
-      ...(query.status ? { status: query.status } : {}),
-      ...(query.homeroomClassId
-        ? {
-            courseSection: {
-              homeroomClassId: query.homeroomClassId,
-            },
-          }
-        : {}),
-      ...(query.academicYearId && !semesterId
-        ? {
-            semester: {
-              academicYearId: query.academicYearId,
-            },
-          }
-        : {}),
-    };
+    const where = await this.buildListWhere(schoolId, query);
 
     const orderBy: Prisma.TimetableEntryOrderByWithRelationInput[] = [
       { [query.sortBy]: query.sortOrder },
@@ -84,6 +60,22 @@ export class TimetableEntriesService {
       items: entries.map(toTimetableEntryResponse),
       meta: buildPaginationMeta(query.page, query.limit, total),
     };
+  }
+
+  async listForMatrix(
+    schoolId: string,
+    query: TimetableMatrixQuery,
+  ): Promise<TimetableEntryResponse[]> {
+    const where = await this.buildListWhere(schoolId, query);
+
+    const entries = await this.prisma.timetableEntry.findMany({
+      where,
+      orderBy: [{ dayOfWeek: 'asc' }, { periodNumber: 'asc' }],
+      take: 1000,
+      include: timetableEntryInclude,
+    });
+
+    return entries.map(toTimetableEntryResponse);
   }
 
   async listByCourseSection(
@@ -391,7 +383,10 @@ export class TimetableEntriesService {
 
   private async resolveSemesterId(
     schoolId: string,
-    query: ListTimetableEntriesQuery,
+    query: Pick<
+      ListTimetableEntriesQuery | TimetableMatrixQuery,
+      'includeAllSemesters' | 'semesterId' | 'academicYearId'
+    >,
   ): Promise<string | undefined> {
     if (query.includeAllSemesters) {
       return query.semesterId;
@@ -409,6 +404,70 @@ export class TimetableEntriesService {
       await this.semestersService.findCurrentForSchool(schoolId);
 
     return currentSemester.id;
+  }
+
+  private async buildListWhere(
+    schoolId: string,
+    query: ListTimetableEntriesQuery | TimetableMatrixQuery,
+  ): Promise<Prisma.TimetableEntryWhereInput> {
+    const semesterId = await this.resolveSemesterId(schoolId, query);
+    const courseSectionFilter = this.buildCourseSectionFilter(query);
+
+    return {
+      schoolId,
+      ...(semesterId ? { semesterId } : {}),
+      ...(query.courseSectionId
+        ? { courseSectionId: query.courseSectionId }
+        : {}),
+      ...(query.teacherId ? { teacherId: query.teacherId } : {}),
+      ...(query.dayOfWeek !== undefined ? { dayOfWeek: query.dayOfWeek } : {}),
+      ...(query.status ? { status: query.status } : {}),
+      ...(Object.keys(courseSectionFilter).length > 0
+        ? { courseSection: courseSectionFilter }
+        : {}),
+      ...(query.academicYearId && !semesterId
+        ? {
+            semester: {
+              academicYearId: query.academicYearId,
+            },
+          }
+        : {}),
+    };
+  }
+
+  private buildCourseSectionFilter(
+    query: ListTimetableEntriesQuery | TimetableMatrixQuery,
+  ): Prisma.CourseSectionWhereInput {
+    return {
+      ...(query.homeroomClassId
+        ? { homeroomClassId: query.homeroomClassId }
+        : {}),
+      ...(query.subjectId
+        ? {
+            gradeLevelSubject: {
+              subjectId: query.subjectId,
+            },
+          }
+        : {}),
+      ...(query.search
+        ? {
+            OR: [
+              {
+                name: {
+                  contains: query.search,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                code: {
+                  contains: query.search,
+                  mode: 'insensitive',
+                },
+              },
+            ],
+          }
+        : {}),
+    };
   }
 
   private handleSlotConflict(error: unknown): void {

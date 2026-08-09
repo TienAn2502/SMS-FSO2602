@@ -1,27 +1,28 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { AcademicEntityStatus, Prisma } from '@prisma/client';
 
-import { AppException } from '../../common/exceptions/app.exception';
-import { PrismaService } from '../../common/database/prisma.service';
-import { parseIsoDate, toIsoDateString } from '../../common/schemas/academic.schema';
-import type { PaginationMeta } from '../../common/types/api-response.types';
+import { AppException } from '@/common/exceptions/app.exception';
+import { PrismaService } from '@/common/database/prisma.service';
 import {
-  buildPaginationMeta,
-  getSkip,
-} from '../../common/utils/pagination.util';
-import { CourseSectionsService } from '../course-sections/course-sections.service';
-import { SemestersService } from '../semesters/semesters.service';
-import { TeachersService } from '../teachers/teachers.service';
+  parseIsoDate,
+  toIsoDateString,
+} from '@/common/schemas/academic.schema';
+import type { PaginationMeta } from '@/common/types/api-response.types';
+import { buildPaginationMeta, getSkip } from '@/common/utils/pagination.util';
+import { CourseSectionsService } from '@/modules/course-sections/course-sections.service';
+import { SemestersService } from '@/modules/semesters/semesters.service';
+import { TeachersService } from '@/modules/teachers/teachers.service';
 import {
   teachingAssignmentInclude,
   toTeachingAssignmentResponse,
   type TeachingAssignmentResponse,
-} from './mappers/teaching-assignment.mapper';
+} from '@/modules/teaching-assignments/mappers/teaching-assignment.mapper';
 import type {
+  CopySemesterTeachingAssignmentsInput,
   CreateTeachingAssignmentInput,
   ListTeachingAssignmentsQuery,
   UpdateTeachingAssignmentStatusInput,
-} from './schemas/teaching-assignment.schema';
+} from '@/modules/teaching-assignments/schemas/teaching-assignment.schema';
 
 @Injectable()
 export class TeachingAssignmentsService {
@@ -48,9 +49,37 @@ export class TeachingAssignmentsService {
         ? { courseSectionId: query.courseSectionId }
         : {}),
       ...(query.status ? { status: query.status } : {}),
-      ...(courseSectionFilter
-        ? { courseSection: courseSectionFilter }
+      ...(query.search
+        ? {
+            OR: [
+              {
+                teacher: {
+                  fullName: {
+                    contains: query.search,
+                    mode: 'insensitive',
+                  },
+                },
+              },
+              {
+                courseSection: {
+                  code: {
+                    contains: query.search,
+                    mode: 'insensitive',
+                  },
+                },
+              },
+              {
+                courseSection: {
+                  name: {
+                    contains: query.search,
+                    mode: 'insensitive',
+                  },
+                },
+              },
+            ],
+          }
         : {}),
+      ...(courseSectionFilter ? { courseSection: courseSectionFilter } : {}),
     };
 
     const orderBy: Prisma.TeachingAssignmentOrderByWithRelationInput = {
@@ -210,10 +239,166 @@ export class TeachingAssignmentsService {
     return toTeachingAssignmentResponse(updated);
   }
 
-  private async findAssignmentInTenant(
+  /**
+   * Sao chép phân công giảng dạy HK nguồn → HK đích (vd. HK1 → HK2).
+   * Giả định: lớp môn HK đích đã được tạo trước (copy course-sections) với cùng mã.
+   * Mỗi lớp môn chỉ có tối đa một GV ACTIVE; HK nguồn không bị đóng.
+   */
+  async copyFromSemester(
     schoolId: string,
-    assignmentId: string,
-  ) {
+    input: CopySemesterTeachingAssignmentsInput,
+  ): Promise<{
+    sourceSemesterId: string;
+    targetSemesterId: string;
+    sourceSemesterCode: string;
+    targetSemesterCode: string;
+    sourceActiveCount: number;
+    createdCount: number;
+    skippedCount: number;
+  }> {
+    // --- Kiểm tra đầu vào ---
+    if (input.sourceSemesterId === input.targetSemesterId) {
+      throw new AppException(
+        'ASSIGNMENT_COPY_SAME_SEMESTER',
+        'Học kỳ nguồn và học kỳ đích phải khác nhau',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    const sourceSemester = await this.semestersService.findSemesterInTenantById(
+      schoolId,
+      input.sourceSemesterId,
+    );
+    const targetSemester = await this.semestersService.findSemesterInTenantById(
+      schoolId,
+      input.targetSemesterId,
+    );
+
+    // Hai HK phải cùng năm học (vd. HK1 và HK2 của 2025-2026)
+    if (sourceSemester.academicYearId !== targetSemester.academicYearId) {
+      throw new AppException(
+        'TENANT_MISMATCH',
+        'Hai học kỳ phải thuộc cùng năm học',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    // --- Lấy danh sách phân công cần sao chép (HK nguồn) ---
+    const sourceAssignments = await this.prisma.teachingAssignment.findMany({
+      where: {
+        schoolId,
+        status: AcademicEntityStatus.ACTIVE,
+        courseSection: {
+          semesterId: input.sourceSemesterId,
+          status: AcademicEntityStatus.ACTIVE,
+        },
+      },
+      include: {
+        courseSection: {
+          select: {
+            code: true, // Mã lớp môn dùng để ghép với lớp tương ứng ở HK đích
+          },
+        },
+      },
+      orderBy: { assignAt: 'asc' },
+    });
+
+    if (sourceAssignments.length === 0) {
+      throw new AppException(
+        'NO_SOURCE_ASSIGNMENTS',
+        'Không có phân công đang hoạt động (ACTIVE) ở học kỳ nguồn',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    // --- Lớp môn HK đích: map mã → id ---
+    // Copy course-sections giữ nguyên mã (TOAN-12A5), nên ghép theo code là đủ.
+    const targetSections = await this.prisma.courseSection.findMany({
+      where: {
+        schoolId,
+        semesterId: input.targetSemesterId,
+        status: AcademicEntityStatus.ACTIVE,
+      },
+      select: {
+        id: true,
+        code: true,
+      },
+    });
+
+    const targetSectionIdByCode = new Map(
+      targetSections.map((section) => [section.code, section.id]),
+    );
+
+    // --- Lớp môn HK đích đã có GV chưa? (mỗi lớp chỉ 1 GV ACTIVE) ---
+    const sectionsWithActiveAssignment = new Set<string>();
+
+    if (targetSections.length > 0) {
+      const existingActiveAssignments =
+        await this.prisma.teachingAssignment.findMany({
+          where: {
+            schoolId,
+            status: AcademicEntityStatus.ACTIVE,
+            courseSectionId: {
+              in: targetSections.map((section) => section.id),
+            },
+          },
+          select: {
+            courseSectionId: true,
+          },
+        });
+
+      for (const assignment of existingActiveAssignments) {
+        sectionsWithActiveAssignment.add(assignment.courseSectionId);
+      }
+    }
+
+    // Ngày phân công mới = ngày bắt đầu HK đích
+    const assignAt = toIsoDateString(targetSemester.startDate);
+    let createdCount = 0;
+    let skippedCount = 0;
+
+    // --- Duyệt từng phân công HK nguồn và tạo bản tương ứng ở HK đích ---
+    for (const source of sourceAssignments) {
+      const targetSectionId = targetSectionIdByCode.get(
+        source.courseSection.code,
+      );
+
+      // Chưa có lớp môn cùng mã ở HK đích (chưa copy course-sections?)
+      if (!targetSectionId) {
+        skippedCount += 1;
+        continue;
+      }
+
+      // Lớp HK đích đã có GV (copy lại hoặc đã phân công tay) → bỏ qua
+      if (sectionsWithActiveAssignment.has(targetSectionId)) {
+        skippedCount += 1;
+        continue;
+      }
+
+      // Dùng create() có sẵn: tạo mới hoặc kích hoạt lại nếu từng có bản INACTIVE
+      await this.create(schoolId, {
+        teacherId: source.teacherId,
+        courseSectionId: targetSectionId,
+        assignAt,
+      });
+
+      createdCount += 1;
+      // Cập nhật set trong vòng lặp để tránh 2 phân công trùng 1 lớp (edge case)
+      sectionsWithActiveAssignment.add(targetSectionId);
+    }
+
+    return {
+      sourceSemesterId: sourceSemester.id,
+      targetSemesterId: targetSemester.id,
+      sourceSemesterCode: sourceSemester.code,
+      targetSemesterCode: targetSemester.code,
+      sourceActiveCount: sourceAssignments.length,
+      createdCount,
+      skippedCount,
+    };
+  }
+
+  private async findAssignmentInTenant(schoolId: string, assignmentId: string) {
     const assignment = await this.prisma.teachingAssignment.findFirst({
       where: { id: assignmentId, schoolId },
       include: teachingAssignmentInclude,

@@ -8,6 +8,7 @@ export type EnrollmentStatus =
   | 'ACTIVE'
   | 'TRANSFERRED'
   | 'WITHDRAWN'
+  | 'SEMESTER_COMPLETED'
   | 'COMPLETED';
 
 export interface StudentEnrollment {
@@ -26,6 +27,7 @@ export interface StudentEnrollment {
   enrolledAt: string;
   leftAt: string | null;
   status: EnrollmentStatus;
+  semesterIsCurrent: boolean;
   note: string | null;
   createdAt: string;
   updatedAt: string;
@@ -60,6 +62,36 @@ export interface WithdrawStudentEnrollmentInput {
   note?: string;
 }
 
+export interface CopySemesterEnrollmentsInput {
+  sourceSemesterId: string;
+  targetSemesterId: string;
+  enrolledAt?: string;
+  note?: string;
+  closeSourceSemester?: boolean;
+}
+
+export interface CopySemesterEnrollmentsResult {
+  sourceSemesterId: string;
+  targetSemesterId: string;
+  sourceSemesterCode: string;
+  targetSemesterCode: string;
+  sourceActiveCount: number;
+  createdCount: number;
+  skippedCount: number;
+  sourceClosedCount: number;
+}
+
+export interface CloseSemesterEnrollmentsInput {
+  semesterId: string;
+  leftAt?: string;
+}
+
+export interface CloseSemesterEnrollmentsResult {
+  semesterId: string;
+  semesterCode: string;
+  closedCount: number;
+}
+
 export async function fetchStudentEnrollments(
   studentId: string,
   params: ListStudentEnrollmentsParams = {},
@@ -69,6 +101,15 @@ export async function fetchStudentEnrollments(
     { params },
   );
   return { items: data.data, meta: data.meta };
+}
+
+export async function fetchStudentEnrollment(
+  id: string,
+): Promise<StudentEnrollment> {
+  const { data } = await api.get<ApiSuccessResponse<StudentEnrollment>>(
+    `/student-enrollments/${id}`,
+  );
+  return data.data;
 }
 
 export async function createStudentEnrollment(
@@ -100,5 +141,46 @@ export async function withdrawStudentEnrollment(
     `/student-enrollments/${id}/withdraw`,
     input,
   );
+  return data.data;
+}
+
+export async function copySemesterEnrollments(
+  input: CopySemesterEnrollmentsInput,
+): Promise<CopySemesterEnrollmentsResult> {
+  const { data } = await api.post<
+    ApiSuccessResponse<CopySemesterEnrollmentsResult>
+  >('/student-enrollments/copy-from-semester', input);
+  return data.data;
+}
+
+export async function closeSemesterEnrollments(
+  input: CloseSemesterEnrollmentsInput,
+): Promise<CloseSemesterEnrollmentsResult> {
+  const { data } = await api.post<
+    ApiSuccessResponse<CloseSemesterEnrollmentsResult>
+  >('/student-enrollments/close-semester', input);
+  return data.data;
+}
+
+export interface SyncStaleEnrollmentsInput {
+  academicYearId: string;
+}
+
+export interface SyncStaleEnrollmentsResult {
+  academicYearId: string;
+  closedCount: number;
+  closedBySemester: Array<{
+    semesterId: string;
+    semesterCode: string;
+    closedCount: number;
+  }>;
+}
+
+export async function syncStaleEnrollments(
+  input: SyncStaleEnrollmentsInput,
+): Promise<SyncStaleEnrollmentsResult> {
+  const { data } = await api.post<
+    ApiSuccessResponse<SyncStaleEnrollmentsResult>
+  >('/student-enrollments/sync-stale', input);
   return data.data;
 }

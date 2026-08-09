@@ -62,7 +62,6 @@ export interface BulkUpsertRecordsInput {
     status: AttendanceRecordStatus;
     note?: string | null;
   }>;
-  initMissingStudents?: boolean;
 }
 
 export async function fetchAttendanceSessions(params: ListAttendanceSessionsParams = {}) {

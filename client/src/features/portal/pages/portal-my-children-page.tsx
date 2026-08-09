@@ -51,12 +51,26 @@ export function PortalMyChildrenPage() {
                 ) : (
                   <p className='text-muted-foreground'>Chưa có ghi danh hiện tại.</p>
                 )}
-                <Link
-                  to={`${ROUTES.portalMyChildren}/${item.student.id}/attendance`}
-                  className='mt-3 inline-block text-sm text-primary hover:underline'
-                >
-                  Xem lịch sử điểm danh
-                </Link>
+                <div className='mt-3 flex flex-wrap gap-x-4 gap-y-1'>
+                  <Link
+                    to={`${ROUTES.portalMyChildren}/${item.student.id}/attendance`}
+                    className='text-sm text-primary hover:underline'
+                  >
+                    Xem lịch sử điểm danh
+                  </Link>
+                  <Link
+                    to={`${ROUTES.portalMyChildren}/${item.student.id}/scores`}
+                    className='text-sm text-primary hover:underline'
+                  >
+                    Xem bảng điểm
+                  </Link>
+                  <Link
+                    to={`${ROUTES.portalMyChildren}/${item.student.id}/summaries`}
+                    className='text-sm text-primary hover:underline'
+                  >
+                    Xem tổng kết
+                  </Link>
+                </div>
               </CardContent>
             </Card>
           ))}

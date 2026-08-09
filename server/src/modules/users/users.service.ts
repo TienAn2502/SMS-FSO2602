@@ -1,21 +1,21 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
-import { AppException } from '../../common/exceptions/app.exception';
-import { PrismaService } from '../../common/database/prisma.service';
+import { AppException } from '@/common/exceptions/app.exception';
+import { PrismaService } from '@/common/database/prisma.service';
 import {
   buildPaginationMeta,
   getSkip,
-} from '../../common/utils/pagination.util';
-import { PasswordService } from '../../common/utils/password.service';
-import type { PaginationMeta } from '../../common/types/api-response.types';
-import { toUserResponse, type UserResponse } from './mappers/user.mapper';
+} from '@/common/utils/pagination.util';
+import { PasswordService } from '@/common/utils/password.service';
+import type { PaginationMeta } from '@/common/types/api-response.types';
+import { toUserResponse, type UserResponse } from '@/modules/users/mappers/user.mapper';
 import type {
   CreateUserInput,
   ListUsersQuery,
   UpdateUserInput,
   UpdateUserStatusInput,
-} from './schemas/user.schema';
+} from '@/modules/users/schemas/user.schema';
 
 @Injectable()
 export class UsersService {

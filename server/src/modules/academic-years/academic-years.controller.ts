@@ -13,14 +13,14 @@ import {
 import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 
-import type { AuthenticatedUser } from '../../common/auth/auth.types';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { TenantGuard } from '../../common/guards/tenant.guard';
-import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import { uuidParamSchema } from '../../common/schemas/shared.schema';
-import { AcademicYearsService } from './academic-years.service';
+import type { AuthenticatedUser } from '@/common/auth/auth.types';
+import { CurrentUser } from '@/common/decorators/current-user.decorator';
+import { Roles } from '@/common/decorators/roles.decorator';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { TenantGuard } from '@/common/guards/tenant.guard';
+import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe';
+import { uuidParamSchema } from '@/common/schemas/shared.schema';
+import { AcademicYearsService } from '@/modules/academic-years/academic-years.service';
 import {
   createAcademicYearSchema,
   listAcademicYearsQuerySchema,
@@ -30,7 +30,7 @@ import {
   type ListAcademicYearsQuery,
   type UpdateAcademicYearInput,
   type UpdateAcademicYearStatusInput,
-} from './schemas/academic-year.schema';
+} from '@/modules/academic-years/schemas/academic-year.schema';
 
 @ApiTags('Academic Years')
 @ApiCookieAuth('access_token')
@@ -41,6 +41,7 @@ export class AcademicYearsController {
   constructor(private readonly academicYearsService: AcademicYearsService) {}
 
   @Get()
+  @Roles(UserRole.SCHOOL_ADMIN, UserRole.STUDENT, UserRole.TEACHER, UserRole.PARENT)
   @ApiOperation({ summary: 'Danh sách năm học' })
   async list(
     @CurrentUser() user: AuthenticatedUser,
@@ -61,12 +62,14 @@ export class AcademicYearsController {
   }
 
   @Get('current')
+  @Roles(UserRole.SCHOOL_ADMIN, UserRole.STUDENT, UserRole.TEACHER, UserRole.PARENT)
   @ApiOperation({ summary: 'Năm học hiện hành' })
   findCurrent(@CurrentUser() user: AuthenticatedUser) {
     return this.academicYearsService.findCurrent(user.activeSchoolId);
   }
 
   @Get(':id')
+  @Roles(UserRole.SCHOOL_ADMIN, UserRole.STUDENT, UserRole.TEACHER, UserRole.PARENT)
   @ApiOperation({ summary: 'Chi tiết năm học' })
   findById(
     @CurrentUser() user: AuthenticatedUser,

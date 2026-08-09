@@ -5,25 +5,25 @@ import {
   AcademicEntityStatus,
 } from '@prisma/client';
 
-import { AppException } from '../../common/exceptions/app.exception';
-import { PrismaService } from '../../common/database/prisma.service';
-import type { PaginationMeta } from '../../common/types/api-response.types';
+import { AppException } from '@/common/exceptions/app.exception';
+import { PrismaService } from '@/common/database/prisma.service';
+import type { PaginationMeta } from '@/common/types/api-response.types';
 import {
   buildPaginationMeta,
   getSkip,
-} from '../../common/utils/pagination.util';
-import { AcademicYearsService } from '../academic-years/academic-years.service';
-import { GradeLevelsService } from '../grade-levels/grade-levels.service';
+} from '@/common/utils/pagination.util';
+import { AcademicYearsService } from '@/modules/academic-years/academic-years.service';
+import { GradeLevelsService } from '@/modules/grade-levels/grade-levels.service';
 import {
   toHomeroomClassResponse,
   type HomeroomClassResponse,
-} from './mappers/homeroom-class.mapper';
+} from '@/modules/homeroom-classes/mappers/homeroom-class.mapper';
 import type {
   CreateHomeroomClassInput,
   ListHomeroomClassesQuery,
   UpdateHomeroomClassInput,
   UpdateHomeroomClassStatusInput,
-} from './schemas/homeroom-class.schema';
+} from '@/modules/homeroom-classes/schemas/homeroom-class.schema';
 
 @Injectable()
 export class HomeroomClassesService {
@@ -210,7 +210,7 @@ export class HomeroomClassesService {
     if (!teacher) {
       throw new AppException(
         'INVALID_HOMEROOM_TEACHER',
-        'Giáo viên chủ nhiệm không hợp lệ',
+        'Giáo viên không hợp lệ',
         HttpStatus.UNPROCESSABLE_ENTITY,
       );
     }

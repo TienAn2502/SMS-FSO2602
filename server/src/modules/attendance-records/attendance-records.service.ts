@@ -1,22 +1,22 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { AttendanceRecordStatus, EnrollmentStatus } from '@prisma/client';
 
-import { PrismaService } from '../../common/database/prisma.service';
-import { AppException } from '../../common/exceptions/app.exception';
+import { PrismaService } from '@/common/database/prisma.service';
+import { AppException } from '@/common/exceptions/app.exception';
 import {
   attendanceSessionDetailInclude,
   toAttendanceSessionDetailResponse,
   type AttendanceSessionDetailResponse,
-} from '../attendance-sessions/mappers/attendance-session.mapper';
+} from '@/modules/attendance-sessions/mappers/attendance-session.mapper';
 import {
   attendanceRecordInclude,
   toAttendanceRecordResponse,
   type AttendanceRecordResponse,
-} from './mappers/attendance-record.mapper';
+} from '@/modules/attendance-records/mappers/attendance-record.mapper';
 import type {
   BulkUpsertAttendanceRecordsInput,
   UpdateAttendanceRecordInput,
-} from './schemas/attendance-record.schema';
+} from '@/modules/attendance-records/schemas/attendance-record.schema';
 
 @Injectable()
 export class AttendanceRecordsService {
@@ -27,14 +27,17 @@ export class AttendanceRecordsService {
     sessionId: string,
     input: BulkUpsertAttendanceRecordsInput,
   ): Promise<AttendanceSessionDetailResponse> {
+    // Tìm phiên điểm danh
     const session = await this.findSessionForRecords(schoolId, sessionId);
 
+    // Lấy danh sách học sinh thuộc lớp hành chính của lớp môn
     const enrolledStudentIds = await this.getEnrolledStudentIds(
       schoolId,
       session.semesterId,
       session.courseSection.homeroomClassId,
     );
 
+    // Kiểm tra học sinh có thuộc lớp hành chính của lớp môn không
     for (const record of input.records) {
       if (!enrolledStudentIds.has(record.studentId)) {
         throw new AppException(
@@ -46,31 +49,43 @@ export class AttendanceRecordsService {
       }
     }
 
-    const toUpsert = this.buildUpsertItems(input, enrolledStudentIds);
-
     await this.prisma.$transaction(
-      toUpsert.map((item) =>
-        this.prisma.attendanceRecord.upsert({
+      input.records.map((record) =>
+        this.prisma.attendanceRecord.update({
           where: {
             sessionId_studentId: {
               sessionId,
-              studentId: item.studentId,
+              studentId: record.studentId,
             },
           },
-          create: {
-            schoolId,
-            sessionId,
-            studentId: item.studentId,
-            status: item.status,
-            note: item.note ?? null,
-          },
-          update: {
-            status: item.status,
-            ...(item.note !== undefined ? { note: item.note } : {}),
-          },
+          data: record,
         }),
       ),
     );
+
+    return this.getSessionDetail(schoolId, sessionId);
+  }
+
+  async initializeSessionRecords(
+    schoolId: string,
+    sessionId: string,
+  ): Promise<AttendanceSessionDetailResponse> {
+    const session = await this.findSessionForRecords(schoolId, sessionId);
+    const enrolledStudentIds = await this.getEnrolledStudentIds(
+      schoolId,
+      session.semesterId,
+      session.courseSection.homeroomClassId,
+    );
+
+    await this.prisma.attendanceRecord.createMany({
+      data: [...enrolledStudentIds].map((studentId) => ({
+        schoolId,
+        sessionId,
+        studentId,
+        status: AttendanceRecordStatus.PRESENT,
+      })),
+      skipDuplicates: true,
+    });
 
     return this.getSessionDetail(schoolId, sessionId);
   }
@@ -131,43 +146,6 @@ export class AttendanceRecordsService {
     });
 
     return toAttendanceRecordResponse(updated);
-  }
-
-  // khởi tạo danh sách HS còn thiếu (initMissingStudents: true)
-  private buildUpsertItems(
-    input: BulkUpsertAttendanceRecordsInput,
-    enrolledStudentIds: Set<string>,
-  ): Array<{
-    studentId: string;
-    status: AttendanceRecordStatus;
-    note?: string | null;
-  }> {
-    const items: Array<{
-      studentId: string;
-      status: AttendanceRecordStatus;
-      note?: string | null;
-    }> = input.records.map((record) => ({
-      studentId: record.studentId,
-      status: record.status,
-      ...(record.note !== undefined ? { note: record.note } : {}),
-    }));
-
-    if (!input.initMissingStudents) {
-      return items;
-    }
-
-    const providedIds = new Set(items.map((item) => item.studentId));
-
-    for (const studentId of enrolledStudentIds) {
-      if (!providedIds.has(studentId)) {
-        items.push({
-          studentId,
-          status: AttendanceRecordStatus.PRESENT,
-        });
-      }
-    }
-
-    return items;
   }
 
   private async getEnrolledStudentIds(

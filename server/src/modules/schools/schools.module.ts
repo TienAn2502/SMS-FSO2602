@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 
-import { AuthModule } from '../auth/auth.module';
-import { FilesModule } from '../files/files.module';
-import { SchoolsController } from './schools.controller';
-import { SchoolsService } from './schools.service';
+import { AuthModule } from '@/modules/auth/auth.module';
+import { FilesModule } from '@/modules/files/files.module';
+import { SchoolsController } from '@/modules/schools/schools.controller';
+import { SchoolsService } from '@/modules/schools/schools.service';
 
 // Module dành cho BGH nhà trường
 @Module({

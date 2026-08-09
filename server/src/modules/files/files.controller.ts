@@ -22,16 +22,16 @@ import {
 import { FilePurpose, UserRole } from '@prisma/client';
 import { z } from 'zod';
 
-import type { AuthenticatedUser } from '../../common/auth/auth.types';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { AppException } from '../../common/exceptions/app.exception';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { TenantGuard } from '../../common/guards/tenant.guard';
-import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import { uuidParamSchema } from '../../common/schemas/shared.schema';
-import { UPLOAD_PURPOSES } from './constants/file-upload.constants';
-import { FilesService } from './files.service';
+import type { AuthenticatedUser } from '@/common/auth/auth.types';
+import { CurrentUser } from '@/common/decorators/current-user.decorator';
+import { Roles } from '@/common/decorators/roles.decorator';
+import { AppException } from '@/common/exceptions/app.exception';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { TenantGuard } from '@/common/guards/tenant.guard';
+import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe';
+import { uuidParamSchema } from '@/common/schemas/shared.schema';
+import { UPLOAD_PURPOSES } from '@/modules/files/constants/file-upload.constants';
+import { FilesService } from '@/modules/files/files.service';
 
 const uploadPurposeSchema = z.enum([
   FilePurpose.SCHOOL_LOGO,

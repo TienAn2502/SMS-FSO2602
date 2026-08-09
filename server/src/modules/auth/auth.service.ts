@@ -1,17 +1,17 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import type { Response } from 'express';
 
-import { CookieService } from '../../common/auth/cookie.service';
-import { JwtTokenService } from '../../common/auth/jwt-token.service';
+import { CookieService } from '@/common/auth/cookie.service';
+import { JwtTokenService } from '@/common/auth/jwt-token.service';
 import type {
   AuthSessionData,
   RefreshTokenPayload,
-} from '../../common/auth/auth.types';
-import { AppException } from '../../common/exceptions/app.exception';
-import { PrismaService } from '../../common/database/prisma.service';
-import { PasswordService } from '../../common/utils/password.service';
-import type { LoginInput } from './schemas/login.schema';
-import { toAuthSessionData } from './mappers/auth.mapper';
+} from '@/common/auth/auth.types';
+import { AppException } from '@/common/exceptions/app.exception';
+import { PrismaService } from '@/common/database/prisma.service';
+import { PasswordService } from '@/common/utils/password.service';
+import type { LoginInput } from '@/modules/auth/schemas/login.schema';
+import { toAuthSessionData } from '@/modules/auth/mappers/auth.mapper';
 
 @Injectable()
 export class AuthService {

@@ -10,16 +10,17 @@
       "@prisma/client",
       "@prisma/engines",
       "bcrypt",
-      "prisma"
+      "prisma",
+      "puppeteer"
     ]
   },
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
-    "start:dev": "nest start --watch",
-    "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "dev": "nest start --watch",
+    "debug": "nest start --debug --watch",
+    "prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -29,8 +30,22 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "dotenv -e .env.development -- prisma migrate dev",
     "prisma:migrate:deploy": "dotenv -e .env.development -- prisma migrate deploy",
+    "prisma:fix-enrollment-enum": "dotenv -e .env.development -- prisma db execute --file prisma/scripts/add-semester-completed-enum.sql",
     "prisma:seed": "dotenv -e .env.development -- prisma db seed",
-    "postinstall": "prisma generate",
+    "prisma:reseed-gradebook": "dotenv -e .env.development -- ts-node -O \"{\\\"module\\\":\\\"CommonJS\\\"}\" prisma/scripts/reseed-gradebook.ts",
+    "prisma:seed-timetable": "dotenv -e .env.development -- ts-node -O \"{\\\"module\\\":\\\"CommonJS\\\"}\" prisma/scripts/seed-timetable-semester.ts",
+    "prisma:seed-gradebook-semester": "dotenv -e .env.development -- ts-node -O \"{\\\"module\\\":\\\"CommonJS\\\"}\" prisma/scripts/seed-gradebook-semester.ts",
+    "prisma:seed-attendance-semester": "dotenv -e .env.development -- ts-node -O \"{\\\"module\\\":\\\"CommonJS\\\"}\" prisma/scripts/seed-attendance-semester.ts",
+    "prisma:seed-semester-full": "dotenv -e .env.development -- ts-node -O \"{\\\"module\\\":\\\"CommonJS\\\"}\" prisma/scripts/seed-semester-full.ts",
+    "prisma:seed-summaries-semester": "dotenv -e .env.development -- ts-node -O \"{\\\"module\\\":\\\"CommonJS\\\"}\" prisma/scripts/seed-summaries-semester.ts",
+    "prisma:seed-conduct-semester": "dotenv -e .env.development -- ts-node -O \"{\\\"module\\\":\\\"CommonJS\\\"}\" prisma/scripts/seed-conduct-semester.ts",
+    "prisma:reopen-semester": "dotenv -e .env.development -- ts-node -O \"{\\\"module\\\":\\\"CommonJS\\\"}\" prisma/scripts/reopen-semester-gradebook.ts",
+    "prisma:lock-semester": "dotenv -e .env.development -- ts-node -O \"{\\\"module\\\":\\\"CommonJS\\\"}\" prisma/scripts/lock-semester-gradebook.ts",
+    "prisma:clear-semester": "dotenv -e .env.development -- ts-node -O \"{\\\"module\\\":\\\"CommonJS\\\"}\" prisma/scripts/clear-semester-data.ts",
+    "prisma:clear-semester-gradebook": "dotenv -e .env.development -- ts-node -O \"{\\\"module\\\":\\\"CommonJS\\\"}\" prisma/scripts/clear-semester-gradebook-summaries.ts",
+    "prisma:backfill-periods": "dotenv -e .env.development -- ts-node -O \"{\\\"module\\\":\\\"CommonJS\\\"}\" prisma/scripts/backfill-periods-per-year.ts",
+    "postinstall": "node scripts/postinstall.mjs",
+    "puppeteer:install-chrome": "puppeteer browsers install chrome",
     "postman:export": "node scripts/sync-postman-nestjs.mjs --export-json",
     "postman:sync": "node scripts/sync-postman-nestjs.mjs"
   },
@@ -47,8 +62,12 @@
     "@prisma/client": "^6.19.3",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
+    "csv-parse": "^7.0.2",
+    "csv-stringify": "^6.8.2",
+    "exceljs": "^4.4.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
+    "puppeteer": "^25.4.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "zod": "^4.4.3"
@@ -100,7 +119,10 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/$1"
+    }
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"

@@ -2,18 +2,18 @@ import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 
-import type { AuthenticatedUser } from '../../common/auth/auth.types';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { TenantGuard } from '../../common/guards/tenant.guard';
-import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import { uuidParamSchema } from '../../common/schemas/shared.schema';
+import type { AuthenticatedUser } from '@/common/auth/auth.types';
+import { CurrentUser } from '@/common/decorators/current-user.decorator';
+import { Roles } from '@/common/decorators/roles.decorator';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { TenantGuard } from '@/common/guards/tenant.guard';
+import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe';
+import { uuidParamSchema } from '@/common/schemas/shared.schema';
 import {
   listStudentEnrollmentsQuerySchema,
   type ListStudentEnrollmentsQuery,
-} from './schemas/student-enrollment.schema';
-import { StudentEnrollmentsService } from './student-enrollments.service';
+} from '@/modules/student-enrollments/schemas/student-enrollment.schema';
+import { StudentEnrollmentsService } from '@/modules/student-enrollments/student-enrollments.service';
 
 @ApiTags('Student Enrollments')
 @ApiCookieAuth('access_token')

@@ -2,17 +2,17 @@ import { Controller, Get, Patch, Body, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 
-import type { AuthenticatedUser } from '../../common/auth/auth.types';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { TenantGuard } from '../../common/guards/tenant.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import { SchoolsService } from './schools.service';
+import type { AuthenticatedUser } from '@/common/auth/auth.types';
+import { CurrentUser } from '@/common/decorators/current-user.decorator';
+import { Roles } from '@/common/decorators/roles.decorator';
+import { TenantGuard } from '@/common/guards/tenant.guard';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe';
+import { SchoolsService } from '@/modules/schools/schools.service';
 import {
   updateSchoolSchema,
   type UpdateSchoolInput,
-} from './schemas/update-school.schema';
+} from '@/modules/schools/schemas/update-school.schema';
 
 @ApiTags('Schools')
 @ApiCookieAuth('access_token')

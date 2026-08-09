@@ -8,9 +8,10 @@ import { Reflector } from '@nestjs/core';
 import type { UserRole } from '@prisma/client';
 import type { Request } from 'express';
 
-import { ROLES_KEY } from '../auth/auth.constants';
-import { AppException } from '../exceptions/app.exception';
+import { ROLES_KEY } from '@/common/auth/auth.constants';
+import { AppException } from '@/common/exceptions/app.exception';
 
+// Check role xem có hợp lệ không
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}

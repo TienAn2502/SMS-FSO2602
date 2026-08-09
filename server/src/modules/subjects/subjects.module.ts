@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 
-import { SubjectsController } from './subjects.controller';
-import { SubjectsService } from './subjects.service';
+import { SubjectsController } from '@/modules/subjects/subjects.controller';
+import { SubjectsService } from '@/modules/subjects/subjects.service';
 
 @Module({
   controllers: [SubjectsController],

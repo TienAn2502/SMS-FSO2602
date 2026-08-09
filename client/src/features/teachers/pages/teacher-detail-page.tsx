@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 
 import { ROUTES } from '@/app/router/routes';
+import { ProvisionLoginAccountSection } from '@/components/common/provision-login-account-section';
 import { ErrorState } from '@/components/feedback/error-state';
 import { LoadingState } from '@/components/feedback/loading-state';
 import { Button } from '@/components/ui/button';
@@ -26,11 +27,6 @@ const profileSchema = z.object({
   fullName: z.string().trim().min(1),
   specialization: z.string().optional(),
   phone: z.string().optional(),
-});
-
-const accountSchema = z.object({
-  email: z.email(),
-  password: z.string().min(8),
 });
 
 export function TeacherDetailPage() {
@@ -58,11 +54,6 @@ export function TeacherDetailPage() {
     },
   });
 
-  const accountForm = useForm({
-    resolver: zodResolver(accountSchema),
-    defaultValues: { email: '', password: '' },
-  });
-
   const updateMutation = useMutation({
     mutationFn: (values: z.infer<typeof profileSchema>) => updateTeacher(id, values),
     onSuccess: () => {
@@ -76,21 +67,26 @@ export function TeacherDetailPage() {
   });
 
   const createUserMutation = useMutation({
-    mutationFn: (values: z.infer<typeof accountSchema>) => createTeacherUser(id, values),
+    mutationFn: (values: { email: string; password: string }) =>
+      createTeacherUser(id, values),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['teachers', id] });
-      toast.success('Tạo tài khoản thành công');
-      accountForm.reset();
+      toast.success('Cấp tài khoản thành công');
     },
     onError: (error) => {
       const apiError = getApiError(error);
-      toast.error(getErrorMessage(apiError?.code, apiError?.message ?? 'Tạo tài khoản thất bại'));
+      toast.error(getErrorMessage(apiError?.code, apiError?.message ?? 'Cấp tài khoản thất bại'));
     },
   });
 
   if (teacherQuery.isLoading) return <LoadingState />;
   if (teacherQuery.isError || !teacherQuery.data) {
-    return <ErrorState message='Không tải được hồ sơ giáo viên' onRetry={() => void teacherQuery.refetch()} />;
+    return (
+      <ErrorState
+        message='Không tải được hồ sơ giáo viên'
+        onRetry={() => void teacherQuery.refetch()}
+      />
+    );
   }
 
   const teacher = teacherQuery.data;
@@ -98,56 +94,57 @@ export function TeacherDetailPage() {
   return (
     <div className='space-y-6'>
       <div>
-        <Link to={ROUTES.teachers} className='text-sm text-muted-foreground hover:text-foreground'>← Danh sách giáo viên</Link>
+        <Link
+          to={ROUTES.teachers}
+          className='text-sm text-muted-foreground hover:text-foreground'
+        >
+          ← Danh sách giáo viên
+        </Link>
         <h1 className='mt-2 text-2xl font-semibold'>{teacher.fullName}</h1>
-        <p className='text-sm text-muted-foreground'>{ACADEMIC_STATUS_LABELS[teacher.status]}</p>
-      </div>
-
-      <div className='grid gap-6 lg:grid-cols-2'>
-        <Card>
-          <CardHeader><CardTitle>Hồ sơ</CardTitle></CardHeader>
-          <CardContent>
-            <form className='space-y-4' onSubmit={profileForm.handleSubmit((v) => updateMutation.mutate(v))}>
-              <div className='space-y-2'>
-                <Label>Họ tên</Label>
-                <Input {...profileForm.register('fullName')} />
-              </div>
-              <div className='space-y-2'>
-                <Label>Chuyên môn</Label>
-                <Input {...profileForm.register('specialization')} />
-              </div>
-              <div className='space-y-2'>
-                <Label>SĐT</Label>
-                <Input {...profileForm.register('phone')} />
-              </div>
-              <p className='text-sm text-muted-foreground'>Email: {teacher.userEmail ?? 'Chưa có tài khoản'}</p>
-              <Button type='submit' disabled={updateMutation.isPending}>Lưu hồ sơ</Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        {!teacher.userId ? (
-          <Card>
-            <CardHeader><CardTitle>Tạo tài khoản đăng nhập</CardTitle></CardHeader>
-            <CardContent>
-              <form className='space-y-4' onSubmit={accountForm.handleSubmit((v) => createUserMutation.mutate(v))}>
-                <div className='space-y-2'>
-                  <Label>Email</Label>
-                  <Input type='email' {...accountForm.register('email')} />
-                </div>
-                <div className='space-y-2'>
-                  <Label>Mật khẩu</Label>
-                  <Input type='password' {...accountForm.register('password')} />
-                </div>
-                <Button type='submit' disabled={createUserMutation.isPending}>Tạo tài khoản</Button>
-              </form>
-            </CardContent>
-          </Card>
-        ) : null}
+        <p className='text-sm text-muted-foreground'>
+          {ACADEMIC_STATUS_LABELS[teacher.status]}
+        </p>
       </div>
 
       <Card>
-        <CardHeader><CardTitle>Phân công hiện tại (HK hiện hành)</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Hồ sơ</CardTitle>
+        </CardHeader>
+        <CardContent className='space-y-4'>
+          <form
+            className='space-y-4'
+            onSubmit={profileForm.handleSubmit((values) => updateMutation.mutate(values))}
+          >
+            <div className='space-y-2'>
+              <Label>Họ tên</Label>
+              <Input {...profileForm.register('fullName')} />
+            </div>
+            <div className='space-y-2'>
+              <Label>Chuyên môn</Label>
+              <Input {...profileForm.register('specialization')} />
+            </div>
+            <div className='space-y-2'>
+              <Label>SĐT</Label>
+              <Input {...profileForm.register('phone')} />
+            </div>
+            <Button type='submit' disabled={updateMutation.isPending}>
+              Lưu hồ sơ
+            </Button>
+          </form>
+
+          <ProvisionLoginAccountSection
+            userEmail={teacher.userEmail}
+            hasAccount={Boolean(teacher.userId)}
+            onProvision={(values) => createUserMutation.mutate(values)}
+            isPending={createUserMutation.isPending}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Phân công hiện tại (HK hiện hành)</CardTitle>
+        </CardHeader>
         <CardContent>
           {assignmentsQuery.isLoading ? <LoadingState /> : null}
           {assignmentsQuery.data?.items.length === 0 ? (

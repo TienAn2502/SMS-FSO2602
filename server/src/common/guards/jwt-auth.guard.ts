@@ -7,9 +7,9 @@ import {
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 
-import { IS_PUBLIC_KEY, JWT_ACCESS_STRATEGY } from '../auth/auth.constants';
-import type { AuthenticatedUser } from '../auth/auth.types';
-import { AppException } from '../exceptions/app.exception';
+import { IS_PUBLIC_KEY, JWT_ACCESS_STRATEGY } from '@/common/auth/auth.constants';
+import type { AuthenticatedUser } from '@/common/auth/auth.types';
+import { AppException } from '@/common/exceptions/app.exception';
 
 function getErrorName(info: unknown): string | undefined {
   if (typeof info === 'object' && info !== null && 'name' in info) {

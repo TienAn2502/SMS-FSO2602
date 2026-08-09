@@ -15,12 +15,9 @@ export const attendanceRecordItemSchema = z.object({
 
 export const bulkUpsertAttendanceRecordsSchema = z
   .object({
-    records: z.array(attendanceRecordItemSchema).default([]),
-    initMissingStudents: z.coerce.boolean().optional().default(true),
-  })
-  .refine((value) => value.records.length > 0 || value.initMissingStudents, {
-    message:
-      'Cần ít nhất một bản ghi hoặc bật initMissingStudents để khởi tạo danh sách HS',
+    records: z
+      .array(attendanceRecordItemSchema)
+      .min(1, 'Cần ít nhất một bản ghi điểm danh'),
   })
   .refine(
     (value) => {

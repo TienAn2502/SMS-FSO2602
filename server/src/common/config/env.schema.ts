@@ -26,6 +26,10 @@ export const envSchema = z.object({
   R2_BUCKET: z.string().min(1, 'R2_BUCKET là bắt buộc'),
   R2_SIGNED_URL_EXPIRES_SEC: z.coerce.number().int().positive().default(900),
   R2_MAX_FILE_SIZE_BYTES: z.coerce.number().int().positive().default(2_097_152),
+  IMPORT_MAX_BYTES: z.coerce.number().int().positive().default(5_242_880),
+  IMPORT_MAX_ROWS: z.coerce.number().int().positive().default(10_000),
+  IMPORT_DEFAULT_STUDENT_PASSWORD: z.string().min(8).default('Demo@123456'),
+  PUPPETEER_EXECUTABLE_PATH: z.string().trim().optional(),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

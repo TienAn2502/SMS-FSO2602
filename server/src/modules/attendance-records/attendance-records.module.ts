@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 
-import { AttendanceRecordsService } from './attendance-records.service';
+import { AttendanceRecordsService } from '@/modules/attendance-records/attendance-records.service';
 
 @Module({
   controllers: [],

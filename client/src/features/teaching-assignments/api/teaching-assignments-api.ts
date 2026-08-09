@@ -22,6 +22,7 @@ export interface TeachingAssignment {
 export interface ListTeachingAssignmentsParams {
   page?: number;
   limit?: number;
+  search?: string;
   teacherId?: string;
   courseSectionId?: string;
   semesterId?: string;
@@ -65,6 +66,30 @@ export async function updateTeachingAssignmentStatus(
     `/teaching-assignments/${id}/status`,
     { status, endAt },
   );
+  return data.data;
+}
+
+export interface CopySemesterTeachingAssignmentsInput {
+  sourceSemesterId: string;
+  targetSemesterId: string;
+}
+
+export interface CopySemesterTeachingAssignmentsResult {
+  sourceSemesterId: string;
+  targetSemesterId: string;
+  sourceSemesterCode: string;
+  targetSemesterCode: string;
+  sourceActiveCount: number;
+  createdCount: number;
+  skippedCount: number;
+}
+
+export async function copySemesterTeachingAssignments(
+  input: CopySemesterTeachingAssignmentsInput,
+): Promise<CopySemesterTeachingAssignmentsResult> {
+  const { data } = await api.post<
+    ApiSuccessResponse<CopySemesterTeachingAssignmentsResult>
+  >('/teaching-assignments/copy-from-semester', input);
   return data.data;
 }
 

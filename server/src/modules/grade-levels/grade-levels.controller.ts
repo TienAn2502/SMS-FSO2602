@@ -13,14 +13,14 @@ import {
 import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 
-import type { AuthenticatedUser } from '../../common/auth/auth.types';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { TenantGuard } from '../../common/guards/tenant.guard';
-import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import { uuidParamSchema } from '../../common/schemas/shared.schema';
-import { GradeLevelsService } from './grade-levels.service';
+import type { AuthenticatedUser } from '@/common/auth/auth.types';
+import { CurrentUser } from '@/common/decorators/current-user.decorator';
+import { Roles } from '@/common/decorators/roles.decorator';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { TenantGuard } from '@/common/guards/tenant.guard';
+import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe';
+import { uuidParamSchema } from '@/common/schemas/shared.schema';
+import { GradeLevelsService } from '@/modules/grade-levels/grade-levels.service';
 import {
   createGradeLevelSchema,
   listGradeLevelsQuerySchema,
@@ -28,7 +28,7 @@ import {
   type CreateGradeLevelInput,
   type ListGradeLevelsQuery,
   type UpdateGradeLevelInput,
-} from './schemas/grade-level.schema';
+} from '@/modules/grade-levels/schemas/grade-level.schema';
 
 @ApiTags('Grade Levels')
 @ApiCookieAuth('access_token')

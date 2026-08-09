@@ -1,11 +1,11 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { FilePurpose } from '@prisma/client';
 
-import { AppException } from '../../common/exceptions/app.exception';
-import { PrismaService } from '../../common/database/prisma.service';
-import { FilesService } from '../files/files.service';
-import { toSchoolResponse, type SchoolResponse } from './mappers/school.mapper';
-import type { UpdateSchoolInput } from './schemas/update-school.schema';
+import { AppException } from '@/common/exceptions/app.exception';
+import { PrismaService } from '@/common/database/prisma.service';
+import { FilesService } from '@/modules/files/files.service';
+import { toSchoolResponse, type SchoolResponse } from '@/modules/schools/mappers/school.mapper';
+import type { UpdateSchoolInput } from '@/modules/schools/schemas/update-school.schema';
 
 @Injectable()
 export class SchoolsService {

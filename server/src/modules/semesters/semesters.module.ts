@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 
-import { AcademicYearsModule } from '../academic-years/academic-years.module';
+import { AcademicYearsModule } from '@/modules/academic-years/academic-years.module';
 import {
   SemestersController,
   SemestersSchoolController,
-} from './semesters.controller';
-import { SemestersService } from './semesters.service';
+} from '@/modules/semesters/semesters.controller';
+import { SemestersService } from '@/modules/semesters/semesters.service';
 
 @Module({
   imports: [AcademicYearsModule],

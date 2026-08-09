@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-import { isoDateSchema } from '../../../common/schemas/academic.schema';
-import { paginationSchema } from '../../../common/schemas/shared.schema';
+import { isoDateSchema } from '@/common/schemas/academic.schema';
+import { paginationSchema } from '@/common/schemas/shared.schema';
 
 export const attendanceSessionStatusSchema = z.enum(['OPEN', 'CLOSED']);
 

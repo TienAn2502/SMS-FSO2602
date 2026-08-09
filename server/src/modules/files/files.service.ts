@@ -3,16 +3,16 @@ import { ConfigService } from '@nestjs/config';
 import { FilePurpose, type File } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 
-import type { EnvConfig } from '../../common/config/env.schema';
-import { AppException } from '../../common/exceptions/app.exception';
-import { PrismaService } from '../../common/database/prisma.service';
+import type { EnvConfig } from '@/common/config/env.schema';
+import { AppException } from '@/common/exceptions/app.exception';
+import { PrismaService } from '@/common/database/prisma.service';
 import {
   ALLOWED_IMAGE_MIME_TYPES,
   MIME_TO_EXTENSION,
   type AllowedImageMimeType,
-} from './constants/file-upload.constants';
-import { toFileResponse, type FileResponse } from './mappers/file.mapper';
-import { R2Service } from './r2.service';
+} from '@/modules/files/constants/file-upload.constants';
+import { toFileResponse, type FileResponse } from '@/modules/files/mappers/file.mapper';
+import { R2Service } from '@/modules/files/r2.service';
 
 @Injectable()
 export class FilesService {

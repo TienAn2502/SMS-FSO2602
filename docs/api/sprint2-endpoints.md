@@ -270,6 +270,8 @@ Response paginated theo chuẩn Sprint 1:
 | `GRADE_LEVEL_SUBJECT_NOT_FOUND` | Môn chưa cấu hình cho khối |
 | `TENANT_MISMATCH` | FK thuộc trường khác |
 | `INVALID_DATE_RANGE` | Khoảng ngày không hợp lệ |
+| `SEMESTER_START_BEFORE_ACADEMIC_YEAR` | Ngày bắt đầu HK trước ngày bắt đầu năm học |
+| `SEMESTER_END_AFTER_ACADEMIC_YEAR` | Ngày kết thúc HK sau ngày kết thúc năm học |
 
 ---
 

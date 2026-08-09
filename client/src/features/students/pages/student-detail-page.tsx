@@ -35,8 +35,11 @@ import { getApiError } from '@/lib/api';
 import { getErrorMessage } from '@/lib/error-messages';
 import { selectClassName } from '@/lib/form-styles';
 import {
+  getEnrollmentStatusBadgeClass,
+  getEnrollmentStatusLabel,
+} from '@/lib/enrollment-display';
+import {
   ACADEMIC_STATUS_LABELS,
-  ENROLLMENT_STATUS_LABELS,
   GENDER_LABELS,
 } from '@/lib/labels';
 import { cn } from '@/lib/utils';
@@ -55,13 +58,6 @@ const STATUS_BADGE = {
   ACTIVE: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
   INACTIVE: 'bg-muted text-muted-foreground',
 } as const;
-
-const ENROLLMENT_BADGE: Record<StudentEnrollment['status'], string> = {
-  ACTIVE: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
-  TRANSFERRED: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
-  WITHDRAWN: 'bg-muted text-muted-foreground',
-  COMPLETED: 'bg-blue-500/10 text-blue-700 dark:text-blue-400',
-};
 
 export function StudentDetailPage() {
   const { id = '' } = useParams();
@@ -147,10 +143,10 @@ export function StudentDetailPage() {
           <span
             className={cn(
               'inline-flex rounded-md px-2 py-0.5 text-xs font-medium',
-              ENROLLMENT_BADGE[row.original.status],
+              getEnrollmentStatusBadgeClass(row.original),
             )}
           >
-            {ENROLLMENT_STATUS_LABELS[row.original.status]}
+            {getEnrollmentStatusLabel(row.original)}
           </span>
         ),
       },
@@ -179,6 +175,9 @@ export function StudentDetailPage() {
   const student = studentQuery.data;
   const enrollments = enrollmentsQuery.data?.items ?? [];
   const activeEnrollment =
+    enrollments.find(
+      (e) => e.status === 'ACTIVE' && e.semesterIsCurrent,
+    ) ??
     enrollments.find((e) => e.status === 'ACTIVE') ??
     (student.currentEnrollment
       ? enrollments.find((e) => e.id === student.currentEnrollment?.id) ?? null
@@ -262,9 +261,9 @@ export function StudentDetailPage() {
         <CardHeader>
           <CardTitle>Ghi danh hiện tại</CardTitle>
           <CardDescription>
-            {student.currentEnrollment
-              ? `${student.currentEnrollment.homeroomClassCode} — ${student.currentEnrollment.semesterName} (${student.currentEnrollment.academicYearName})`
-              : 'Học sinh chưa được ghi danh lớp hành chính'}
+            {activeEnrollment
+              ? `${activeEnrollment.homeroomClassCode} — ${activeEnrollment.semesterName} (${activeEnrollment.academicYearName})`
+              : 'Học sinh chưa được ghi danh lớp hành chính (ACTIVE)'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -286,7 +285,13 @@ export function StudentDetailPage() {
           ) : enrollments.length === 0 ? (
             <p className='text-sm text-muted-foreground'>Chưa có lịch sử ghi danh</p>
           ) : (
-            <DataTableGrid data={enrollments} columns={enrollmentColumns} />
+            <DataTableGrid
+              data={enrollments}
+              columns={enrollmentColumns}
+              getRowHref={(enrollment) =>
+                `${ROUTES.studentEnrollments}/${enrollment.id}`
+              }
+            />
           )}
         </CardContent>
       </Card>

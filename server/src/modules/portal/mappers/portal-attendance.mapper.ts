@@ -6,7 +6,7 @@ import type {
   Teacher,
 } from '@prisma/client';
 
-import { toIsoDateString } from '../../../common/schemas/academic.schema';
+import { toIsoDateString } from '@/common/schemas/academic.schema';
 
 type PortalAttendanceClassRow = {
   id: string;
@@ -31,6 +31,16 @@ export interface PortalAttendanceClassItem {
   homeroomClassCode: string | null;
   homeroomClassName: string | null;
   semesterId: string;
+}
+
+export interface CourseSectionResponse {
+  id: string;
+  code: string;
+  name: string;
+}
+
+export interface CourseSectionWithRelations extends CourseSection {
+  homeroomClass: Pick<HomeroomClass, 'id' | 'code' | 'name'> | null;
 }
 
 export interface PortalMyAttendanceItem {
@@ -83,5 +93,17 @@ export function toPortalMyAttendanceItem(
     teacherFullName: record.session.teacher.fullName,
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
+  };
+}
+
+export function toCourseSectionResponse(
+  courseSection: CourseSection & {
+    homeroomClass: Pick<HomeroomClass, 'id' | 'code' | 'name'> | null;
+  },
+): CourseSectionResponse {
+  return {
+    id: courseSection.id,
+    code: courseSection.code,
+    name: courseSection.name,
   };
 }

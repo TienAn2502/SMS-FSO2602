@@ -12,7 +12,10 @@ import { resolve } from 'node:path';
 import { z } from 'zod';
 
 import { clearSchoolDemoData } from './seed-data/clear-school-data';
+import { backfillGradeLevelSubjectPeriods } from './seed-data/backfill-periods-per-year';
 import { seedAttendance } from './seed-data/attendance';
+import { seedGradebook } from './seed-data/gradebook';
+import { seedSummaries } from './seed-data/summaries';
 import { seedParents } from './seed-data/parents';
 import { seedTeachingAssignmentsAndTimetable } from './seed-data/teaching-and-timetable';
 import {
@@ -23,6 +26,8 @@ import {
   THPT_SUBJECTS,
   buildHomeroomClassCode,
   buildStudentDemoEmail,
+  getThptBgdTotalPeriodsPerYear,
+  getThptBgdEvaluationMode,
   DEMO_PARENT_ACCOUNT_COUNT,
   DEMO_STUDENTS_WITH_PARENTS,
 } from './seed-data/thpt-curriculum';
@@ -228,6 +233,8 @@ async function seedAcademicStructure(
           gradeLevelId,
           subjectId,
           isRequired: subject.isRequired,
+          periodsPerYear: getThptBgdTotalPeriodsPerYear(subject.code),
+          evaluationMode: getThptBgdEvaluationMode(subject.code),
           status: AcademicEntityStatus.ACTIVE,
         },
       });
@@ -450,6 +457,20 @@ async function main(): Promise<void> {
     academic.hk1Semester.id,
   );
 
+  console.log('Seeding gradebook (HK1 — tất cả lớp, môn, HS, đủ TX/GK/CK)...');
+  const gradebook = await seedGradebook(
+    prisma,
+    school.id,
+    academic.hk1Semester.id,
+  );
+
+  console.log('Seeding summaries (HK1 — tất cả lớp, từ điểm đã khóa)...');
+  const summaries = await seedSummaries(
+    prisma,
+    school.id,
+    academic.hk1Semester.id,
+  );
+
   console.log('Seed completed.');
   console.log(`  School: ${school.name} (${school.code})`);
   console.log(`  Admin: ${admin.email} (${admin.role})`);
@@ -476,6 +497,17 @@ async function main(): Promise<void> {
   console.log(`  Student–parent links: ${parents.studentParentLinkCount}`);
   console.log(
     `  Attendance: ${attendance.sessionCount} sessions, ${attendance.recordCount} records (10A1 demo)`,
+  );
+  console.log(
+    `  Gradebook: ${gradebook.assessmentCount} assessments, ${gradebook.scoreCount} scores, ${gradebook.courseSectionCount} lớp môn, ${gradebook.homeroomClassCount} lớp HC, ${gradebook.studentCount} HS (HK1)`,
+  );
+  console.log(
+    `  Summaries: ${summaries.subjectResultCount} subject results, ${summaries.conductRecordCount} conduct records, ${summaries.semesterSummaryCount} semester summaries, ${summaries.yearSummaryCount} year summaries, ${summaries.homeroomClassCount} lớp HC, ${summaries.studentCount} HS (HK1)`,
+  );
+
+  const periodsUpdated = await backfillGradeLevelSubjectPeriods(prisma, school.id);
+  console.log(
+    `  Grade level subjects: ${periodsUpdated} rows (periods_per_year + evaluation_mode)`,
   );
 }
 

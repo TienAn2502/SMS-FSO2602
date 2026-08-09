@@ -29,10 +29,17 @@ export interface ListTimetableEntriesParams {
   courseSectionId?: string;
   teacherId?: string;
   homeroomClassId?: string;
+  subjectId?: string;
+  search?: string;
   dayOfWeek?: number;
   status?: AcademicEntityStatus;
   includeAllSemesters?: boolean;
 }
+
+export type TimetableMatrixParams = Omit<
+  ListTimetableEntriesParams,
+  'page' | 'limit'
+>;
 
 export interface CreateTimetableEntryInput {
   courseSectionId: string;
@@ -57,6 +64,14 @@ export async function fetchTimetableEntries(
     { params },
   );
   return { items: data.data, meta: data.meta };
+}
+
+export async function fetchTimetableMatrix(params: TimetableMatrixParams = {}) {
+  const { data } = await api.get<ApiSuccessResponse<TimetableEntry[]>>(
+    '/timetable-entries/matrix',
+    { params },
+  );
+  return data.data;
 }
 
 export async function createTimetableEntry(

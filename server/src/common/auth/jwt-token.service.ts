@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
-import type { EnvConfig } from '../config/env.schema';
-import type { AccessTokenPayload, RefreshTokenPayload } from './auth.types';
+import type { EnvConfig } from '@/common/config/env.schema';
+import type { AccessTokenPayload, RefreshTokenPayload } from '@/common/auth/auth.types';
 
 @Injectable()
 export class JwtTokenService {

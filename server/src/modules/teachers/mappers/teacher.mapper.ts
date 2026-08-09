@@ -1,6 +1,11 @@
-import type { CourseSection, Teacher, TeachingAssignment, User } from '@prisma/client';
+import type {
+  CourseSection,
+  Teacher,
+  TeachingAssignment,
+  User,
+} from '@prisma/client';
 
-import { toIsoDateString } from '../../../common/schemas/academic.schema';
+import { toIsoDateString } from '@/common/schemas/academic.schema';
 
 export interface TeachingAssignmentSummary {
   id: string;
@@ -50,7 +55,9 @@ export function toTeachingAssignmentSummary(
   };
 }
 
-export function toTeacherResponse(teacher: TeacherWithRelations): TeacherResponse {
+export function toTeacherResponse(
+  teacher: TeacherWithRelations,
+): TeacherResponse {
   return {
     id: teacher.id,
     userId: teacher.userId,

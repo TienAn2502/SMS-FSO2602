@@ -3,10 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 
-import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
-import { RequestIdInterceptor } from './common/interceptors/request-id.interceptor';
-import { ResponseWrapperInterceptor } from './common/interceptors/response-wrapper.interceptor';
-import type { EnvConfig } from './common/config/env.schema';
+import { GlobalExceptionFilter } from '@/common/filters/global-exception.filter';
+import { RequestIdInterceptor } from '@/common/interceptors/request-id.interceptor';
+import { ResponseWrapperInterceptor } from '@/common/interceptors/response-wrapper.interceptor';
+import type { EnvConfig } from '@/common/config/env.schema';
 
 export function setupApp(app: INestApplication): void {
   const configService = app.get(ConfigService<EnvConfig, true>);

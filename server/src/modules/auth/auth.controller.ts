@@ -2,13 +2,13 @@ import { Controller, Get, Post, Body, Req, Res } from '@nestjs/common';
 import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 
-import { AUTH_COOKIE } from '../../common/auth/auth.constants';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { Public } from '../../common/decorators/public.decorator';
-import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import type { AuthenticatedUser } from '../../common/auth/auth.types';
-import { AuthService } from './auth.service';
-import { loginSchema, type LoginInput } from './schemas/login.schema';
+import { AUTH_COOKIE } from '@/common/auth/auth.constants';
+import { CurrentUser } from '@/common/decorators/current-user.decorator';
+import { Public } from '@/common/decorators/public.decorator';
+import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe';
+import type { AuthenticatedUser } from '@/common/auth/auth.types';
+import { AuthService } from '@/modules/auth/auth.service';
+import { loginSchema, type LoginInput } from '@/modules/auth/schemas/login.schema';
 
 @ApiTags('Auth')
 @Controller('auth')

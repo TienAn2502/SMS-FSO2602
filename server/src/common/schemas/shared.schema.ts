@@ -7,4 +7,4 @@ export const paginationSchema = z.object({
 
 export type PaginationQuery = z.infer<typeof paginationSchema>;
 
-export const uuidParamSchema = z.string().uuid('ID không hợp lệ');
+export const uuidParamSchema = z.uuid('ID không hợp lệ');

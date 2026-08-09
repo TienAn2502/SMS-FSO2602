@@ -1,6 +1,6 @@
 import type { Parent, Student, StudentParent, User } from '@prisma/client';
 
-import { toIsoDateString } from '../../../common/schemas/academic.schema';
+import { toIsoDateString } from '@/common/schemas/academic.schema';
 
 export interface LinkedStudentSummary {
   id: string;

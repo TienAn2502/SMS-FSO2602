@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{TITLE}}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Be Vietnam Pro', 'Segoe UI', sans-serif;
+        font-size: 11pt;
+        color: #111827;
+        margin: 0;
+        line-height: 1.45;
+      }
+
+      .report {
+        width: 100%;
+      }
+
+      .report-header {
+        text-align: center;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #1d4ed8;
+        padding-bottom: 12px;
+      }
+
+      .school-name {
+        font-size: 12pt;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .report-title {
+        margin: 8px 0 4px;
+        font-size: 16pt;
+        font-weight: 700;
+      }
+
+      .report-subtitle,
+      .report-meta {
+        font-size: 10pt;
+        color: #4b5563;
+      }
+
+      .report-body {
+        margin-top: 8px;
+      }
+
+      table.data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 10pt;
+      }
+
+      table.data-table th,
+      table.data-table td {
+        border: 1px solid #d1d5db;
+        padding: 6px 8px;
+        vertical-align: top;
+      }
+
+      table.data-table th {
+        background: #eff6ff;
+        font-weight: 600;
+        text-align: left;
+      }
+
+      table.data-table td.num {
+        text-align: center;
+      }
+
+      .report-footer {
+        margin-top: 24px;
+        font-size: 9pt;
+        color: #6b7280;
+        text-align: right;
+      }
+
+      .page-break {
+        page-break-before: always;
+        break-before: page;
+      }
+
+      .draft-watermark {
+        position: fixed;
+        top: 40%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-35deg);
+        font-size: 72pt;
+        font-weight: 700;
+        color: rgba(220, 38, 38, 0.12);
+        pointer-events: none;
+        z-index: 9999;
+        white-space: nowrap;
+      }
+
+      .info-block {
+        margin-bottom: 12px;
+        font-size: 9pt;
+        color: #374151;
+      }
+
+      .info-block div {
+        margin: 2px 0;
+      }
+
+      table.data-table.compact {
+        font-size: 8pt;
+      }
+
+      table.data-table.compact th,
+      table.data-table.compact td {
+        padding: 4px 5px;
+      }
+
+      table.matrix-table td.matrix-cell {
+        white-space: pre-line;
+        font-size: 8pt;
+        text-align: center;
+        vertical-align: middle;
+      }
+
+      table.matrix-table th.period-col,
+      table.matrix-table td.period-col {
+        width: 48px;
+        text-align: center;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="report">
+      <header class="report-header">
+        {{SCHOOL_NAME_BLOCK}}
+        <h1 class="report-title">{{TITLE}}</h1>
+        {{SUBTITLE_BLOCK}} {{ACADEMIC_YEAR_BLOCK}}
+      </header>
+      <main class="report-body">{{BODY_HTML}}</main>
+      {{GENERATED_AT_BLOCK}}
+    </div>
+  </body>
+</html>

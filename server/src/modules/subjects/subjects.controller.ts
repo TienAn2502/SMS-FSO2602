@@ -13,13 +13,13 @@ import {
 import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 
-import type { AuthenticatedUser } from '../../common/auth/auth.types';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { TenantGuard } from '../../common/guards/tenant.guard';
-import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import { uuidParamSchema } from '../../common/schemas/shared.schema';
+import type { AuthenticatedUser } from '@/common/auth/auth.types';
+import { CurrentUser } from '@/common/decorators/current-user.decorator';
+import { Roles } from '@/common/decorators/roles.decorator';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { TenantGuard } from '@/common/guards/tenant.guard';
+import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe';
+import { uuidParamSchema } from '@/common/schemas/shared.schema';
 import {
   createSubjectSchema,
   listSubjectsQuerySchema,
@@ -29,8 +29,8 @@ import {
   type ListSubjectsQuery,
   type UpdateSubjectInput,
   type UpdateSubjectStatusInput,
-} from './schemas/subject.schema';
-import { SubjectsService } from './subjects.service';
+} from '@/modules/subjects/schemas/subject.schema';
+import { SubjectsService } from '@/modules/subjects/subjects.service';
 
 @ApiTags('Subjects')
 @ApiCookieAuth('access_token')
@@ -41,6 +41,12 @@ export class SubjectsController {
   constructor(private readonly subjectsService: SubjectsService) {}
 
   @Get()
+  @Roles(
+    UserRole.SCHOOL_ADMIN,
+    UserRole.STUDENT,
+    UserRole.TEACHER,
+    UserRole.PARENT,
+  )
   @ApiOperation({ summary: 'Danh sách môn học' })
   async list(
     @CurrentUser() user: AuthenticatedUser,
@@ -58,6 +64,12 @@ export class SubjectsController {
   }
 
   @Get(':id')
+  @Roles(
+    UserRole.SCHOOL_ADMIN,
+    UserRole.STUDENT,
+    UserRole.TEACHER,
+    UserRole.PARENT,
+  )
   @ApiOperation({ summary: 'Chi tiết môn học' })
   findById(
     @CurrentUser() user: AuthenticatedUser,

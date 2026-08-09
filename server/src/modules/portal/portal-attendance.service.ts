@@ -2,35 +2,34 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import {
   AcademicEntityStatus,
   AttendanceSessionStatus,
-  UserRole,
 } from '@prisma/client';
 
-import type { AuthenticatedUser } from '../../common/auth/auth.types';
-import { PrismaService } from '../../common/database/prisma.service';
-import { AppException } from '../../common/exceptions/app.exception';
-import type { PaginationMeta } from '../../common/types/api-response.types';
+import type { AuthenticatedUser } from '@/common/auth/auth.types';
+import { PrismaService } from '@/common/database/prisma.service';
+import { AppException } from '@/common/exceptions/app.exception';
+import type { PaginationMeta } from '@/common/types/api-response.types';
 import {
   buildPaginationMeta,
   getSkip,
-} from '../../common/utils/pagination.util';
-import { AttendanceRecordsService } from '../attendance-records/attendance-records.service';
-import type { AttendanceSessionDetailResponse } from '../attendance-sessions/mappers/attendance-session.mapper';
-import type { AttendanceSessionResponse } from '../attendance-sessions/mappers/attendance-session.mapper';
-import { AttendanceSessionsService } from '../attendance-sessions/attendance-sessions.service';
-import { ParentsService } from '../parents/parents.service';
-import { SemestersService } from '../semesters/semesters.service';
+} from '@/common/utils/pagination.util';
+import { AttendanceRecordsService } from '@/modules/attendance-records/attendance-records.service';
+import type { AttendanceSessionDetailResponse } from '@/modules/attendance-sessions/mappers/attendance-session.mapper';
+import type { AttendanceSessionResponse } from '@/modules/attendance-sessions/mappers/attendance-session.mapper';
+import { AttendanceSessionsService } from '@/modules/attendance-sessions/attendance-sessions.service';
+import { ParentsService } from '@/modules/parents/parents.service';
+import { SemestersService } from '@/modules/semesters/semesters.service';
 import {
   toPortalAttendanceClassItem,
   toPortalMyAttendanceItem,
   type PortalAttendanceClassItem,
   type PortalMyAttendanceItem,
-} from './mappers/portal-attendance.mapper';
+} from '@/modules/portal/mappers/portal-attendance.mapper';
 import type {
   PortalBulkUpsertAttendanceRecordsInput,
   PortalCloseAttendanceSessionInput,
   PortalCreateAttendanceSessionInput,
   PortalMyAttendanceQuery,
-} from './schemas/portal-attendance.schema';
+} from '@/modules/portal/schemas/portal-attendance.schema';
 
 @Injectable()
 export class PortalAttendanceService {
@@ -45,7 +44,6 @@ export class PortalAttendanceService {
   async getMyAttendanceClasses(
     user: AuthenticatedUser,
   ): Promise<PortalAttendanceClassItem[]> {
-    this.assertRole(user, UserRole.TEACHER);
     const teacher = await this.findTeacherProfileByUserId(
       user.activeSchoolId,
       user.id,
@@ -88,7 +86,6 @@ export class PortalAttendanceService {
     user: AuthenticatedUser,
     sessionId: string,
   ): Promise<AttendanceSessionDetailResponse> {
-    this.assertRole(user, UserRole.TEACHER);
     await this.assertTeacherOwnsSession(
       user.activeSchoolId,
       user.id,
@@ -105,7 +102,6 @@ export class PortalAttendanceService {
     user: AuthenticatedUser,
     input: PortalCreateAttendanceSessionInput,
   ): Promise<AttendanceSessionResponse> {
-    this.assertRole(user, UserRole.TEACHER);
     const teacher = await this.findTeacherProfileByUserId(
       user.activeSchoolId,
       user.id,
@@ -122,7 +118,6 @@ export class PortalAttendanceService {
     sessionId: string,
     input: PortalBulkUpsertAttendanceRecordsInput,
   ): Promise<AttendanceSessionDetailResponse> {
-    this.assertRole(user, UserRole.TEACHER);
     await this.assertTeacherOwnsOpenSession(
       user.activeSchoolId,
       user.id,
@@ -136,12 +131,27 @@ export class PortalAttendanceService {
     );
   }
 
+  async initializeMySessionRecords(
+    user: AuthenticatedUser,
+    sessionId: string,
+  ): Promise<AttendanceSessionDetailResponse> {
+    await this.assertTeacherOwnsOpenSession(
+      user.activeSchoolId,
+      user.id,
+      sessionId,
+    );
+
+    return this.attendanceRecordsService.initializeSessionRecords(
+      user.activeSchoolId,
+      sessionId,
+    );
+  }
+
   async closeMyAttendanceSession(
     user: AuthenticatedUser,
     sessionId: string,
     input: PortalCloseAttendanceSessionInput,
   ): Promise<AttendanceSessionResponse> {
-    this.assertRole(user, UserRole.TEACHER);
     await this.assertTeacherOwnsOpenSession(
       user.activeSchoolId,
       user.id,
@@ -159,7 +169,6 @@ export class PortalAttendanceService {
     user: AuthenticatedUser,
     query: PortalMyAttendanceQuery,
   ): Promise<{ items: PortalMyAttendanceItem[]; meta: PaginationMeta }> {
-    this.assertRole(user, UserRole.STUDENT);
     const student = await this.findStudentProfileByUserId(
       user.activeSchoolId,
       user.id,
@@ -177,7 +186,6 @@ export class PortalAttendanceService {
     studentId: string,
     query: PortalMyAttendanceQuery,
   ): Promise<{ items: PortalMyAttendanceItem[]; meta: PaginationMeta }> {
-    this.assertRole(user, UserRole.PARENT);
     const parent = await this.parentsService.findParentByUserId(
       user.activeSchoolId,
       user.id,
@@ -215,11 +223,7 @@ export class PortalAttendanceService {
       );
     }
 
-    return this.listAttendanceForStudent(
-      user.activeSchoolId,
-      studentId,
-      query,
-    );
+    return this.listAttendanceForStudent(user.activeSchoolId, studentId, query);
   }
 
   private async listAttendanceForStudent(
@@ -334,16 +338,6 @@ export class PortalAttendanceService {
         'ATTENDANCE_SESSION_CLOSED',
         'Phiên điểm danh đã đóng — không thể ghi bản ghi',
         HttpStatus.CONFLICT,
-      );
-    }
-  }
-
-  private assertRole(user: AuthenticatedUser, role: UserRole): void {
-    if (user.role !== role) {
-      throw new AppException(
-        'FORBIDDEN',
-        'Bạn không có quyền truy cập tài nguyên này',
-        HttpStatus.FORBIDDEN,
       );
     }
   }

@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 
-import { AcademicYearsController } from './academic-years.controller';
-import { AcademicYearsService } from './academic-years.service';
+import { AcademicYearsController } from '@/modules/academic-years/academic-years.controller';
+import { AcademicYearsService } from '@/modules/academic-years/academic-years.service';
 
 @Module({
   controllers: [AcademicYearsController],

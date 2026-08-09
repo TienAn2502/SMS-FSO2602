@@ -1,6 +1,6 @@
 import type { School, User } from '@prisma/client';
 
-import type { AuthSessionData } from '../../../common/auth/auth.types';
+import type { AuthSessionData } from '@/common/auth/auth.types';
 
 type UserWithSchool = User & { school: School };
 

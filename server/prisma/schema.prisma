@@ -45,6 +45,11 @@ enum AcademicEntityStatus {
   INACTIVE
 }
 
+enum SubjectEvaluationMode {
+  NUMERIC
+  PASS_FAIL
+}
+
 enum Gender {
   MALE
   FEMALE
@@ -55,6 +60,7 @@ enum EnrollmentStatus {
   ACTIVE
   TRANSFERRED
   WITHDRAWN
+  SEMESTER_COMPLETED
   COMPLETED
 }
 
@@ -74,6 +80,49 @@ enum AttendanceRecordStatus {
   ABSENT // Vắng
   LATE // Muộn
   EXCUSED // Vắng có lý do
+}
+
+enum AssessmentType {
+  REGULAR
+  MIDTERM
+  FINAL
+}
+
+enum AssessmentStatus {
+  OPEN
+  CLOSED
+}
+
+enum TrainingResultLevel {
+  GOOD
+  FAIR
+  SATISFACTORY
+  UNSATISFACTORY
+}
+
+enum AcademicResultLevel {
+  GOOD
+  FAIR
+  SATISFACTORY
+  UNSATISFACTORY
+}
+
+enum PassFailResult {
+  PASS
+  FAIL
+  PENDING
+}
+
+enum PromotionDecision {
+  PENDING
+  PROMOTED
+  RETAINED
+  GRADUATED
+}
+
+enum SummaryStatus {
+  DRAFT
+  CLOSED
 }
 
 model School {
@@ -109,6 +158,12 @@ model School {
   studentParents       StudentParent[]
   attendanceSessions   AttendanceSession[]
   attendanceRecords    AttendanceRecord[]
+  assessments          Assessment[]
+  scores               Score[]
+  studentSubjectResults    StudentSubjectResult[]
+  studentConductRecords    StudentConductRecord[]
+  studentSemesterSummaries StudentSemesterSummary[]
+  studentYearSummaries     StudentYearSummary[]
 
   @@index([status])
   @@map("schools")
@@ -152,6 +207,7 @@ model AcademicYear {
   school             School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   semesters          Semester[]
   homeroomClasses    HomeroomClass[]
+  studentYearSummaries StudentYearSummary[]
 
   @@unique([schoolId, code])
   @@index([schoolId])
@@ -179,6 +235,10 @@ model Semester {
   timetableEntries TimetableEntry[]
   studentEnrollments StudentEnrollment[]
   attendanceSessions AttendanceSession[]
+  assessments        Assessment[]
+  studentSubjectResults    StudentSubjectResult[]
+  studentConductRecords    StudentConductRecord[]
+  studentSemesterSummaries StudentSemesterSummary[]
 
   @@unique([academicYearId, code])
   @@index([schoolId])
@@ -220,12 +280,14 @@ model Subject {
 }
 
 model GradeLevelSubject {
-  id           String               @id @default(uuid()) @db.Uuid
-  schoolId     String               @map("school_id") @db.Uuid
-  gradeLevelId String               @map("grade_level_id") @db.Uuid
-  subjectId    String               @map("subject_id") @db.Uuid
-  isRequired   Boolean              @default(true) @map("is_required")
-  status       AcademicEntityStatus @default(ACTIVE)
+  id             String               @id @default(uuid()) @db.Uuid
+  schoolId       String               @map("school_id") @db.Uuid
+  gradeLevelId   String               @map("grade_level_id") @db.Uuid
+  subjectId      String               @map("subject_id") @db.Uuid
+  isRequired     Boolean                @default(true) @map("is_required")
+  periodsPerYear Int?                   @map("periods_per_year") @db.SmallInt
+  evaluationMode SubjectEvaluationMode  @default(NUMERIC) @map("evaluation_mode")
+  status         AcademicEntityStatus   @default(ACTIVE)
 
   school         School          @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   gradeLevel     GradeLevel      @relation(fields: [gradeLevelId], references: [id], onDelete: Cascade)
@@ -258,6 +320,10 @@ model HomeroomClass {
   homeroomTeacher    Teacher?            @relation("HomeroomTeacher", fields: [homeroomTeacherId], references: [id], onDelete: SetNull)
   courseSections     CourseSection[]
   studentEnrollments StudentEnrollment[]
+  studentConductRecords    StudentConductRecord[]
+  studentSemesterSummaries StudentSemesterSummary[]
+  studentYearSummaries     StudentYearSummary[]
+  promotedYearSummaries    StudentYearSummary[]     @relation("PromotedHomeroomClass")
 
   @@unique([schoolId, academicYearId, code])
   @@index([schoolId])
@@ -286,6 +352,8 @@ model CourseSection {
   teachingAssignments  TeachingAssignment[]
   timetableEntries     TimetableEntry[]
   attendanceSessions   AttendanceSession[]
+  assessments          Assessment[]
+  studentSubjectResults StudentSubjectResult[]
 
   @@unique([schoolId, semesterId, code])
   @@unique([homeroomClassId, gradeLevelSubjectId, semesterId])
@@ -330,6 +398,7 @@ model Student {
   gender       Gender?
   phone        String?              @db.VarChar(20)
   address      String?              @db.Text
+  externalCode String?              @map("external_code") @db.VarChar(50)
   avatarFileId String?              @map("avatar_file_id") @db.Uuid
   status       AcademicEntityStatus @default(ACTIVE)
   createdAt    DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -341,12 +410,19 @@ model Student {
   enrollments     StudentEnrollment[]
   studentParents  StudentParent[]
   attendanceRecords AttendanceRecord[]
+  scores            Score[]
+  studentSubjectResults    StudentSubjectResult[]
+  studentConductRecords    StudentConductRecord[]
+  studentSemesterSummaries StudentSemesterSummary[]
+  studentYearSummaries     StudentYearSummary[]
 
   @@unique([schoolId, userId])
+  @@unique([schoolId, externalCode])
   @@index([schoolId])
   @@index([userId])
   @@index([status])
   @@index([fullName])
+  @@index([externalCode])
   @@map("students")
 }
 
@@ -396,7 +472,9 @@ model Teacher {
   teachingAssignments TeachingAssignment[]
   timetableEntries    TimetableEntry[]
   attendanceSessions  AttendanceSession[]
+  assessments         Assessment[]
   homeroomClasses     HomeroomClass[]      @relation("HomeroomTeacher")
+  studentConductRecords StudentConductRecord[] @relation("ConductRecordedBy")
 
   @@unique([schoolId, userId])
   @@index([schoolId])
@@ -543,4 +621,179 @@ model AttendanceRecord {
   @@index([studentId])
   @@index([status])
   @@map("attendance_records")
+}
+
+model Assessment {
+  id              String           @id @default(uuid()) @db.Uuid
+  schoolId        String           @map("school_id") @db.Uuid
+  semesterId      String           @map("semester_id") @db.Uuid
+  courseSectionId String           @map("course_section_id") @db.Uuid
+  teacherId       String           @map("teacher_id") @db.Uuid
+  type            AssessmentType
+  name            String           @db.VarChar(255)
+  assessmentDate  DateTime         @map("assessment_date") @db.Date
+  maxScore        Decimal          @default(10) @map("max_score") @db.Decimal(5, 2)
+  weight          Decimal?         @db.Decimal(5, 2)
+  status          AssessmentStatus @default(OPEN)
+  note            String?          @db.Text
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school        School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  semester      Semester      @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+  courseSection CourseSection @relation(fields: [courseSectionId], references: [id], onDelete: Cascade)
+  teacher       Teacher       @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  scores        Score[]
+
+  @@unique([courseSectionId, assessmentDate, type, name])
+  @@index([schoolId])
+  @@index([semesterId])
+  @@index([courseSectionId])
+  @@index([teacherId])
+  @@index([assessmentDate])
+  @@index([type])
+  @@index([status])
+  @@map("assessments")
+}
+
+model Score {
+  id           String   @id @default(uuid()) @db.Uuid
+  schoolId     String   @map("school_id") @db.Uuid
+  assessmentId String   @map("assessment_id") @db.Uuid
+  studentId    String   @map("student_id") @db.Uuid
+  score        Decimal? @db.Decimal(5, 2)
+  note         String?  @db.Text
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school     School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  student    Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([assessmentId, studentId])
+  @@index([schoolId])
+  @@index([assessmentId])
+  @@index([studentId])
+  @@map("scores")
+}
+
+model StudentSubjectResult {
+  id               String                @id @default(uuid()) @db.Uuid
+  schoolId         String                @map("school_id") @db.Uuid
+  studentId        String                @map("student_id") @db.Uuid
+  courseSectionId  String                @map("course_section_id") @db.Uuid
+  semesterId       String                @map("semester_id") @db.Uuid
+  evaluationMode   SubjectEvaluationMode @map("evaluation_mode")
+  regularAverage   Decimal?              @map("regular_average") @db.Decimal(5, 2)
+  midtermScore     Decimal?              @map("midterm_score") @db.Decimal(5, 2)
+  finalScore       Decimal?              @map("final_score") @db.Decimal(5, 2)
+  semesterAverage  Decimal?              @map("semester_average") @db.Decimal(5, 2)
+  yearAverage      Decimal?              @map("year_average") @db.Decimal(5, 2)
+  passFailResult   PassFailResult?       @map("pass_fail_result")
+  computedAt       DateTime              @map("computed_at") @db.Timestamptz(6)
+  status           SummaryStatus         @default(DRAFT)
+  createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school        School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student       Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  courseSection CourseSection @relation(fields: [courseSectionId], references: [id], onDelete: Cascade)
+  semester      Semester      @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, courseSectionId, semesterId])
+  @@index([schoolId])
+  @@index([studentId])
+  @@index([semesterId])
+  @@index([courseSectionId])
+  @@index([status])
+  @@map("student_subject_results")
+}
+
+model StudentConductRecord {
+  id                    String              @id @default(uuid()) @db.Uuid
+  schoolId              String              @map("school_id") @db.Uuid
+  studentId             String              @map("student_id") @db.Uuid
+  semesterId            String              @map("semester_id") @db.Uuid
+  homeroomClassId       String              @map("homeroom_class_id") @db.Uuid
+  trainingResultLevel   TrainingResultLevel @map("training_result_level")
+  note                  String?             @db.Text
+  recordedByTeacherId   String?             @map("recorded_by_teacher_id") @db.Uuid
+  status                SummaryStatus       @default(DRAFT)
+  createdAt             DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school            School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student           Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  semester          Semester      @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+  homeroomClass     HomeroomClass @relation(fields: [homeroomClassId], references: [id], onDelete: Cascade)
+  recordedByTeacher Teacher?      @relation("ConductRecordedBy", fields: [recordedByTeacherId], references: [id], onDelete: SetNull)
+
+  @@unique([studentId, semesterId])
+  @@index([schoolId])
+  @@index([homeroomClassId])
+  @@index([semesterId])
+  @@index([status])
+  @@map("student_conduct_records")
+}
+
+model StudentSemesterSummary {
+  id                  String               @id @default(uuid()) @db.Uuid
+  schoolId            String               @map("school_id") @db.Uuid
+  studentId           String               @map("student_id") @db.Uuid
+  semesterId          String               @map("semester_id") @db.Uuid
+  homeroomClassId     String               @map("homeroom_class_id") @db.Uuid
+  overallAverage      Decimal?             @map("overall_average") @db.Decimal(5, 2)
+  academicResultLevel AcademicResultLevel? @map("academic_result_level")
+  trainingResultLevel TrainingResultLevel? @map("training_result_level")
+  subjectCount        Int?                 @map("subject_count") @db.SmallInt
+  status              SummaryStatus        @default(DRAFT)
+  finalizedAt         DateTime?            @map("finalized_at") @db.Timestamptz(6)
+  createdAt           DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school        School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student       Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  semester      Semester      @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+  homeroomClass HomeroomClass @relation(fields: [homeroomClassId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, semesterId])
+  @@index([schoolId])
+  @@index([homeroomClassId])
+  @@index([semesterId])
+  @@index([academicResultLevel])
+  @@index([status])
+  @@map("student_semester_summaries")
+}
+
+model StudentYearSummary {
+  id                     String               @id @default(uuid()) @db.Uuid
+  schoolId               String               @map("school_id") @db.Uuid
+  studentId              String               @map("student_id") @db.Uuid
+  academicYearId         String               @map("academic_year_id") @db.Uuid
+  homeroomClassId        String               @map("homeroom_class_id") @db.Uuid
+  overallAverage         Decimal?             @map("overall_average") @db.Decimal(5, 2)
+  academicResultLevel    AcademicResultLevel? @map("academic_result_level")
+  trainingResultLevel    TrainingResultLevel? @map("training_result_level")
+  promotionDecision      PromotionDecision    @default(PENDING) @map("promotion_decision")
+  absentSessionCount     Int?                 @map("absent_session_count")
+  nextHomeroomClassId    String?              @map("next_homeroom_class_id") @db.Uuid
+  note                   String?              @db.Text
+  status                 SummaryStatus        @default(DRAFT)
+  finalizedAt            DateTime?            @map("finalized_at") @db.Timestamptz(6)
+  createdAt              DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school              School         @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student             Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  academicYear        AcademicYear   @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  homeroomClass       HomeroomClass  @relation(fields: [homeroomClassId], references: [id], onDelete: Cascade)
+  nextHomeroomClass   HomeroomClass? @relation("PromotedHomeroomClass", fields: [nextHomeroomClassId], references: [id], onDelete: SetNull)
+
+  @@unique([studentId, academicYearId])
+  @@index([schoolId])
+  @@index([academicYearId])
+  @@index([homeroomClassId])
+  @@index([promotionDecision])
+  @@index([status])
+  @@map("student_year_summaries")
 }

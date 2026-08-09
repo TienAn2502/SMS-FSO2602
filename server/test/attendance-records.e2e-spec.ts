@@ -3,8 +3,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import type { App } from 'supertest/types';
 
-import { AppModule } from '../src/app.module';
-import { setupApp } from '../src/setup-app';
+import { AppModule } from '@/app.module';
+import { setupApp } from '@/setup-app';
 
 describe('Attendance Records API (e2e)', () => {
   let app: INestApplication<App>;
@@ -25,12 +25,11 @@ describe('Attendance Records API (e2e)', () => {
     }
   });
 
-  it('PUT /api/v1/portal/attendance-sessions/:id/records without auth returns 401', async () => {
+  it('POST /api/v1/portal/attendance-sessions/:id/records/initialize without auth returns 401', async () => {
     const res = await request(app.getHttpServer())
-      .put(
-        '/api/v1/portal/attendance-sessions/00000000-0000-4000-8000-000000000001/records',
+      .post(
+        '/api/v1/portal/attendance-sessions/00000000-0000-4000-8000-000000000001/records/initialize',
       )
-      .send({ records: [], initMissingStudents: true })
       .expect(401);
 
     const body = res.body as { success: boolean; code: string };

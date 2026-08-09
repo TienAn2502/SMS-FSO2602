@@ -13,28 +13,28 @@ import {
 import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 
-import type { AuthenticatedUser } from '../../common/auth/auth.types';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { TenantGuard } from '../../common/guards/tenant.guard';
-import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import { uuidParamSchema } from '../../common/schemas/shared.schema';
+import type { AuthenticatedUser } from '@/common/auth/auth.types';
+import { CurrentUser } from '@/common/decorators/current-user.decorator';
+import { Roles } from '@/common/decorators/roles.decorator';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { TenantGuard } from '@/common/guards/tenant.guard';
+import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe';
+import { uuidParamSchema } from '@/common/schemas/shared.schema';
 import {
   createStudentSchema,
-  // createStudentUserSchema,
+  createStudentUserSchema,
   linkStudentUserSchema,
   listStudentsQuerySchema,
   updateStudentSchema,
   updateStudentStatusSchema,
   type CreateStudentInput,
-  // type CreateStudentUserInput,
+  type CreateStudentUserInput,
   type LinkStudentUserInput,
   type ListStudentsQuery,
   type UpdateStudentInput,
   type UpdateStudentStatusInput,
-} from './schemas/student.schema';
-import { StudentsService } from './students.service';
+} from '@/modules/students/schemas/student.schema';
+import { StudentsService } from '@/modules/students/students.service';
 
 @ApiTags('Students')
 @ApiCookieAuth('access_token')
@@ -129,27 +129,28 @@ export class StudentsController {
     };
   }
 
-  // @Post(':id/create-user')
-  // @HttpCode(HttpStatus.CREATED)
-  // @ApiOperation({ summary: 'Tạo tài khoản và gắn vào hồ sơ học sinh' })
-  // async createUser(
-  //   @CurrentUser() user: AuthenticatedUser,
-  //   @Param('id', new ZodValidationPipe(uuidParamSchema)) id: string,
-  //   @Body(new ZodValidationPipe(createStudentUserSchema))
-  //   body: CreateStudentUserInput,
-  // ) {
-  //   const data = await this.studentsService.createUser(
-  //     user.activeSchoolId,
-  //     id,
-  //     body,
-  //   );
+  // Dùng khi đã có hồ sơ HS (student) nhưng chưa có tài khoản (user)
+  @Post(':id/create-user')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Tạo tài khoản và gắn vào hồ sơ học sinh' })
+  async createUser(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', new ZodValidationPipe(uuidParamSchema)) id: string,
+    @Body(new ZodValidationPipe(createStudentUserSchema))
+    body: CreateStudentUserInput,
+  ) {
+    const data = await this.studentsService.createUser(
+      user.activeSchoolId,
+      id,
+      body,
+    );
 
-  //   return {
-  //     success: true,
-  //     data,
-  //     message: 'Tạo tài khoản học sinh thành công',
-  //   };
-  // }
+    return {
+      success: true,
+      data,
+      message: 'Tạo tài khoản học sinh thành công',
+    };
+  }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Cập nhật hồ sơ học sinh' })

@@ -3,8 +3,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import type { App } from 'supertest/types';
 
-import { AppModule } from '../src/app.module';
-import { setupApp } from '../src/setup-app';
+import { AppModule } from '@/app.module';
+import { setupApp } from '@/setup-app';
 
 describe('Teaching Assignments API (e2e)', () => {
   let app: INestApplication<App>;
@@ -66,6 +66,20 @@ describe('Teaching Assignments API (e2e)', () => {
         '/api/v1/teaching-assignments/00000000-0000-4000-8000-000000000001/status',
       )
       .send({ status: 'INACTIVE' })
+      .expect(401);
+
+    const body = res.body as { success: boolean; code: string };
+    expect(body.success).toBe(false);
+    expect(body.code).toBe('UNAUTHORIZED');
+  });
+
+  it('POST /api/v1/teaching-assignments/copy-from-semester without auth returns 401', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/api/v1/teaching-assignments/copy-from-semester')
+      .send({
+        sourceSemesterId: '00000000-0000-4000-8000-000000000001',
+        targetSemesterId: '00000000-0000-4000-8000-000000000002',
+      })
       .expect(401);
 
     const body = res.body as { success: boolean; code: string };

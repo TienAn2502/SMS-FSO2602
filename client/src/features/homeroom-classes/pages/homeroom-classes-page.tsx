@@ -30,6 +30,7 @@ import {
   updateHomeroomClassStatus,
   type HomeroomClass,
 } from '@/features/homeroom-classes/api/homeroom-classes-api';
+import { HomeroomClassesImportExportActions } from '@/features/homeroom-classes/components/homeroom-classes-import-export-actions';
 import { fetchAllTeachers } from '@/features/teachers/api/teachers-api';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { getApiError } from '@/lib/api';
@@ -69,6 +70,7 @@ export function HomeroomClassesPage() {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [page, setPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const debouncedSearch = useDebouncedValue(globalFilter, 300);
 
   const yearFilter = getColumnFilterValue<string>(columnFilters, 'academicYearId');
@@ -356,8 +358,28 @@ export function HomeroomClassesPage() {
       ) : null}
 
       <Card>
-        <CardHeader>
-          <CardTitle>Danh sách lớp hành chính</CardTitle>
+        <CardHeader className='flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between'>
+          <div>
+            <CardTitle>Danh sách lớp hành chính</CardTitle>
+            <CardDescription>
+              Bộ lọc áp dụng cho danh sách và export file
+            </CardDescription>
+          </div>
+          <HomeroomClassesImportExportActions
+            exportFilters={{
+              search: debouncedSearch || undefined,
+              academicYearId: yearFilter,
+              gradeLevelId: gradeFilter,
+              status: statusFilter,
+            }}
+            importOpen={importOpen}
+            onImportOpenChange={setImportOpen}
+            onImportSuccess={() => {
+              void queryClient.invalidateQueries({
+                queryKey: ['homeroom-classes'],
+              });
+            }}
+          />
         </CardHeader>
         <CardContent className='space-y-4'>
           <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-4'>

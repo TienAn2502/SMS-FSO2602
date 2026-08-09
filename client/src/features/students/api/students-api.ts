@@ -17,7 +17,7 @@ export interface StudentEnrollmentSummary {
   homeroomClassName: string;
   homeroomClassCode: string;
   enrolledAt: string;
-  status: 'ACTIVE' | 'TRANSFERRED' | 'WITHDRAWN' | 'COMPLETED';
+  status: 'ACTIVE' | 'TRANSFERRED' | 'WITHDRAWN' | 'SEMESTER_COMPLETED' | 'COMPLETED';
 }
 
 export interface Student {
@@ -29,6 +29,7 @@ export interface Student {
   gender: Gender | null;
   phone: string | null;
   address: string | null;
+  externalCode: string | null;
   avatarFileId: string | null;
   status: AcademicEntityStatus;
   currentEnrollment: StudentEnrollmentSummary | null;

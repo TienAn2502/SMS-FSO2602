@@ -1,22 +1,19 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { Prisma, UserRole, UserStatus } from '@prisma/client';
 
-import { AppException } from '../../common/exceptions/app.exception';
-import { PrismaService } from '../../common/database/prisma.service';
-import { parseIsoDate } from '../../common/schemas/academic.schema';
-import type { PaginationMeta } from '../../common/types/api-response.types';
-import {
-  buildPaginationMeta,
-  getSkip,
-} from '../../common/utils/pagination.util';
-import { PasswordService } from '../../common/utils/password.service';
+import { AppException } from '@/common/exceptions/app.exception';
+import { PrismaService } from '@/common/database/prisma.service';
+import { parseIsoDate } from '@/common/schemas/academic.schema';
+import type { PaginationMeta } from '@/common/types/api-response.types';
+import { buildPaginationMeta, getSkip } from '@/common/utils/pagination.util';
+import { PasswordService } from '@/common/utils/password.service';
 import {
   teacherInclude,
   teacherListInclude,
   toTeacherListResponse,
   toTeacherResponse,
   type TeacherResponse,
-} from './mappers/teacher.mapper';
+} from '@/modules/teachers/mappers/teacher.mapper';
 import type {
   CreateTeacherInput,
   CreateTeacherUserInput,
@@ -24,7 +21,7 @@ import type {
   ListTeachersQuery,
   UpdateTeacherInput,
   UpdateTeacherStatusInput,
-} from './schemas/teacher.schema';
+} from '@/modules/teachers/schemas/teacher.schema';
 
 @Injectable()
 export class TeachersService {

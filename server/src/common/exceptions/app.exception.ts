@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 
-import type { ApiErrorDetail } from '../types/api-response.types';
+import type { ApiErrorDetail } from '@/common/types/api-response.types';
 
 export class AppException extends HttpException {
   constructor(
@@ -8,6 +8,7 @@ export class AppException extends HttpException {
     message: string,
     status: HttpStatus,
     public readonly details: ApiErrorDetail[] = [],
+    public readonly data?: unknown,
   ) {
     super(
       {
@@ -15,6 +16,7 @@ export class AppException extends HttpException {
         code,
         message,
         details,
+        ...(data !== undefined ? { data } : {}),
       },
       status,
     );

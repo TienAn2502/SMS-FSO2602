@@ -14,6 +14,7 @@ export interface ApiErrorResponse {
   code: string;
   message: string;
   details: ApiErrorDetail[];
+  data?: unknown;
 }
 
 export interface PaginationMeta {

@@ -3,9 +3,9 @@ import { z } from 'zod';
 import {
   academicEntityStatusSchema,
   isoDateSchema,
-} from '../../../common/schemas/academic.schema';
-import { paginationSchema } from '../../../common/schemas/shared.schema';
-import { genderSchema } from '../../students/schemas/student.schema';
+} from '@/common/schemas/academic.schema';
+import { paginationSchema } from '@/common/schemas/shared.schema';
+import { genderSchema } from '@/modules/students/schemas/student.schema';
 
 export const listTeachersQuerySchema = paginationSchema.extend({
   search: z.string().trim().optional(),

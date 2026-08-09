@@ -5,3 +5,4 @@ allowBuilds:
   prisma: true
   '@scarf/scarf': true
   unrs-resolver: true
+  puppeteer: true

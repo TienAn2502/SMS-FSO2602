@@ -13,14 +13,14 @@ import {
 import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 
-import type { AuthenticatedUser } from '../../common/auth/auth.types';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { TenantGuard } from '../../common/guards/tenant.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import { uuidParamSchema } from '../../common/schemas/shared.schema';
-import { UsersService } from './users.service';
+import type { AuthenticatedUser } from '@/common/auth/auth.types';
+import { CurrentUser } from '@/common/decorators/current-user.decorator';
+import { Roles } from '@/common/decorators/roles.decorator';
+import { TenantGuard } from '@/common/guards/tenant.guard';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe';
+import { uuidParamSchema } from '@/common/schemas/shared.schema';
+import { UsersService } from '@/modules/users/users.service';
 import {
   createUserSchema,
   listUsersQuerySchema,
@@ -30,7 +30,7 @@ import {
   type ListUsersQuery,
   type UpdateUserInput,
   type UpdateUserStatusInput,
-} from './schemas/user.schema';
+} from '@/modules/users/schemas/user.schema';
 
 // Module dành cho BGH nhà trường thao tác với giáo viên và học sinh trong trường
 

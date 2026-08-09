@@ -194,4 +194,5 @@ Chi tiết: [schema-sprint5.md](../database/schema-sprint5.md)
 
 ## Bước tiếp theo
 
-Sprint 5 hoàn thành (backend + frontend MVP điểm danh).
+Sprint 5 hoàn thành (backend + frontend MVP điểm danh).  
+Tiếp theo: [Sprint 6 — Sổ điểm](./sprint-6-plan.md).

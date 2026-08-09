@@ -6,22 +6,22 @@ import {
   UserStatus,
 } from '@prisma/client';
 
-import { AppException } from '../../common/exceptions/app.exception';
-import { PrismaService } from '../../common/database/prisma.service';
-import type { PaginationMeta } from '../../common/types/api-response.types';
+import { AppException } from '@/common/exceptions/app.exception';
+import { PrismaService } from '@/common/database/prisma.service';
+import type { PaginationMeta } from '@/common/types/api-response.types';
 import {
   buildPaginationMeta,
   getSkip,
-} from '../../common/utils/pagination.util';
-import { PasswordService } from '../../common/utils/password.service';
-import { StudentsService } from '../students/students.service';
+} from '@/common/utils/pagination.util';
+import { PasswordService } from '@/common/utils/password.service';
+import { StudentsService } from '@/modules/students/students.service';
 import {
   parentInclude,
   parentListInclude,
   toParentListResponse,
   toParentResponse,
   type ParentResponse,
-} from './mappers/parent.mapper';
+} from '@/modules/parents/mappers/parent.mapper';
 import type {
   CreateParentInput,
   CreateParentUserInput,
@@ -30,7 +30,7 @@ import type {
   ListParentsQuery,
   UpdateParentInput,
   UpdateParentStatusInput,
-} from './schemas/parent.schema';
+} from '@/modules/parents/schemas/parent.schema';
 
 @Injectable()
 export class ParentsService {
@@ -99,6 +99,7 @@ export class ParentsService {
     schoolId: string,
     input: CreateParentInput,
   ): Promise<ParentResponse> {
+    // tạo hồ sơ phụ huynh và tài khoản đăng nhập cùng lúc nếu có thông tin tài khoản
     if (input.account) {
       return this.createWithAccount(schoolId, input);
     }

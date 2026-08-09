@@ -9,7 +9,8 @@ import type {
   User,
 } from '@prisma/client';
 
-import { toIsoDateString } from '../../../common/schemas/academic.schema';
+import { toIsoDateString } from '@/common/schemas/academic.schema';
+import { STUDENT_YEAR_ENROLLMENT_STATUSES } from '@/common/utils/enrollment-status.util';
 
 type StudentEnrollmentWithRelations = StudentEnrollment & {
   homeroomClass: Pick<HomeroomClass, 'id' | 'name' | 'code'>;
@@ -58,6 +59,8 @@ export interface StudentResponse {
 
   address: string | null;
 
+  externalCode: string | null;
+
   avatarFileId: string | null;
 
   status: Student['status'];
@@ -78,22 +81,42 @@ type StudentWithRelations = Student & {
 export function pickCurrentEnrollment(
   enrollments: StudentEnrollmentWithRelations[],
 ): StudentEnrollmentWithRelations | null {
-  if (enrollments.length === 0) {
+  const eligible = enrollments.filter((enrollment) =>
+    STUDENT_YEAR_ENROLLMENT_STATUSES.includes(enrollment.status),
+  );
+
+  if (eligible.length === 0) {
     return null;
   }
 
-  const currentSemesterEnrollment = enrollments.find(
+  const activeCurrentSemester = eligible.find(
     (enrollment) =>
       enrollment.status === 'ACTIVE' && enrollment.semester.isCurrent,
   );
 
-  if (currentSemesterEnrollment) {
-    return currentSemesterEnrollment;
+  if (activeCurrentSemester) {
+    return activeCurrentSemester;
   }
 
-  return (
-    enrollments.find((enrollment) => enrollment.status === 'ACTIVE') ?? null
+  const activeCurrentYear = eligible.find(
+    (enrollment) =>
+      enrollment.status === 'ACTIVE' &&
+      enrollment.semester.academicYear.isCurrent,
   );
+
+  if (activeCurrentYear) {
+    return activeCurrentYear;
+  }
+
+  const anyActive = eligible.find(
+    (enrollment) => enrollment.status === 'ACTIVE',
+  );
+
+  if (anyActive) {
+    return anyActive;
+  }
+
+  return null;
 }
 
 export function toEnrollmentSummary(
@@ -146,6 +169,8 @@ export function toStudentResponse(
 
     address: student.address,
 
+    externalCode: student.externalCode,
+
     avatarFileId: student.avatarFileId,
 
     status: student.status,
@@ -166,7 +191,9 @@ export const studentInclude = {
   },
 
   enrollments: {
-    where: { status: 'ACTIVE' as const },
+    where: {
+      status: { in: STUDENT_YEAR_ENROLLMENT_STATUSES },
+    },
 
     include: {
       homeroomClass: {

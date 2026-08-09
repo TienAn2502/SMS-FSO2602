@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { paginationSchema } from '../../../common/schemas/shared.schema';
+import { paginationSchema } from '@/common/schemas/shared.schema';
 
 export const listGradeLevelsQuerySchema = paginationSchema.extend({
   search: z.string().trim().optional(),

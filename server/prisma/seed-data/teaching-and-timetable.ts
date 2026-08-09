@@ -12,6 +12,11 @@ export interface TeachingTimetableSeedResult {
   timetableCount: number;
 }
 
+export interface TimetableSeedResult {
+  timetableCount: number;
+  skippedCount: number;
+}
+
 /** Tính slot TKB: tránh trùng tiết trong lớp và trùng lịch GV cùng môn. */
 export function computeTimetableSlot(
   classIndex: number,
@@ -47,6 +52,110 @@ function buildHomeroomClassIndexMap(
 ): Map<string, number> {
   const sorted = [...homeroomClasses].sort((a, b) => a.code.localeCompare(b.code));
   return new Map(sorted.map((homeroomClass, index) => [homeroomClass.id, index]));
+}
+
+/** Seed TKB từ phân công GV hiện có (không tạo teaching assignment mới). */
+export async function seedTimetableEntriesForSemester(
+  prisma: PrismaClient,
+  schoolId: string,
+  semesterId: string,
+  options?: { replaceExisting?: boolean },
+): Promise<TimetableSeedResult> {
+  if (options?.replaceExisting) {
+    await prisma.timetableEntry.deleteMany({ where: { schoolId, semesterId } });
+  }
+
+  const existingCount = await prisma.timetableEntry.count({
+    where: { schoolId, semesterId },
+  });
+  if (existingCount > 0 && !options?.replaceExisting) {
+    return { timetableCount: 0, skippedCount: existingCount };
+  }
+
+  const [courseSections, homeroomClasses] = await Promise.all([
+    prisma.courseSection.findMany({
+      where: { schoolId, semesterId, status: AcademicEntityStatus.ACTIVE },
+      include: {
+        gradeLevelSubject: { include: { subject: true } },
+        homeroomClass: { select: { id: true, code: true } },
+        teachingAssignments: {
+          where: { schoolId, status: AcademicEntityStatus.ACTIVE },
+          select: { teacherId: true },
+          take: 1,
+        },
+      },
+    }),
+    prisma.homeroomClass.findMany({
+      where: { schoolId, status: AcademicEntityStatus.ACTIVE },
+      select: { id: true, code: true },
+    }),
+  ]);
+
+  const classIndexById = buildHomeroomClassIndexMap(homeroomClasses);
+
+  const timetableRows: Array<{
+    schoolId: string;
+    semesterId: string;
+    courseSectionId: string;
+    teacherId: string;
+    dayOfWeek: number;
+    periodNumber: number;
+    room: string;
+    status: AcademicEntityStatus;
+  }> = [];
+
+  let skippedCount = 0;
+
+  for (const section of courseSections) {
+    const teacherId = section.teachingAssignments[0]?.teacherId;
+    if (!teacherId) {
+      skippedCount += 1;
+      continue;
+    }
+
+    const subjectCode = section.gradeLevelSubject.subject.code;
+    const subjectIndex = THPT_SUBJECTS.findIndex(
+      (subject) => subject.code === subjectCode,
+    );
+    if (subjectIndex < 0) {
+      throw new Error(`Unknown subject code in course section ${section.code}`);
+    }
+
+    const homeroomClassId = section.homeroomClass?.id;
+    if (!homeroomClassId) {
+      throw new Error(`Course section ${section.code} missing homeroom class`);
+    }
+
+    const classIndex = classIndexById.get(homeroomClassId);
+    if (classIndex === undefined) {
+      throw new Error(`Missing class index for homeroom ${homeroomClassId}`);
+    }
+
+    const slot = computeTimetableSlot(classIndex, subjectIndex);
+    const room = section.homeroomClass?.code ?? 'P.101';
+
+    timetableRows.push({
+      schoolId,
+      semesterId,
+      courseSectionId: section.id,
+      teacherId,
+      dayOfWeek: slot.dayOfWeek,
+      periodNumber: slot.periodNumber,
+      room: `P.${room}`,
+      status: AcademicEntityStatus.ACTIVE,
+    });
+  }
+
+  for (let i = 0; i < timetableRows.length; i += ASSIGN_BATCH_SIZE) {
+    await prisma.timetableEntry.createMany({
+      data: timetableRows.slice(i, i + ASSIGN_BATCH_SIZE),
+    });
+  }
+
+  return {
+    timetableCount: timetableRows.length,
+    skippedCount,
+  };
 }
 
 export async function seedTeachingAssignmentsAndTimetable(

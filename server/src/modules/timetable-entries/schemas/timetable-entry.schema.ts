@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-import { academicEntityStatusSchema } from '../../../common/schemas/academic.schema';
-import { paginationSchema } from '../../../common/schemas/shared.schema';
+import { academicEntityStatusSchema } from '@/common/schemas/academic.schema';
+import { paginationSchema } from '@/common/schemas/shared.schema';
 
 export const dayOfWeekSchema = z.coerce
   .number()
@@ -21,6 +21,8 @@ export const listTimetableEntriesQuerySchema = paginationSchema.extend({
   courseSectionId: z.uuid().optional(),
   teacherId: z.uuid().optional(),
   homeroomClassId: z.uuid().optional(),
+  subjectId: z.uuid().optional(),
+  search: z.string().trim().optional(),
   dayOfWeek: dayOfWeekSchema.optional(),
   status: academicEntityStatusSchema.optional(),
   includeAllSemesters: z.coerce.boolean().optional().default(false),
@@ -63,3 +65,12 @@ export const updateTimetableEntrySchema = z
 export type UpdateTimetableEntryInput = z.infer<
   typeof updateTimetableEntrySchema
 >;
+
+export const timetableMatrixQuerySchema = listTimetableEntriesQuerySchema.omit({
+  page: true,
+  limit: true,
+  sortBy: true,
+  sortOrder: true,
+});
+
+export type TimetableMatrixQuery = z.infer<typeof timetableMatrixQuerySchema>;

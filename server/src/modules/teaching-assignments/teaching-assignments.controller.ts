@@ -13,22 +13,24 @@ import {
 import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 
-import type { AuthenticatedUser } from '../../common/auth/auth.types';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { TenantGuard } from '../../common/guards/tenant.guard';
-import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import { uuidParamSchema } from '../../common/schemas/shared.schema';
+import type { AuthenticatedUser } from '@/common/auth/auth.types';
+import { CurrentUser } from '@/common/decorators/current-user.decorator';
+import { Roles } from '@/common/decorators/roles.decorator';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { TenantGuard } from '@/common/guards/tenant.guard';
+import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe';
+import { uuidParamSchema } from '@/common/schemas/shared.schema';
 import {
+  copySemesterTeachingAssignmentsSchema,
   createTeachingAssignmentSchema,
   listTeachingAssignmentsQuerySchema,
   updateTeachingAssignmentStatusSchema,
+  type CopySemesterTeachingAssignmentsInput,
   type CreateTeachingAssignmentInput,
   type ListTeachingAssignmentsQuery,
   type UpdateTeachingAssignmentStatusInput,
-} from './schemas/teaching-assignment.schema';
-import { TeachingAssignmentsService } from './teaching-assignments.service';
+} from '@/modules/teaching-assignments/schemas/teaching-assignment.schema';
+import { TeachingAssignmentsService } from '@/modules/teaching-assignments/teaching-assignments.service';
 
 @ApiTags('Teaching Assignments')
 @ApiCookieAuth('access_token')
@@ -41,6 +43,12 @@ export class TeachingAssignmentsController {
   ) {}
 
   @Get()
+  @Roles(
+    UserRole.SCHOOL_ADMIN,
+    UserRole.STUDENT,
+    UserRole.TEACHER,
+    UserRole.PARENT,
+  )
   @ApiOperation({
     summary:
       'Danh sách phân công giảng dạy (mặc định: học kỳ hiện hành của trường)',
@@ -63,7 +71,36 @@ export class TeachingAssignmentsController {
     };
   }
 
+  @Post('copy-from-semester')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Sao chép phân công ACTIVE từ học kỳ nguồn sang học kỳ đích (vd. HK1 → HK2)',
+  })
+  async copyFromSemester(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body(new ZodValidationPipe(copySemesterTeachingAssignmentsSchema))
+    body: CopySemesterTeachingAssignmentsInput,
+  ) {
+    const data = await this.teachingAssignmentsService.copyFromSemester(
+      user.activeSchoolId,
+      body,
+    );
+
+    return {
+      success: true,
+      data,
+      message: `Đã sao chép ${data.createdCount} phân công (${data.sourceSemesterCode} → ${data.targetSemesterCode})`,
+    };
+  }
+
   @Get(':id')
+  @Roles(
+    UserRole.SCHOOL_ADMIN,
+    UserRole.STUDENT,
+    UserRole.TEACHER,
+    UserRole.PARENT,
+  )
   @ApiOperation({ summary: 'Chi tiết phân công giảng dạy' })
   findById(
     @CurrentUser() user: AuthenticatedUser,

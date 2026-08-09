@@ -1,7 +1,7 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { AppException } from '../exceptions/app.exception';
-import { assertValidDateRange } from '../schemas/academic.schema';
+import { AppException } from '@/common/exceptions/app.exception';
+import { assertValidDateRange } from '@/common/schemas/academic.schema';
 
 export function validateDateRangeOrThrow(
   startDate: string,

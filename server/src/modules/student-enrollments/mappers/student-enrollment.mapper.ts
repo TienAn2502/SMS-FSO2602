@@ -16,7 +16,7 @@ import type {
 
 
 
-import { toIsoDateString } from '../../../common/schemas/academic.schema';
+import { toIsoDateString } from '@/common/schemas/academic.schema';
 
 
 
@@ -67,6 +67,8 @@ export interface StudentEnrollmentResponse {
   leftAt: string | null;
 
   status: EnrollmentStatus;
+
+  semesterIsCurrent: boolean;
 
   note: string | null;
 
@@ -155,6 +157,8 @@ export function toStudentEnrollmentResponse(
     leftAt: enrollment.leftAt ? toIsoDateString(enrollment.leftAt) : null,
 
     status: enrollment.status,
+
+    semesterIsCurrent: enrollment.semester.isCurrent,
 
     note: enrollment.note,
 

@@ -132,12 +132,15 @@ Không kiểm tra R2 trong mọi health check request.
 | 3 | Học sinh, enrollment, chuyển lớp, R2 upload |
 | 4 | Giáo viên, phân công, thời khóa biểu, phụ huynh, portal |
 | **5** | Điểm danh (Phase 5A: schema + seed ✅) |
-| 6 | Sổ điểm |
-| 7 | Hạnh kiểm, tổng kết, lên lớp |
-| 8 | Báo cáo, test E2E, CI/CD, deployment |
+| **6** | Sổ điểm — [sprint-6-plan.md](../sprints/sprint-6-plan.md) |
+| **7** | Tổng kết, hạnh kiểm, học lực, lên lớp — [sprint-7-plan.md](../sprints/sprint-7-plan.md) |
+| 8 | Báo cáo import/export (XLSX, CSV, PDF), CI/CD, deployment — [sprint-8-plan.md](../sprints/sprint-8-plan.md) |
 
 Chi tiết Sprint 1: [sprint-1-plan.md](../sprints/sprint-1-plan.md)  
 Chi tiết Sprint 2: [sprint-2-plan.md](../sprints/sprint-2-plan.md)  
 Chi tiết Sprint 3: [sprint-3-plan.md](../sprints/sprint-3-plan.md)  
 Chi tiết Sprint 4: [sprint-4-plan.md](../sprints/sprint-4-plan.md)  
-Chi tiết Sprint 5: [sprint-5-plan.md](../sprints/sprint-5-plan.md)
+Chi tiết Sprint 5: [sprint-5-plan.md](../sprints/sprint-5-plan.md)  
+Chi tiết Sprint 6: [sprint-6-plan.md](../sprints/sprint-6-plan.md)  
+Chi tiết Sprint 7: [sprint-7-plan.md](../sprints/sprint-7-plan.md)  
+Chi tiết Sprint 8: [sprint-8-plan.md](../sprints/sprint-8-plan.md)

@@ -1,0 +1,2 @@
+-- RenameIndex
+ALTER INDEX "student_subject_results_student_id_course_section_id_semester_k" RENAME TO "student_subject_results_student_id_course_section_id_semest_key";

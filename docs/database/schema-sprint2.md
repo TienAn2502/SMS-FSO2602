@@ -152,6 +152,8 @@ Cấu hình môn theo khối: khối X **có học** môn Y không, bắt buộc
 | grade_level_id | UUID | FK → grade_levels, NOT NULL | |
 | subject_id | UUID | FK → subjects, NOT NULL | |
 | is_required | BOOLEAN | NOT NULL, DEFAULT true | true = bắt buộc, false = tự chọn |
+| periods_per_year | SMALLINT | nullable | Số tiết/năm học (CTGDPT 2018); xem Sprint 6 |
+| evaluation_mode | SubjectEvaluationMode | NOT NULL, DEFAULT NUMERIC | Điểm số hoặc đạt/chưa đạt |
 | status | AcademicEntityStatus | NOT NULL, DEFAULT ACTIVE | |
 
 **Unique:** `(school_id, grade_level_id, subject_id)`  

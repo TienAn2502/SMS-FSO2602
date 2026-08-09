@@ -8,7 +8,7 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl as presignGetObjectUrl } from '@aws-sdk/s3-request-presigner';
 
-import type { EnvConfig } from '../../common/config/env.schema';
+import type { EnvConfig } from '@/common/config/env.schema';
 
 @Injectable()
 export class R2Service {

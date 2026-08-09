@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-import { academicEntityStatusSchema } from '../../../common/schemas/academic.schema';
-import { paginationSchema } from '../../../common/schemas/shared.schema';
+import { academicEntityStatusSchema } from '@/common/schemas/academic.schema';
+import { paginationSchema } from '@/common/schemas/shared.schema';
 
 export const listSubjectsQuerySchema = paginationSchema.extend({
   search: z.string().trim().optional(),

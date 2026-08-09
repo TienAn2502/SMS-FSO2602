@@ -1,22 +1,22 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { Prisma, type GradeLevel } from '@prisma/client';
 
-import { AppException } from '../../common/exceptions/app.exception';
-import { PrismaService } from '../../common/database/prisma.service';
-import type { PaginationMeta } from '../../common/types/api-response.types';
+import { AppException } from '@/common/exceptions/app.exception';
+import { PrismaService } from '@/common/database/prisma.service';
+import type { PaginationMeta } from '@/common/types/api-response.types';
 import {
   buildPaginationMeta,
   getSkip,
-} from '../../common/utils/pagination.util';
+} from '@/common/utils/pagination.util';
 import {
   toGradeLevelResponse,
   type GradeLevelResponse,
-} from './mappers/grade-level.mapper';
+} from '@/modules/grade-levels/mappers/grade-level.mapper';
 import type {
   CreateGradeLevelInput,
   ListGradeLevelsQuery,
   UpdateGradeLevelInput,
-} from './schemas/grade-level.schema';
+} from '@/modules/grade-levels/schemas/grade-level.schema';
 
 @Injectable()
 export class GradeLevelsService {

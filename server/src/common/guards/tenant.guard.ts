@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 
-import { AppException } from '../exceptions/app.exception';
+import { AppException } from '@/common/exceptions/app.exception';
 
 @Injectable()
 export class TenantGuard implements CanActivate {

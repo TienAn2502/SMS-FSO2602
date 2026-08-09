@@ -11,6 +11,12 @@ export async function clearSchoolDemoData(
   });
 
   await prisma.$transaction([
+    prisma.studentYearSummary.deleteMany({ where: { schoolId } }),
+    prisma.studentSemesterSummary.deleteMany({ where: { schoolId } }),
+    prisma.studentConductRecord.deleteMany({ where: { schoolId } }),
+    prisma.studentSubjectResult.deleteMany({ where: { schoolId } }),
+    prisma.score.deleteMany({ where: { schoolId } }),
+    prisma.assessment.deleteMany({ where: { schoolId } }),
     prisma.attendanceRecord.deleteMany({ where: { schoolId } }),
     prisma.attendanceSession.deleteMany({ where: { schoolId } }),
     prisma.timetableEntry.deleteMany({ where: { schoolId } }),

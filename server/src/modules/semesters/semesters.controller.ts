@@ -12,13 +12,13 @@ import {
 import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 
-import type { AuthenticatedUser } from '../../common/auth/auth.types';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { TenantGuard } from '../../common/guards/tenant.guard';
-import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import { uuidParamSchema } from '../../common/schemas/shared.schema';
+import type { AuthenticatedUser } from '@/common/auth/auth.types';
+import { CurrentUser } from '@/common/decorators/current-user.decorator';
+import { Roles } from '@/common/decorators/roles.decorator';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { TenantGuard } from '@/common/guards/tenant.guard';
+import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe';
+import { uuidParamSchema } from '@/common/schemas/shared.schema';
 import {
   createSemesterSchema,
   updateSemesterSchema,
@@ -26,8 +26,8 @@ import {
   type CreateSemesterInput,
   type UpdateSemesterInput,
   type UpdateSemesterStatusInput,
-} from './schemas/semester.schema';
-import { SemestersService } from './semesters.service';
+} from '@/modules/semesters/schemas/semester.schema';
+import { SemestersService } from '@/modules/semesters/semesters.service';
 
 @ApiTags('Semesters')
 @ApiCookieAuth('access_token')
@@ -38,6 +38,12 @@ export class SemestersController {
   constructor(private readonly semestersService: SemestersService) {}
 
   @Get()
+  @Roles(
+    UserRole.SCHOOL_ADMIN,
+    UserRole.STUDENT,
+    UserRole.TEACHER,
+    UserRole.PARENT,
+  )
   @ApiOperation({ summary: 'Danh sách học kỳ theo năm học' })
   async list(
     @CurrentUser() user: AuthenticatedUser,
@@ -52,8 +58,13 @@ export class SemestersController {
     };
   }
 
-  // Trong năm học X đang là HK nào?
   @Get('current')
+  @Roles(
+    UserRole.SCHOOL_ADMIN,
+    UserRole.STUDENT,
+    UserRole.TEACHER,
+    UserRole.PARENT,
+  )
   @ApiOperation({ summary: 'Học kỳ hiện hành trong năm học' })
   findCurrentForYear(
     @CurrentUser() user: AuthenticatedUser,
@@ -66,6 +77,12 @@ export class SemestersController {
   }
 
   @Get(':id')
+  @Roles(
+    UserRole.SCHOOL_ADMIN,
+    UserRole.STUDENT,
+    UserRole.TEACHER,
+    UserRole.PARENT,
+  )
   @ApiOperation({ summary: 'Chi tiết học kỳ' })
   findById(
     @CurrentUser() user: AuthenticatedUser,
@@ -172,8 +189,13 @@ export class SemestersController {
 export class SemestersSchoolController {
   constructor(private readonly semestersService: SemestersService) {}
 
-  // Trường đang học kỳ nào?
   @Get('current')
+  @Roles(
+    UserRole.SCHOOL_ADMIN,
+    UserRole.STUDENT,
+    UserRole.TEACHER,
+    UserRole.PARENT,
+  )
   @ApiOperation({ summary: 'Học kỳ hiện hành của trường' })
   findCurrent(@CurrentUser() user: AuthenticatedUser) {
     return this.semestersService.findCurrentForSchool(user.activeSchoolId);

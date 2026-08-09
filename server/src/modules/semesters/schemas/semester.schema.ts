@@ -3,7 +3,7 @@ import { z } from 'zod';
 import {
   academicEntityStatusSchema,
   isoDateSchema,
-} from '../../../common/schemas/academic.schema';
+} from '@/common/schemas/academic.schema';
 
 export const createSemesterSchema = z
   .object({

@@ -1,23 +1,20 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { Prisma, type Subject } from '@prisma/client';
 
-import { AppException } from '../../common/exceptions/app.exception';
-import { PrismaService } from '../../common/database/prisma.service';
-import type { PaginationMeta } from '../../common/types/api-response.types';
-import {
-  buildPaginationMeta,
-  getSkip,
-} from '../../common/utils/pagination.util';
+import { AppException } from '@/common/exceptions/app.exception';
+import { PrismaService } from '@/common/database/prisma.service';
+import type { PaginationMeta } from '@/common/types/api-response.types';
+import { buildPaginationMeta, getSkip } from '@/common/utils/pagination.util';
 import {
   toSubjectResponse,
   type SubjectResponse,
-} from './mappers/subject.mapper';
+} from '@/modules/subjects/mappers/subject.mapper';
 import type {
   CreateSubjectInput,
   ListSubjectsQuery,
   UpdateSubjectInput,
   UpdateSubjectStatusInput,
-} from './schemas/subject.schema';
+} from '@/modules/subjects/schemas/subject.schema';
 
 @Injectable()
 export class SubjectsService {

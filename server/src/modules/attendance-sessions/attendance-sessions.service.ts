@@ -5,17 +5,17 @@ import {
   Prisma,
 } from '@prisma/client';
 
-import { AppException } from '../../common/exceptions/app.exception';
-import { PrismaService } from '../../common/database/prisma.service';
-import { parseIsoDate } from '../../common/schemas/academic.schema';
-import type { PaginationMeta } from '../../common/types/api-response.types';
+import { AppException } from '@/common/exceptions/app.exception';
+import { PrismaService } from '@/common/database/prisma.service';
+import { parseIsoDate } from '@/common/schemas/academic.schema';
+import type { PaginationMeta } from '@/common/types/api-response.types';
 import {
   buildPaginationMeta,
   getSkip,
-} from '../../common/utils/pagination.util';
-import { CourseSectionsService } from '../course-sections/course-sections.service';
-import { SemestersService } from '../semesters/semesters.service';
-import { TeachersService } from '../teachers/teachers.service';
+} from '@/common/utils/pagination.util';
+import { CourseSectionsService } from '@/modules/course-sections/course-sections.service';
+import { SemestersService } from '@/modules/semesters/semesters.service';
+import { TeachersService } from '@/modules/teachers/teachers.service';
 import {
   attendanceSessionDetailInclude,
   attendanceSessionInclude,
@@ -23,12 +23,12 @@ import {
   toAttendanceSessionResponse,
   type AttendanceSessionDetailResponse,
   type AttendanceSessionResponse,
-} from './mappers/attendance-session.mapper';
+} from '@/modules/attendance-sessions/mappers/attendance-session.mapper';
 import type {
   CreateAttendanceSessionInput,
   ListAttendanceSessionsQuery,
   UpdateAttendanceSessionInput,
-} from './schemas/attendance-session.schema';
+} from '@/modules/attendance-sessions/schemas/attendance-session.schema';
 
 @Injectable()
 export class AttendanceSessionsService {
@@ -72,6 +72,7 @@ export class AttendanceSessionsService {
         : {}),
     };
 
+    // Sắp xếp theo nhiều field
     const orderBy: Prisma.AttendanceSessionOrderByWithRelationInput[] = [
       { [query.sortBy]: query.sortOrder },
       ...(query.sortBy === 'sessionDate'
@@ -108,6 +109,7 @@ export class AttendanceSessionsService {
     schoolId: string,
     input: CreateAttendanceSessionInput,
   ): Promise<AttendanceSessionResponse> {
+    // Lấy ra lớp môn học
     const courseSection =
       await this.courseSectionsService.findCourseSectionInTenant(
         schoolId,
@@ -122,7 +124,9 @@ export class AttendanceSessionsService {
       );
     }
 
-    await this.validateTeacher(schoolId, input.teacherId);
+    await this.validateTeacher(schoolId, input.teacherId); // Kiểm tra GV có còn hoạt động không
+
+    // Kiểm tra GV có được phân công lớp môn này không
     await this.assertTeacherAssigned(
       schoolId,
       input.teacherId,

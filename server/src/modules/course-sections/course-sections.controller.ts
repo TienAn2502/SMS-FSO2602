@@ -13,24 +13,26 @@ import {
 import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 
-import type { AuthenticatedUser } from '../../common/auth/auth.types';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { TenantGuard } from '../../common/guards/tenant.guard';
-import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import { uuidParamSchema } from '../../common/schemas/shared.schema';
-import { CourseSectionsService } from './course-sections.service';
+import type { AuthenticatedUser } from '@/common/auth/auth.types';
+import { CurrentUser } from '@/common/decorators/current-user.decorator';
+import { Roles } from '@/common/decorators/roles.decorator';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { TenantGuard } from '@/common/guards/tenant.guard';
+import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe';
+import { uuidParamSchema } from '@/common/schemas/shared.schema';
+import { CourseSectionsService } from '@/modules/course-sections/course-sections.service';
 import {
+  copySemesterCourseSectionsSchema,
   createCourseSectionSchema,
   listCourseSectionsQuerySchema,
   updateCourseSectionSchema,
   updateCourseSectionStatusSchema,
+  type CopySemesterCourseSectionsInput,
   type CreateCourseSectionInput,
   type ListCourseSectionsQuery,
   type UpdateCourseSectionInput,
   type UpdateCourseSectionStatusInput,
-} from './schemas/course-section.schema';
+} from '@/modules/course-sections/schemas/course-section.schema';
 
 @ApiTags('Course Sections')
 @ApiCookieAuth('access_token')
@@ -60,7 +62,35 @@ export class CourseSectionsController {
     };
   }
 
+  @Post('copy-from-semester')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Sao chép lớp môn ACTIVE từ học kỳ nguồn sang học kỳ đích (vd. HK1 → HK2)',
+  })
+  async copyFromSemester(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body(new ZodValidationPipe(copySemesterCourseSectionsSchema))
+    body: CopySemesterCourseSectionsInput,
+  ) {
+    const data = await this.courseSectionsService.copyFromSemester(
+      user.activeSchoolId,
+      body,
+    );
+
+    return {
+      success: true,
+      data,
+      message: `Đã tạo ${data.createdCount} lớp môn (${data.sourceSemesterCode} → ${data.targetSemesterCode})`,
+    };
+  }
+
   @Get(':id')
+  @Roles(
+    UserRole.SCHOOL_ADMIN,
+    UserRole.STUDENT,
+    UserRole.TEACHER,
+    UserRole.PARENT,
+  )
   @ApiOperation({ summary: 'Chi tiết lớp môn học' })
   findById(
     @CurrentUser() user: AuthenticatedUser,

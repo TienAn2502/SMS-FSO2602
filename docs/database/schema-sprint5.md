@@ -130,7 +130,7 @@ attendance_records (mỗi phiên × 30 HS)
 
 ---
 
-## Sprint tiếp theo (chưa triển khai)
+## Sprint tiếp theo
 
-- `assessments`, `scores` — Sprint 6
+- Sổ điểm (`assessments`, `scores`) — [schema-sprint6.md](./schema-sprint6.md)
 - `periods` (giờ tiết), `timetables` (header TKB) — hoãn
