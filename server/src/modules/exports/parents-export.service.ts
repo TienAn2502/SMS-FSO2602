@@ -101,6 +101,12 @@ export class ParentsExportService {
                 },
               },
               {
+                externalCode: {
+                  contains: query.search,
+                  mode: 'insensitive',
+                },
+              },
+              {
                 user: {
                   email: {
                     contains: query.search,
@@ -126,6 +132,7 @@ export class ParentsExportService {
 
   private toExportRows(parent: ParentForExport) {
     const base = {
+      ma_ph: parent.externalCode ?? '',
       ho_ten: parent.fullName,
       phone: parent.phone ?? '',
       email: parent.user?.email ?? '',

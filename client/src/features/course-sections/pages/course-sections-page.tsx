@@ -6,7 +6,7 @@ import {
     useQuery,
     useQueryClient,
 } from '@tanstack/react-query';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
@@ -31,6 +31,7 @@ import { Label } from '@/components/ui/label';
 import { fetchSemesters } from '@/features/academic-years/api/academic-years-api';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { CourseSectionListFilters } from '@/features/course-sections/components/course-section-list-filters';
+import { CourseSectionsImportSheet } from '@/features/course-sections/components/course-sections-import-sheet';
 import {
     findCurrentAcademicContext,
     useCourseSectionListFilters,
@@ -84,6 +85,7 @@ export function CourseSectionsPage() {
     const queryClient = useQueryClient();
     const [page, setPage] = useState(1);
     const [showForm, setShowForm] = useState(false);
+    const [importOpen, setImportOpen] = useState(false);
 
     const filters = useCourseSectionListFilters(() => setPage(1));
     const {
@@ -143,6 +145,7 @@ export function CourseSectionsPage() {
         handleSubmit,
         reset,
         watch,
+        setValue,
         formState: { errors, isSubmitting },
     } = useForm<CreateFormValues>({
         resolver: zodResolver(createSchema),
@@ -159,6 +162,7 @@ export function CourseSectionsPage() {
 
     const formYearId = watch('academicYearId');
     const formHomeroomClassId = watch('homeroomClassId');
+    const formSubjectId = watch('subjectId');
 
     const formSemestersQuery = useQuery({
         queryKey: ['semesters', session?.activeSchoolId, 'form', formYearId],
@@ -337,26 +341,83 @@ export function CourseSectionsPage() {
     const homeroomClasses = homeroomClassesQuery.data?.items ?? [];
     const formSemesters = formSemestersQuery.data ?? [];
 
+    useEffect(() => {
+        const subject = subjects.find((row) => row.id === formSubjectId);
+        const homeroom = homeroomClasses.find(
+            (row) => row.id === formHomeroomClassId,
+        );
+        if (!subject || !homeroom) {
+            return;
+        }
+
+        setValue('code', `${subject.code}-${homeroom.code}`.slice(0, 30), {
+            shouldDirty: true,
+        });
+        setValue('name', `${subject.name} ${homeroom.code}`.slice(0, 100), {
+            shouldDirty: true,
+        });
+    }, [
+        formSubjectId,
+        formHomeroomClassId,
+        subjects,
+        homeroomClasses,
+        setValue,
+    ]);
+
     return (
         <div className='space-y-6'>
             <div className='flex flex-wrap items-center justify-between gap-4'>
                 <div>
                     <h1 className='text-2xl font-semibold'>Lớp môn học</h1>
                     <p className='text-sm text-muted-foreground'>
-                        Quản lý lớp môn theo học kỳ, môn và lớp hành chính
+                        Tạo tay hoặc import Excel (mỗi sheet một lớp HC). Chọn
+                        học kỳ rồi tải mẫu: khối 10 tạo mới theo cấu hình môn;
+                        khối 11/12 lấy môn từ HK2 năm trước trong DB.
                     </p>
                 </div>
-                <Button onClick={handleToggleForm}>
-                    {showForm ? 'Đóng form' : 'Thêm lớp môn'}
-                </Button>
+                <div className='flex flex-wrap gap-2'>
+                    <Button
+                        type='button'
+                        variant='outline'
+                        onClick={() => setImportOpen(true)}
+                    >
+                        Import Excel
+                    </Button>
+                    <Button onClick={handleToggleForm}>
+                        {showForm ? 'Đóng form' : 'Thêm lớp môn'}
+                    </Button>
+                </div>
             </div>
+
+            <CourseSectionsImportSheet
+                open={importOpen}
+                onOpenChange={setImportOpen}
+                defaultAcademicYearId={
+                    yearFilter && yearFilter !== 'all' ? yearFilter : formYearId || ''
+                }
+                defaultSemesterId={
+                    semesterFilter && semesterFilter !== 'all'
+                        ? semesterFilter
+                        : ''
+                }
+                onSuccess={() => {
+                    void queryClient.invalidateQueries({
+                        queryKey: ['course-sections'],
+                    });
+                    void queryClient.invalidateQueries({
+                        queryKey: ['teaching-assignments'],
+                    });
+                }}
+            />
 
             {showForm ? (
                 <Card>
                     <CardHeader>
                         <CardTitle>Tạo lớp môn học</CardTitle>
                         <CardDescription>
-                            Gắn lớp HC hoặc chọn khối riêng cho lớp ghép
+                            Chọn năm/học kỳ/môn và lớp HC (hoặc khối cho lớp
+                            ghép). Mã/tên tự gợi ý khi chọn môn + lớp HC. Có thể
+                            import Excel nhiều lớp cùng lúc.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>

@@ -101,8 +101,10 @@ Trước khi seed, mặc định **xóa dữ liệu nghiệp vụ cũ** của tr
 ### Biến môi trường seed
 
 ```env
-SEED_ADMIN_EMAIL=admin@demo.edu.vn
-SEED_ADMIN_PASSWORD=Admin@123456
+SEED_SCHOOL_ADMIN_EMAIL=school_admin@demo.edu.vn
+SEED_SCHOOL_ADMIN_PASSWORD=SchoolAdmin@123456
+SEED_SYSTEM_ADMIN_EMAIL=system_admin@demo.edu.vn
+SEED_SYSTEM_ADMIN_PASSWORD=SystemAdmin@123456
 SEED_DEMO_PASSWORD=Demo@123456
 SEED_SCHOOL_CODE=DEMO
 SEED_SCHOOL_NAME=Trường THPT Demo
@@ -114,7 +116,8 @@ SEED_CLEAR_DEMO=true
 
 | Vai trò | Email | Mật khẩu |
 |---------|-------|----------|
-| Admin trường | `admin@demo.edu.vn` | `SEED_ADMIN_PASSWORD` (mặc định `Admin@123456`) |
+| System admin | `system_admin@demo.edu.vn` | `SEED_SYSTEM_ADMIN_PASSWORD` (mặc định `SystemAdmin@123456`) |
+| Admin trường (DEMO) | `school_admin@demo.edu.vn` | `SEED_SCHOOL_ADMIN_PASSWORD` (mặc định `SchoolAdmin@123456`) |
 | Giáo viên | `teacher01@demo.edu.vn` … `teacher25@demo.edu.vn` | `SEED_DEMO_PASSWORD` (mặc định `Demo@123456`) |
 | Học sinh | `student0001@demo.edu.vn` … `student0450@demo.edu.vn` | `SEED_DEMO_PASSWORD` (mặc định `Demo@123456`) |
 | Phụ huynh | `parent01@demo.edu.vn` … `parent15@demo.edu.vn` | `SEED_DEMO_PASSWORD` (mặc định `Demo@123456`) |
@@ -130,7 +133,8 @@ School và admin user dùng `upsert`. Các dữ liệu nghiệp vụ (HS, lớp,
 ```text
 Seed completed.
   School: Trường THPT Demo (DEMO)
-  Admin: admin@demo.edu.vn (SCHOOL_ADMIN)
+  School admin: school_admin@demo.edu.vn (SCHOOL_ADMIN)
+  System admin: system_admin@demo.edu.vn (SYSTEM_ADMIN)
   Teachers: 25 accounts (password: Demo@123456)
   Students: 450 accounts (student0001…student0450@demo.edu.vn, password: Demo@123456)
   Academic year: 2025-2026 (is_current)

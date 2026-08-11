@@ -3,6 +3,7 @@ import type { SpreadsheetColumnDef } from '@/common/files/file-format.types';
 export const PARENT_EXPORT_SHEET_NAME = 'Phu_huynh';
 
 export const PARENT_EXPORT_COLUMNS: SpreadsheetColumnDef[] = [
+  { header: 'Mã PH', key: 'ma_ph', width: 12 },
   { header: 'Họ và tên', key: 'ho_ten', width: 28 },
   { header: 'SĐT', key: 'phone', width: 14 },
   { header: 'Email', key: 'email', width: 28 },

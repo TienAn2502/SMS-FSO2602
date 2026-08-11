@@ -133,7 +133,7 @@ Admin / GVCN / GV đăng nhập
 | 2 | Quy tắc MVP: lên lớp / ở lại / tốt nghiệp | `promotion.util.ts` | ✅ |
 | 3 | Admin: chốt hàng loạt + ghi `student_year_summaries` | controller | ✅ |
 | 4 | GVCN: xem đề xuất (read-only) | `GET /portal/my-homeroom/year-summaries` | ✅ |
-| 5 | Tạo enrollment năm sau — manual trigger MVP | hoãn (admin thủ công) | ⬜ |
+| 5 | Tạo enrollment năm sau — auto prepare + manual fallback | `year-preparation` + `from-year-promotions` + UI | ✅ |
 
 ---
 
@@ -253,7 +253,7 @@ Enum `PromotionDecision`:
 - `RETAINED`: `academic_result_level` = `UNSATISFACTORY` **hoặc** `training_result_level` = `UNSATISFACTORY`
 - `GRADUATED`: khối 12 + đủ điều kiện tốt nghiệp MVP (TB năm ≥ 5.0)
 
-Sau khi chốt `PROMOTED`: admin tạo enrollment năm học mới (MVP thủ công hoặc nút “Tạo ghi danh năm sau”).
+Sau khi chốt `PROMOTED`: admin tạo năm học mới + học kỳ, rồi `POST /year-preparation/prepare-next-year` để tự tạo lớp HC, gán `nextHomeroomClassId` và tạo ghi danh (`RETAINED` / `GRADUATED` bỏ qua; hoặc làm thủ công qua PATCH + `from-year-promotions`).
 
 ---
 

@@ -22,15 +22,19 @@ export class CookieService {
     accessToken: string,
     refreshToken: string,
   ): void {
-    response.cookie(
-      AUTH_COOKIE.ACCESS,
-      accessToken,
-      this.getAccessCookieOptions(),
-    );
+    this.setAccessCookie(response, accessToken);
     response.cookie(
       AUTH_COOKIE.REFRESH,
       refreshToken,
       this.getRefreshCookieOptions(),
+    );
+  }
+
+  setAccessCookie(response: Response, accessToken: string): void {
+    response.cookie(
+      AUTH_COOKIE.ACCESS,
+      accessToken,
+      this.getAccessCookieOptions(),
     );
   }
 

@@ -7,6 +7,7 @@ import {
     ClipboardList,
     GraduationCap,
     HeartHandshake,
+    KeyRound,
     Layers,
     LayoutDashboard,
     LogOut,
@@ -49,6 +50,21 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
+    {
+        to: ROUTES.platform,
+        label: 'Nền tảng SaaS',
+        icon: Building2,
+        group: 'main',
+        roles: ['SYSTEM_ADMIN'],
+    },
+    {
+        to: ROUTES.platformSchools,
+        label: 'Quản lý trường',
+        icon: School,
+        group: 'main',
+        roles: ['SYSTEM_ADMIN'],
+        activePrefix: true,
+    },
     {
         to: ROUTES.home,
         label: 'Tổng quan',
@@ -120,6 +136,13 @@ const NAV_ITEMS: NavItem[] = [
         roles: ['STUDENT'],
     },
     {
+        to: ROUTES.changePassword,
+        label: 'Đổi mật khẩu',
+        icon: KeyRound,
+        group: 'portal',
+        roles: ['TEACHER', 'STUDENT'],
+    },
+    {
         to: ROUTES.portalMyCourseSections,
         label: 'Lớp môn học',
         icon: BookOpen,
@@ -169,6 +192,13 @@ const NAV_ITEMS: NavItem[] = [
         group: 'main',
     },
     {
+        to: ROUTES.changePassword,
+        label: 'Đổi mật khẩu',
+        icon: KeyRound,
+        roles: ['SCHOOL_ADMIN'],
+        group: 'main',
+    },
+    {
         to: ROUTES.academicYears,
         label: 'Năm học',
         icon: Calendar,
@@ -210,6 +240,13 @@ const NAV_ITEMS: NavItem[] = [
         roles: ['SCHOOL_ADMIN'],
         group: 'academic',
         activePrefix: true,
+    },
+    {
+        to: ROUTES.classPlacement,
+        label: 'Xếp lớp đầu năm',
+        icon: Users,
+        roles: ['SCHOOL_ADMIN'],
+        group: 'academic',
     },
     {
         to: ROUTES.courseSections,
@@ -336,16 +373,32 @@ function SidebarNavGroup({
 export function AppSidebar() {
     const { session, logout } = useAuth();
     const navigate = useNavigate();
+    const isImpersonating = Boolean(session?.impersonation);
 
     const handleLogout = async () => {
         await logout();
         navigate(ROUTES.login, { replace: true });
     };
 
-    const visibleItems = NAV_ITEMS.filter(
-        (item) =>
-            !item.roles || (session && item.roles.includes(session.user.role)),
-    );
+    const visibleItems = NAV_ITEMS.filter((item) => {
+        if (!item.roles || !session) {
+            return !item.roles;
+        }
+
+        if (item.roles.includes(session.user.role)) {
+            // While impersonating, hide platform-only navigation.
+            if (
+                isImpersonating &&
+                item.roles.length === 1 &&
+                item.roles[0] === 'SYSTEM_ADMIN'
+            ) {
+                return false;
+            }
+            return true;
+        }
+
+        return isImpersonating && item.roles.includes('SCHOOL_ADMIN');
+    });
 
     const mainItems = visibleItems.filter((item) => item.group === 'main');
     const portalItems = visibleItems.filter((item) => item.group === 'portal');
@@ -373,7 +426,10 @@ export function AppSidebar() {
                     <div className='min-w-0 flex-1 group-data-[collapsible=icon]:hidden'>
                         <p className='truncate font-semibold'>eSchool SaaS</p>
                         <p className='truncate text-xs text-muted-foreground'>
-                            {session?.activeSchool.name}
+                            {session?.activeSchool?.name ??
+                                (session?.user.role === 'SYSTEM_ADMIN'
+                                    ? 'Quản trị nền tảng'
+                                    : '—')}
                         </p>
                     </div>
                 </div>

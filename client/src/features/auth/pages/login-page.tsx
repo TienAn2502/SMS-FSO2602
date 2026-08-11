@@ -36,7 +36,7 @@ export function LoginPage() {
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
+      identifier: '',
       password: '',
     },
   });
@@ -67,23 +67,25 @@ export function LoginPage() {
       <CardHeader>
         <CardTitle>Đăng nhập eSchool</CardTitle>
         <CardDescription>
-          Hệ thống quản trị trường học — nhập tài khoản của bạn
+          HS / GV / PH: mã hoặc SĐT · Quản trị: email
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form className='flex flex-col gap-4' onSubmit={onSubmit}>
           <div className='flex flex-col gap-2'>
-            <Label htmlFor='email'>Email</Label>
+            <Label htmlFor='identifier'>Mã / SĐT / Email</Label>
             <Input
-              id='email'
-              type='email'
-              autoComplete='email'
-              placeholder='admin@demo.edu.vn'
-              aria-invalid={Boolean(errors.email)}
-              {...register('email')}
+              id='identifier'
+              type='text'
+              autoComplete='username'
+              placeholder='HS-261 · 0901234567 · school_admin@demo.edu.vn'
+              aria-invalid={Boolean(errors.identifier)}
+              {...register('identifier')}
             />
-            {errors.email ? (
-              <p className='text-sm text-destructive'>{errors.email.message}</p>
+            {errors.identifier ? (
+              <p className='text-sm text-destructive'>
+                {errors.identifier.message}
+              </p>
             ) : null}
           </div>
 
@@ -109,7 +111,10 @@ export function LoginPage() {
         </form>
 
         <p className='mt-4 text-center text-xs text-muted-foreground'>
-          Tài khoản dev: admin@demo.edu.vn / Admin@123456
+          Admin trường: school_admin@demo.edu.vn / SchoolAdmin@123456
+        </p>
+        <p className='mt-1 text-center text-xs text-muted-foreground'>
+          System admin: system_admin@demo.edu.vn / SystemAdmin@123456
         </p>
         <p className='mt-1 text-center text-xs text-muted-foreground'>
           <Link to={ROUTES.home} className='underline hover:text-foreground'>

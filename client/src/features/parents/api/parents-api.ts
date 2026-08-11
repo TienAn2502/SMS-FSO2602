@@ -21,6 +21,7 @@ export interface Parent {
   userEmail: string | null;
   fullName: string;
   phone: string | null;
+  externalCode: string | null;
   status: AcademicEntityStatus;
   linkedStudents: LinkedStudentSummary[];
 }
@@ -35,7 +36,7 @@ export interface ListParentsParams {
 export interface CreateParentInput {
   fullName: string;
   phone?: string;
-  account?: { email: string; password: string };
+  createLogin?: boolean;
 }
 
 export interface UpdateParentInput {
@@ -88,13 +89,10 @@ export async function updateParentStatus(
   return data.data;
 }
 
-export async function createParentUser(
-  id: string,
-  input: { email: string; password: string },
-): Promise<Parent> {
+export async function createParentUser(id: string): Promise<Parent> {
   const { data } = await api.post<ApiSuccessResponse<Parent>>(
     `/parents/${id}/create-user`,
-    input,
+    {},
   );
   return data.data;
 }

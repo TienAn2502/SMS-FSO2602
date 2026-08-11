@@ -292,6 +292,14 @@ export class HomeroomClassesImportService {
       ]);
     }
 
+    const existing = await tx.homeroomClass.findFirst({
+      where: {
+        schoolId,
+        academicYearId,
+        code: row.ma_lop_hc,
+      },
+    });
+
     let homeroomTeacherId: string | null = null;
     if (row.email_gvcn) {
       const teacherId = teacherByEmail.get(row.email_gvcn.toLowerCase());
@@ -304,16 +312,30 @@ export class HomeroomClassesImportService {
           },
         ]);
       }
+
+      const conflict = await tx.homeroomClass.findFirst({
+        where: {
+          schoolId,
+          academicYearId,
+          homeroomTeacherId: teacherId,
+          status: 'ACTIVE',
+          ...(existing ? { id: { not: existing.id } } : {}),
+        },
+        select: { code: true },
+      });
+
+      if (conflict) {
+        throw this.buildValidationException([
+          {
+            row: rowNumber,
+            field: 'email_gvcn',
+            message: `Giáo viên đã là GVCN lớp ${conflict.code} trong năm học này`,
+          },
+        ]);
+      }
+
       homeroomTeacherId = teacherId;
     }
-
-    const existing = await tx.homeroomClass.findFirst({
-      where: {
-        schoolId,
-        academicYearId,
-        code: row.ma_lop_hc,
-      },
-    });
 
     if (!existing) {
       await tx.homeroomClass.create({

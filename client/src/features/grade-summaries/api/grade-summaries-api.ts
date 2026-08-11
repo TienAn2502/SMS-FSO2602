@@ -98,6 +98,17 @@ export async function fetchYearSummaries(params: {
   return { items: data.data, meta: data.meta };
 }
 
+export async function updateYearSummaryNextHomeroom(
+  id: string,
+  nextHomeroomClassId: string | null,
+): Promise<YearSummaryItem> {
+  const { data } = await api.patch<ApiSuccessResponse<YearSummaryItem>>(
+    `/grade-summaries/year-summaries/${id}`,
+    { nextHomeroomClassId },
+  );
+  return data.data;
+}
+
 export async function recomputeGradeSummaries(input: {
   semesterId: string;
   homeroomClassId?: string;

@@ -15,6 +15,10 @@ import type { ParsedSpreadsheetRow } from '@/common/files/file-format.types';
 import { parseIsoDate } from '@/common/schemas/academic.schema';
 import { PasswordService } from '@/common/utils/password.service';
 import {
+  PersonCodeAllocator,
+  PersonCodeService,
+} from '@/common/utils/person-code.service';
+import {
   ImportStudentsFormInput,
   StudentImportResult,
   StudentImportRow,
@@ -40,6 +44,7 @@ export class StudentsImportService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly passwordService: PasswordService,
+    private readonly personCodeService: PersonCodeService,
     private readonly configService: ConfigService<EnvConfig, true>,
   ) {}
 
@@ -87,20 +92,28 @@ export class StudentsImportService {
       return await this.prisma.$transaction(async (tx) => {
         let created = 0;
         let updated = 0;
+        const codeAllocator = this.personCodeService.createAllocator(tx);
+        await codeAllocator.prepareStudent(
+          schoolId,
+          rows.map((item) => item.row.external_code),
+        );
 
         for (const item of rows) {
-          const homeroomClassId = context.homeroomClassByCode.get(
-            item.row.ma_lop_hc,
-          );
+          const classCode = item.row.ma_lop_hc?.trim();
+          let homeroomClassId: string | undefined;
 
-          if (!homeroomClassId) {
-            throw this.buildValidationException([
-              {
-                row: item.rowNumber,
-                field: 'ma_lop_hc',
-                message: `Không tìm thấy lớp ${item.row.ma_lop_hc} trong năm học đã chọn`,
-              },
-            ]);
+          if (classCode) {
+            homeroomClassId = context.homeroomClassByCode.get(classCode);
+
+            if (!homeroomClassId) {
+              throw this.buildValidationException([
+                {
+                  row: item.rowNumber,
+                  field: 'ma_lop_hc',
+                  message: `Không tìm thấy lớp ${classCode} trong năm học đã chọn`,
+                },
+              ]);
+            }
           }
 
           const outcome = await this.upsertStudentRow(tx, schoolId, {
@@ -110,6 +123,7 @@ export class StudentsImportService {
             semesterId: context.semesterId,
             enrolledAt: context.enrolledAt,
             defaultPassword,
+            codeAllocator,
           });
 
           if (outcome === 'created') {
@@ -208,7 +222,7 @@ export class StudentsImportService {
       normalized[key] = value.trim();
     }
 
-    for (const key of ['gioi_tinh', 'email', 'mat_khau', 'external_code']) {
+    for (const key of ['gioi_tinh', 'email', 'mat_khau', 'external_code', 'ma_lop_hc']) {
       if (!normalized[key]) {
         delete normalized[key];
       }
@@ -309,14 +323,22 @@ export class StudentsImportService {
     params: {
       rowNumber: number;
       row: StudentImportRow;
-      homeroomClassId: string;
+      homeroomClassId?: string;
       semesterId: string;
       enrolledAt: Date;
       defaultPassword: string;
+      codeAllocator: PersonCodeAllocator;
     },
   ): Promise<'created' | 'updated'> {
-    const { rowNumber, row, homeroomClassId, semesterId, enrolledAt, defaultPassword } =
-      params;
+    const {
+      rowNumber,
+      row,
+      homeroomClassId,
+      semesterId,
+      enrolledAt,
+      defaultPassword,
+      codeAllocator,
+    } = params;
 
     const existingByCode = row.external_code
       ? await tx.student.findFirst({
@@ -389,25 +411,30 @@ export class StudentsImportService {
         userId = user.id;
       }
 
+      const externalCode =
+        row.external_code ?? (await codeAllocator.nextStudentCode(schoolId));
+
       const student = await tx.student.create({
         data: {
           schoolId,
           fullName: row.ho_ten,
           dateOfBirth: parseIsoDate(row.ngay_sinh),
           gender: row.gioi_tinh,
-          externalCode: row.external_code,
+          externalCode,
           userId,
         },
       });
 
-      await this.ensureEnrollment(tx, {
-        rowNumber,
-        schoolId,
-        studentId: student.id,
-        semesterId,
-        homeroomClassId,
-        enrolledAt,
-      });
+      if (homeroomClassId) {
+        await this.ensureEnrollment(tx, {
+          rowNumber,
+          schoolId,
+          studentId: student.id,
+          semesterId,
+          homeroomClassId,
+          enrolledAt,
+        });
+      }
 
       return 'created';
     }
@@ -447,26 +474,31 @@ export class StudentsImportService {
       });
     }
 
+    const externalCodeToSet = !existing.externalCode
+      ? (row.external_code ??
+        (await codeAllocator.nextStudentCode(schoolId)))
+      : undefined;
+
     await tx.student.update({
       where: { id: existing.id },
       data: {
         fullName: row.ho_ten,
         dateOfBirth: parseIsoDate(row.ngay_sinh),
         gender: row.gioi_tinh,
-        ...(row.external_code && !existing.externalCode
-          ? { externalCode: row.external_code }
-          : {}),
+        ...(externalCodeToSet ? { externalCode: externalCodeToSet } : {}),
       },
     });
 
-    await this.ensureEnrollment(tx, {
-      rowNumber,
-      schoolId,
-      studentId: existing.id,
-      semesterId,
-      homeroomClassId,
-      enrolledAt,
-    });
+    if (homeroomClassId) {
+      await this.ensureEnrollment(tx, {
+        rowNumber,
+        schoolId,
+        studentId: existing.id,
+        semesterId,
+        homeroomClassId,
+        enrolledAt,
+      });
+    }
 
     return 'updated';
   }

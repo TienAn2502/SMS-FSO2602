@@ -17,11 +17,22 @@ export interface AuthSchool {
 
 export interface AuthSession {
   user: AuthUser;
-  activeSchoolId: string;
-  activeSchool: AuthSchool;
+  activeSchoolId: string | null;
+  activeSchool: AuthSchool | null;
+  impersonation: ImpersonationSession | null;
+}
+
+export type ImpersonationMode = 'read_only' | 'full';
+
+export interface ImpersonationSession {
+  targetSchoolId: string;
+  targetSchoolName: string;
+  impersonatedBy: string;
+  mode: ImpersonationMode;
+  startedAt: string;
 }
 
 export interface LoginInput {
-  email: string;
+  identifier: string;
   password: string;
 }

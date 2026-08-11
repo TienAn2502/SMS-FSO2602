@@ -31,7 +31,6 @@ import { getApiError } from '@/lib/api';
 import {
   buildOptionalAccountPayload,
   createAccountFields,
-  refineCreateAccountFields,
 } from '@/lib/create-account-schema';
 import { getErrorMessage } from '@/lib/error-messages';
 import { ACADEMIC_STATUS_LABELS } from '@/lib/labels';
@@ -46,7 +45,15 @@ const createSchema = z
     phone: z.string().optional(),
     ...createAccountFields,
   })
-  .superRefine(refineCreateAccountFields);
+  .superRefine((values, ctx) => {
+    if (values.createAccount && !values.phone?.trim()) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Số điện thoại là bắt buộc khi tạo tài khoản',
+        path: ['phone'],
+      });
+    }
+  });
 
 export function ParentsPage() {
   const { session } = useAuth();
@@ -171,12 +178,15 @@ export function ParentsPage() {
               <div className='space-y-2'>
                 <Label>SĐT</Label>
                 <Input {...register('phone')} />
+                {errors.phone ? (
+                  <p className='text-sm text-destructive'>{errors.phone.message}</p>
+                ) : null}
               </div>
               <CreateAccountFields
                 idPrefix='parent-create'
+                personKind='PH'
                 createAccount={Boolean(createAccount)}
                 register={register}
-                errors={errors}
               />
               <div className='md:col-span-2'>
                 <Button type='submit' disabled={isSubmitting || createMutation.isPending}>

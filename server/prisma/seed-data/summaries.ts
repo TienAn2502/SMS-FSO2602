@@ -1,6 +1,5 @@
 import {
   AcademicResultLevel,
-  EnrollmentStatus,
   PassFailResult,
   Prisma,
   PrismaClient,
@@ -9,6 +8,7 @@ import {
   SummaryStatus,
 } from '@prisma/client';
 
+import { GRADEBOOK_ENROLLMENT_STATUSES } from '../../src/common/utils/enrollment-status.util';
 import {
   computeOverallAverage,
   computePassFailResult,
@@ -25,6 +25,13 @@ export interface SummariesSeedResult {
   yearSummaryCount: number;
   homeroomClassCount: number;
   studentCount: number;
+}
+
+export interface SeedSummariesOptions {
+  /** Default DRAFT. Use CLOSED after locking gradebooks for year-complete seed. */
+  status?: SummaryStatus;
+  /** When false, skip creating placeholder year summaries (year-complete recomputes them). */
+  createYearSummaries?: boolean;
 }
 
 async function loadSubjectScoreInputs(
@@ -66,6 +73,8 @@ async function seedHomeroomClassSummaries(
       homeroomTeacherId: string | null;
       academicYearId: string;
     };
+    status: SummaryStatus;
+    createYearSummaries: boolean;
   },
 ): Promise<{
   subjectResultCount: number;
@@ -79,7 +88,7 @@ async function seedHomeroomClassSummaries(
       schoolId: params.schoolId,
       semesterId: params.semesterId,
       homeroomClassId: params.homeroomClass.id,
-      status: EnrollmentStatus.ACTIVE,
+      status: { in: GRADEBOOK_ENROLLMENT_STATUSES },
     },
     select: { studentId: true },
     orderBy: { enrolledAt: 'asc' },
@@ -117,6 +126,8 @@ async function seedHomeroomClassSummaries(
   }
 
   const computedAt = new Date('2026-01-15T10:00:00.000Z');
+  const finalizedAt =
+    params.status === SummaryStatus.CLOSED ? computedAt : null;
   let subjectResultCount = 0;
   let conductRecordCount = 0;
   let semesterSummaryCount = 0;
@@ -132,7 +143,7 @@ async function seedHomeroomClassSummaries(
       homeroomClassId: params.homeroomClass.id,
       homeroomTeacherId: params.homeroomClass.homeroomTeacherId,
       studentIndex: index,
-      status: SummaryStatus.DRAFT,
+      status: params.status,
     });
     conductRecordCount += 1;
 
@@ -181,7 +192,7 @@ async function seedHomeroomClassSummaries(
             yearAverage: null,
             passFailResult: null,
             computedAt,
-            status: SummaryStatus.DRAFT,
+            status: params.status,
           },
         });
       } else {
@@ -202,7 +213,7 @@ async function seedHomeroomClassSummaries(
             yearAverage: null,
             passFailResult,
             computedAt,
-            status: SummaryStatus.DRAFT,
+            status: params.status,
           },
         });
       }
@@ -228,28 +239,30 @@ async function seedHomeroomClassSummaries(
         academicResultLevel,
         trainingResultLevel,
         subjectCount: subjectAverages.length,
-        status: SummaryStatus.DRAFT,
-        finalizedAt: null,
+        status: params.status,
+        finalizedAt,
       },
     });
     semesterSummaryCount += 1;
 
-    await prisma.studentYearSummary.create({
-      data: {
-        schoolId: params.schoolId,
-        studentId: enrollment.studentId,
-        academicYearId: params.homeroomClass.academicYearId,
-        homeroomClassId: params.homeroomClass.id,
-        overallAverage: null,
-        academicResultLevel: null,
-        trainingResultLevel: null,
-        promotionDecision: PromotionDecision.PENDING,
-        nextHomeroomClassId: null,
-        note: null,
-        status: SummaryStatus.DRAFT,
-      },
-    });
-    yearSummaryCount += 1;
+    if (params.createYearSummaries) {
+      await prisma.studentYearSummary.create({
+        data: {
+          schoolId: params.schoolId,
+          studentId: enrollment.studentId,
+          academicYearId: params.homeroomClass.academicYearId,
+          homeroomClassId: params.homeroomClass.id,
+          overallAverage: null,
+          academicResultLevel: null,
+          trainingResultLevel: null,
+          promotionDecision: PromotionDecision.PENDING,
+          nextHomeroomClassId: null,
+          note: null,
+          status: SummaryStatus.DRAFT,
+        },
+      });
+      yearSummaryCount += 1;
+    }
   }
 
   return {
@@ -265,7 +278,11 @@ export async function seedSummaries(
   prisma: PrismaClient,
   schoolId: string,
   semesterId: string,
+  options: SeedSummariesOptions = {},
 ): Promise<SummariesSeedResult> {
+  const status = options.status ?? SummaryStatus.DRAFT;
+  const createYearSummaries = options.createYearSummaries ?? true;
+
   await prisma.studentSubjectResult.deleteMany({
     where: { schoolId, semesterId },
   });
@@ -275,13 +292,16 @@ export async function seedSummaries(
   await prisma.studentSemesterSummary.deleteMany({
     where: { schoolId, semesterId },
   });
-  await prisma.studentYearSummary.deleteMany({
-    where: {
-      schoolId,
-      status: SummaryStatus.DRAFT,
-      academicYear: { semesters: { some: { id: semesterId } } },
-    },
-  });
+
+  if (createYearSummaries) {
+    await prisma.studentYearSummary.deleteMany({
+      where: {
+        schoolId,
+        status: SummaryStatus.DRAFT,
+        academicYear: { semesters: { some: { id: semesterId } } },
+      },
+    });
+  }
 
   const homeroomClasses = await prisma.homeroomClass.findMany({
     where: {
@@ -312,6 +332,8 @@ export async function seedSummaries(
       schoolId,
       semesterId,
       homeroomClass,
+      status,
+      createYearSummaries,
     });
 
     subjectResultCount += result.subjectResultCount;

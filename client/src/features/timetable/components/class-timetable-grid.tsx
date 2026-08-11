@@ -2,17 +2,30 @@ import type { TimetableEntry } from '@/features/timetable/api/timetable-entries-
 import { DAY_OF_WEEK_LABELS } from '@/lib/labels';
 
 const DEFAULT_DAYS = [1, 2, 3, 4, 5] as const;
+/** Tiết 1–5 sáng, 6–10 chiều. */
+const DEFAULT_PERIODS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
 
 interface ClassTimetableGridProps {
   entries: TimetableEntry[];
   emptyMessage?: string;
 }
 
+function formatPeriodLabel(period: number): string {
+  if (period >= 1 && period <= 5) {
+    return `${period} (Sáng)`;
+  }
+  if (period >= 6 && period <= 10) {
+    return `${period} (Chiều)`;
+  }
+  return String(period);
+}
+
 function buildGrid(entries: TimetableEntry[]) {
-  const periodSet = new Set(entries.map((entry) => entry.periodNumber));
-  const periods = periodSet.size > 0
-    ? [...periodSet].sort((a, b) => a - b)
-    : [1, 2, 3, 4, 5];
+  const periodSet = new Set<number>(DEFAULT_PERIODS);
+  for (const entry of entries) {
+    periodSet.add(entry.periodNumber);
+  }
+  const periods = [...periodSet].sort((a, b) => a - b);
 
   const cellMap = new Map<string, TimetableEntry>();
   for (const entry of entries) {
@@ -37,10 +50,15 @@ export function ClassTimetableGrid({
       <table className='w-full min-w-[640px] border-collapse text-sm'>
         <thead>
           <tr>
-            <th className='border bg-muted/50 px-3 py-2 text-left font-medium'>Tiết</th>
+            <th className='border bg-muted/50 px-3 py-2 text-left font-medium'>
+              Tiết
+            </th>
             {DEFAULT_DAYS.map((day) => (
-              <th key={day} className='border bg-muted/50 px-3 py-2 text-left font-medium'>
-                {DAY_OF_WEEK_LABELS[day]}
+              <th
+                key={day}
+                className='border bg-muted/50 px-3 py-2 text-left font-medium'
+              >
+                {DAY_OF_WEEK_LABELS[day] ?? `Thứ ${day + 1}`}
               </th>
             ))}
           </tr>
@@ -48,8 +66,8 @@ export function ClassTimetableGrid({
         <tbody>
           {periods.map((period) => (
             <tr key={period}>
-              <td className='border px-3 py-2 font-medium text-muted-foreground'>
-                {period}
+              <td className='border px-3 py-2 font-medium whitespace-nowrap'>
+                {formatPeriodLabel(period)}
               </td>
               {DEFAULT_DAYS.map((day) => {
                 const entry = cellMap.get(`${day}-${period}`);
@@ -57,16 +75,19 @@ export function ClassTimetableGrid({
                   <td key={day} className='border px-3 py-2 align-top'>
                     {entry ? (
                       <div className='space-y-0.5'>
-                        <p className='font-medium'>{entry.courseSectionCode.split('-')[0]}</p>
-                        <p className='text-xs text-muted-foreground'>{entry.courseSectionName}</p>
-                        <p className='text-xs text-muted-foreground'>{entry.teacherFullName}</p>
+                        <div className='font-medium'>
+                          {entry.courseSectionName}
+                        </div>
+                        <div className='text-muted-foreground'>
+                          {entry.teacherFullName}
+                        </div>
                         {entry.room ? (
-                          <p className='text-xs text-muted-foreground'>{entry.room}</p>
+                          <div className='text-muted-foreground'>
+                            {entry.room}
+                          </div>
                         ) : null}
                       </div>
-                    ) : (
-                      <span className='text-muted-foreground/40'>—</span>
-                    )}
+                    ) : null}
                   </td>
                 );
               })}

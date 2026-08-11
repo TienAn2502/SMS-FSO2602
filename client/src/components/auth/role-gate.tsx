@@ -3,6 +3,18 @@ import type { ReactNode } from 'react';
 import type { UserRole } from '@/types/api.types';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 
+function hasEffectiveRole(
+  role: UserRole,
+  required: UserRole[],
+  isImpersonating: boolean,
+) {
+  if (required.includes(role)) {
+    return true;
+  }
+
+  return isImpersonating && required.includes('SCHOOL_ADMIN');
+}
+
 export function RoleGate({
   roles,
   children,
@@ -17,8 +29,12 @@ export function RoleGate({
   fallback?: ReactNode;
 }) {
   const { session } = useAuth();
+  const isImpersonating = Boolean(session?.impersonation);
 
-  if (!session || !roles.includes(session.user.role)) {
+  if (
+    !session ||
+    !hasEffectiveRole(session.user.role, roles, isImpersonating)
+  ) {
     return fallback;
   }
 

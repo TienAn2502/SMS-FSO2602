@@ -3,6 +3,7 @@ import type { SpreadsheetColumnDef } from '@/common/files/file-format.types';
 export const TEACHER_EXPORT_SHEET_NAME = 'Giao_vien';
 
 export const TEACHER_EXPORT_COLUMNS: SpreadsheetColumnDef[] = [
+  { header: 'Mã GV', key: 'ma_gv', width: 12 },
   { header: 'Họ và tên', key: 'ho_ten', width: 28 },
   { header: 'Ngày sinh', key: 'ngay_sinh', width: 15 },
   { header: 'Giới tính', key: 'gioi_tinh', width: 13 },

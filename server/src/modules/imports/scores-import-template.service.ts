@@ -167,8 +167,8 @@ export class ScoresImportTemplateService {
 
     return {
       metadata,
-      sampleRows: enrollments.map((enrollment, index) => ({
-        ma_hs: enrollment.student.externalCode ?? `HS${String(index + 1).padStart(3, '0')}`,
+      sampleRows: enrollments.map((enrollment) => ({
+        ma_hs: enrollment.student.externalCode ?? '',
         ho_ten: enrollment.student.fullName,
         diem: '',
         ghi_chu: '',

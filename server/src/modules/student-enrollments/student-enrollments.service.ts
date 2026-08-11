@@ -1,6 +1,6 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 
-import { EnrollmentStatus, Prisma } from '@prisma/client';
+import { EnrollmentStatus, Prisma, SummaryStatus } from '@prisma/client';
 
 import { AppException } from '@/common/exceptions/app.exception';
 
@@ -30,12 +30,15 @@ import {
 import type {
   CloseSemesterEnrollmentsInput,
   CopySemesterEnrollmentsInput,
+  CreateFromYearPromotionsInput,
   CreateStudentEnrollmentInput,
+  FromYearPromotionsPreviewQuery,
   ListStudentEnrollmentsQuery,
   SyncStaleEnrollmentsInput,
   TransferStudentEnrollmentInput,
   WithdrawStudentEnrollmentInput,
 } from '@/modules/student-enrollments/schemas/student-enrollment.schema';
+import { planYearPromotionEnrollments } from '@/modules/student-enrollments/year-promotion-enrollments.util';
 
 @Injectable()
 export class StudentEnrollmentsService {
@@ -616,6 +619,188 @@ export class StudentEnrollmentsService {
       academicYearId: input.academicYearId,
       closedCount,
       closedBySemester,
+    };
+  }
+
+  async previewFromYearPromotions(
+    schoolId: string,
+    query: FromYearPromotionsPreviewQuery,
+  ) {
+    const plan = await this.buildFromYearPromotionsPlan(
+      schoolId,
+      query.sourceAcademicYearId,
+      query.targetSemesterId,
+      false,
+    );
+
+    return {
+      sourceAcademicYearId: plan.sourceAcademicYearId,
+      sourceAcademicYearName: plan.sourceAcademicYearName,
+      targetSemesterId: plan.targetSemesterId,
+      targetSemesterCode: plan.targetSemesterCode,
+      targetAcademicYearId: plan.targetAcademicYearId,
+      eligibleCount: plan.eligibleCount,
+      wouldCreateCount: plan.toCreate.length,
+      skippedExistingCount: plan.skippedExistingCount,
+      missingNextClassCount: plan.missingNextClassCount,
+      invalidNextClassCount: plan.invalidNextClassCount,
+      graduatedSkippedCount: plan.graduatedSkippedCount,
+      retainedSkippedCount: plan.retainedSkippedCount,
+    };
+  }
+
+  async createFromYearPromotions(
+    schoolId: string,
+    input: CreateFromYearPromotionsInput,
+  ) {
+    const plan = await this.buildFromYearPromotionsPlan(
+      schoolId,
+      input.sourceAcademicYearId,
+      input.targetSemesterId,
+      true,
+    );
+
+    const enrolledAt = input.enrolledAt
+      ? parseIsoDate(input.enrolledAt)
+      : plan.targetSemesterStartDate;
+
+    let createdCount = 0;
+
+    if (plan.toCreate.length > 0) {
+      const result = await this.prisma.studentEnrollment.createMany({
+        data: plan.toCreate.map((row) => ({
+          schoolId,
+          studentId: row.studentId,
+          semesterId: plan.targetSemesterId,
+          homeroomClassId: row.homeroomClassId,
+          enrolledAt,
+          note:
+            input.note ??
+            `Ghi danh từ xét lên lớp ${plan.sourceAcademicYearName}`,
+          status: EnrollmentStatus.ACTIVE,
+        })),
+      });
+      createdCount = result.count;
+    }
+
+    return {
+      sourceAcademicYearId: plan.sourceAcademicYearId,
+      sourceAcademicYearName: plan.sourceAcademicYearName,
+      targetSemesterId: plan.targetSemesterId,
+      targetSemesterCode: plan.targetSemesterCode,
+      targetAcademicYearId: plan.targetAcademicYearId,
+      eligibleCount: plan.eligibleCount,
+      createdCount,
+      skippedExistingCount: plan.skippedExistingCount,
+      missingNextClassCount: plan.missingNextClassCount,
+      invalidNextClassCount: plan.invalidNextClassCount,
+      graduatedSkippedCount: plan.graduatedSkippedCount,
+      retainedSkippedCount: plan.retainedSkippedCount,
+    };
+  }
+
+  private async buildFromYearPromotionsPlan(
+    schoolId: string,
+    sourceAcademicYearId: string,
+    targetSemesterId: string,
+    requireEligibleSummaries: boolean,
+  ) {
+    const sourceYear = await this.prisma.academicYear.findFirst({
+      where: { id: sourceAcademicYearId, schoolId },
+      select: { id: true, name: true },
+    });
+
+    if (!sourceYear) {
+      throw new AppException(
+        'ACADEMIC_YEAR_NOT_FOUND',
+        'Không tìm thấy năm học nguồn',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const targetSemester =
+      await this.semestersService.findSemesterInTenantById(
+        schoolId,
+        targetSemesterId,
+      );
+
+    if (targetSemester.academicYearId === sourceAcademicYearId) {
+      throw new AppException(
+        'YEAR_PROMOTION_SAME_YEAR',
+        'Học kỳ đích phải thuộc năm học khác với năm nguồn',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    const summaries = await this.prisma.studentYearSummary.findMany({
+      where: {
+        schoolId,
+        academicYearId: sourceAcademicYearId,
+        status: SummaryStatus.CLOSED,
+        promotionDecision: {
+          in: [
+            'PROMOTED',
+            'RETAINED',
+            'GRADUATED',
+          ],
+        },
+      },
+      select: {
+        studentId: true,
+        promotionDecision: true,
+        nextHomeroomClassId: true,
+        nextHomeroomClass: {
+          select: { academicYearId: true },
+        },
+      },
+    });
+
+    const eligibleSummaries = summaries.filter(
+      (row) => row.promotionDecision === 'PROMOTED',
+    );
+
+    if (requireEligibleSummaries && eligibleSummaries.length === 0) {
+      throw new AppException(
+        'NO_YEAR_PROMOTION_SUMMARIES',
+        'Không có tổng kết năm đã chốt với quyết định lên lớp',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    const studentIds = eligibleSummaries.map((row) => row.studentId);
+    const existingActive =
+      studentIds.length === 0
+        ? []
+        : await this.prisma.studentEnrollment.findMany({
+            where: {
+              schoolId,
+              semesterId: targetSemesterId,
+              status: EnrollmentStatus.ACTIVE,
+              studentId: { in: studentIds },
+            },
+            select: { studentId: true },
+          });
+
+    const plan = planYearPromotionEnrollments(
+      summaries.map((row) => ({
+        studentId: row.studentId,
+        promotionDecision: row.promotionDecision,
+        nextHomeroomClassId: row.nextHomeroomClassId,
+        nextHomeroomAcademicYearId:
+          row.nextHomeroomClass?.academicYearId ?? null,
+      })),
+      targetSemester.academicYearId,
+      new Set(existingActive.map((row) => row.studentId)),
+    );
+
+    return {
+      sourceAcademicYearId: sourceYear.id,
+      sourceAcademicYearName: sourceYear.name,
+      targetSemesterId: targetSemester.id,
+      targetSemesterCode: targetSemester.code,
+      targetAcademicYearId: targetSemester.academicYearId,
+      targetSemesterStartDate: targetSemester.startDate,
+      ...plan,
     };
   }
 

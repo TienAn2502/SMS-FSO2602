@@ -19,3 +19,11 @@ export async function login(input: LoginInput): Promise<AuthSession> {
 export async function logout(): Promise<void> {
   await api.post('/auth/logout');
 }
+
+export async function changePassword(input: {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}): Promise<void> {
+  await api.post('/auth/change-password', input);
+}

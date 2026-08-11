@@ -24,13 +24,17 @@ import {
   createStudentEnrollmentSchema,
   copySemesterEnrollmentsSchema,
   closeSemesterEnrollmentsSchema,
+  createFromYearPromotionsSchema,
+  fromYearPromotionsPreviewQuerySchema,
   listStudentEnrollmentsQuerySchema,
   syncStaleEnrollmentsSchema,
   transferStudentEnrollmentSchema,
   withdrawStudentEnrollmentSchema,
   type CloseSemesterEnrollmentsInput,
   type CopySemesterEnrollmentsInput,
+  type CreateFromYearPromotionsInput,
   type CreateStudentEnrollmentInput,
+  type FromYearPromotionsPreviewQuery,
   type ListStudentEnrollmentsQuery,
   type SyncStaleEnrollmentsInput,
   type TransferStudentEnrollmentInput,
@@ -65,6 +69,49 @@ export class StudentEnrollmentsController {
       data: result.items,
       meta: result.meta,
       message: null,
+    };
+  }
+
+  @Get('from-year-promotions/preview')
+  @ApiOperation({
+    summary: 'Xem trước tạo ghi danh từ xét lên lớp năm cũ sang HK năm mới',
+  })
+  async previewFromYearPromotions(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query(new ZodValidationPipe(fromYearPromotionsPreviewQuerySchema))
+    query: FromYearPromotionsPreviewQuery,
+  ) {
+    const data = await this.studentEnrollmentsService.previewFromYearPromotions(
+      user.activeSchoolId,
+      query,
+    );
+
+    return {
+      success: true,
+      data,
+      message: null,
+    };
+  }
+
+  @Post('from-year-promotions')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Tạo ghi danh ACTIVE từ tổng kết năm đã chốt (PROMOTED/RETAINED)',
+  })
+  async createFromYearPromotions(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body(new ZodValidationPipe(createFromYearPromotionsSchema))
+    body: CreateFromYearPromotionsInput,
+  ) {
+    const data = await this.studentEnrollmentsService.createFromYearPromotions(
+      user.activeSchoolId,
+      body,
+    );
+
+    return {
+      success: true,
+      data,
+      message: `Đã tạo ${data.createdCount} ghi danh năm sau`,
     };
   }
 

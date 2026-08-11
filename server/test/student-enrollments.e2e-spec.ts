@@ -90,6 +90,34 @@ describe('Student Enrollments API (e2e)', () => {
     expect(body.code).toBe('UNAUTHORIZED');
   });
 
+  it('POST /api/v1/student-enrollments/from-year-promotions without auth returns 401', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/api/v1/student-enrollments/from-year-promotions')
+      .send({
+        sourceAcademicYearId: '00000000-0000-4000-8000-000000000001',
+        targetSemesterId: '00000000-0000-4000-8000-000000000002',
+      })
+      .expect(401);
+
+    const body = res.body as { success: boolean; code: string };
+    expect(body.success).toBe(false);
+    expect(body.code).toBe('UNAUTHORIZED');
+  });
+
+  it('GET /api/v1/student-enrollments/from-year-promotions/preview without auth returns 401', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/api/v1/student-enrollments/from-year-promotions/preview')
+      .query({
+        sourceAcademicYearId: '00000000-0000-4000-8000-000000000001',
+        targetSemesterId: '00000000-0000-4000-8000-000000000002',
+      })
+      .expect(401);
+
+    const body = res.body as { success: boolean; code: string };
+    expect(body.success).toBe(false);
+    expect(body.code).toBe('UNAUTHORIZED');
+  });
+
   it('POST /api/v1/student-enrollments/copy-from-semester without auth returns 401', async () => {
     const res = await request(app.getHttpServer())
       .post('/api/v1/student-enrollments/copy-from-semester')

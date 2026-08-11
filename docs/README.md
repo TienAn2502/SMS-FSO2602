@@ -12,17 +12,18 @@ Hệ thống quản trị trường học đa tenant (SaaS), tập trung MVP: qu
 | [database/](./database/) | Schema, migration, seed |
 | [api/](./api/) | Quy ước REST API và endpoint theo sprint |
 | [decisions/](./decisions/) | Architecture Decision Records (ADR) |
-| [sprints/](./sprints/) | Kế hoạch triển khai theo sprint ([Sprint 1](./sprints/sprint-1-plan.md) … [Sprint 8](./sprints/sprint-8-plan.md)) |
+| [sprints/](./sprints/) | Kế hoạch triển khai theo sprint ([Sprint 1](./sprints/sprint-1-plan.md) … [Sprint 11](./sprints/sprint-11-plan.md)) |
 
 ## Trạng thái dự án
 
 | Hạng mục | Trạng thái |
 |----------|------------|
-| Sprint hiện tại | **Sprint 5** – Điểm danh (Phase 5A ✅ schema + seed) |
-| Frontend | `client/` – React + Vite (Sprint 1–4 ✅) |
-| Backend | `server/` – NestJS (Sprint 1–4 ✅; Sprint 5: schema điểm danh) |
-| Database | Neon PostgreSQL + Prisma (Sprint 1–4 ✅; Sprint 5: +attendance_*) |
-| Tạo trường đầu tiên | Seed data (MVP) |
+| Sprint hiện tại | **Sprint 9** – Platform 1 (onboard tenant) — 🟡 gần xong |
+| Sprint học vụ (1–8) | Import/export, PDF, điểm danh, điểm, tổng kết — xem [Sprint 8](./sprints/sprint-8-plan.md) |
+| Frontend | `client/` – React + Vite |
+| Backend | `server/` – NestJS |
+| Database | Neon PostgreSQL + Prisma |
+| Tạo trường đầu tiên | Seed (DEMO) + Platform API từ Sprint 9 |
 
 ## Quyết định đã chốt
 
@@ -33,7 +34,8 @@ Hệ thống quản trị trường học đa tenant (SaaS), tập trung MVP: qu
 - Tạo trường tenant đầu tiên: **Seed script**
 - Auth MVP: **JWT stateless** — [ADR 005](./decisions/005-session-storage.md)
 - **Không** có `switch-school` trong MVP — [ADR 006](./decisions/006-defer-switch-school.md)
-- **Không** có `audit_logs` trong MVP — [ADR 007](./decisions/007-defer-audit-logs.md)
+- **Không** có `audit_logs` tenant-wide trong MVP — [ADR 007](./decisions/007-defer-audit-logs.md); audit **platform** từ Sprint 10
+- Platform admin module — [ADR 013](./decisions/013-platform-admin-module.md)
 - Validation backend: **Zod** — [ADR 004](./decisions/004-validation-library.md)
 - RBAC MVP đơn giản: **role enum trên user** — [ADR 008](./decisions/008-simplify-rbac-mvp.md)
 - Auth Phase 1C: **login/logout/refresh/me + JWT cookie guards**
@@ -62,3 +64,14 @@ Tạo trường (seed)
 ## Bắt đầu nhanh
 
 Xem [Hướng dẫn phát triển local](./setup/local-development.md).
+
+## Lộ trình sprint (tóm tắt)
+
+| Sprint | Phạm vi | Tài liệu |
+|--------|---------|----------|
+| 1–4 | Auth, học vụ cơ bản, portal | [Sprint 1](./sprints/sprint-1-plan.md) … [Sprint 4](./sprints/sprint-4-plan.md) |
+| 5–7 | Điểm danh, sổ điểm, tổng kết | [Sprint 5](./sprints/sprint-5-plan.md) … [Sprint 7](./sprints/sprint-7-plan.md) |
+| 8 | Import/export, PDF | [Sprint 8](./sprints/sprint-8-plan.md) · [API](./api/sprint8-endpoints.md) |
+| **9** | **Platform 1** — onboard tenant | [Sprint 9](./sprints/sprint-9-plan.md) · [API](./api/sprint9-endpoints.md) · [ADR 013](./decisions/013-platform-admin-module.md) |
+| 10 | Platform 2 — impersonation, audit | [Sprint 10](./sprints/sprint-10-plan.md) · [API](./api/sprint10-endpoints.md) |
+| 11 | Platform 3 — quota, flags, billing | [Sprint 11](./sprints/sprint-11-plan.md) |

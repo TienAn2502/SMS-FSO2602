@@ -52,12 +52,25 @@ describe('timetable matrix utils', () => {
   });
 
   describe('parseTimetableImportCell', () => {
-    it('parses import cell with course code, email and room', () => {
+    it('parses subject-only cell with optional room', () => {
+      expect(parseTimetableImportCell('TOAN\nP.101')).toEqual({
+        subjectOrSectionKey: 'TOAN',
+        room: 'P.101',
+      });
+    });
+
+    it('parses subject-only cell without room', () => {
+      expect(parseTimetableImportCell('Toán học')).toEqual({
+        subjectOrSectionKey: 'Toán học',
+        room: null,
+      });
+    });
+
+    it('ignores legacy email line and keeps room', () => {
       expect(
         parseTimetableImportCell('VAN-10A2\ngv@test.edu\nP.101'),
       ).toEqual({
-        courseSectionCode: 'VAN-10A2',
-        teacherIdentifier: 'gv@test.edu',
+        subjectOrSectionKey: 'VAN-10A2',
         room: 'P.101',
       });
     });

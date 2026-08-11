@@ -107,7 +107,11 @@ export class HomeroomClassesService {
     );
 
     if (input.homeroomTeacherId) {
-      await this.validateHomeroomTeacher(schoolId, input.homeroomTeacherId);
+      await this.validateHomeroomTeacher(
+        schoolId,
+        input.homeroomTeacherId,
+        input.academicYearId,
+      );
     }
 
     try {
@@ -135,10 +139,18 @@ export class HomeroomClassesService {
     homeroomClassId: string,
     input: UpdateHomeroomClassInput,
   ): Promise<HomeroomClassResponse> {
-    await this.findHomeroomClassInTenant(schoolId, homeroomClassId);
+    const existing = await this.findHomeroomClassInTenant(
+      schoolId,
+      homeroomClassId,
+    );
 
     if (input.homeroomTeacherId) {
-      await this.validateHomeroomTeacher(schoolId, input.homeroomTeacherId);
+      await this.validateHomeroomTeacher(
+        schoolId,
+        input.homeroomTeacherId,
+        existing.academicYearId,
+        homeroomClassId,
+      );
     }
 
     try {
@@ -198,6 +210,8 @@ export class HomeroomClassesService {
   private async validateHomeroomTeacher(
     schoolId: string,
     teacherId: string,
+    academicYearId: string,
+    excludeHomeroomClassId?: string,
   ): Promise<void> {
     const teacher = await this.prisma.teacher.findFirst({
       where: {
@@ -211,6 +225,27 @@ export class HomeroomClassesService {
       throw new AppException(
         'INVALID_HOMEROOM_TEACHER',
         'Giáo viên không hợp lệ',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    const existingHomeroom = await this.prisma.homeroomClass.findFirst({
+      where: {
+        schoolId,
+        academicYearId,
+        homeroomTeacherId: teacherId,
+        status: AcademicEntityStatus.ACTIVE,
+        ...(excludeHomeroomClassId
+          ? { id: { not: excludeHomeroomClassId } }
+          : {}),
+      },
+      select: { id: true, code: true },
+    });
+
+    if (existingHomeroom) {
+      throw new AppException(
+        'HOMEROOM_TEACHER_ALREADY_ASSIGNED',
+        `Giáo viên đã là GVCN lớp ${existingHomeroom.code} trong năm học này`,
         HttpStatus.UNPROCESSABLE_ENTITY,
       );
     }

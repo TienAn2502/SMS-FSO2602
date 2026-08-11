@@ -79,8 +79,7 @@ export function ParentDetailPage() {
   });
 
   const createUserMutation = useMutation({
-    mutationFn: (values: { email: string; password: string }) =>
-      createParentUser(id, values),
+    mutationFn: () => createParentUser(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['parents', id] });
       toast.success('Cấp tài khoản thành công');
@@ -163,9 +162,10 @@ export function ParentDetailPage() {
           </form>
 
           <ProvisionLoginAccountSection
-            userEmail={parent.userEmail}
+            loginCode={parent.externalCode}
             hasAccount={Boolean(parent.userId)}
-            onProvision={(values) => createUserMutation.mutate(values)}
+            passwordHint='mã PH + số điện thoại (chỉ số)'
+            onProvision={() => createUserMutation.mutate()}
             isPending={createUserMutation.isPending}
           />
         </CardContent>

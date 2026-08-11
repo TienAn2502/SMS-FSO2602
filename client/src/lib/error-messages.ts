@@ -1,5 +1,8 @@
 const ERROR_MESSAGES: Record<string, string> = {
-    INVALID_CREDENTIALS: 'Email hoặc mật khẩu không đúng',
+    INVALID_CREDENTIALS: 'Mã / SĐT / email hoặc mật khẩu không đúng',
+    LOGIN_AMBIGUOUS:
+        'Có nhiều tài khoản khớp. Dùng mã HS/GV/PH hoặc liên hệ nhà trường.',
+    INVALID_CURRENT_PASSWORD: 'Mật khẩu hiện tại không đúng',
     SESSION_EXPIRED: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại',
     UNAUTHORIZED: 'Bạn cần đăng nhập để thực hiện thao tác này',
     FORBIDDEN: 'Bạn không có quyền thực hiện thao tác này',
@@ -7,6 +10,14 @@ const ERROR_MESSAGES: Record<string, string> = {
     EMAIL_ALREADY_EXISTS: 'Email đã được sử dụng',
     USER_NOT_FOUND: 'Không tìm thấy người dùng',
     SCHOOL_NOT_FOUND: 'Không tìm thấy trường',
+    SCHOOL_CODE_EXISTS: 'Mã trường đã tồn tại',
+    ADMIN_EMAIL_EXISTS: 'Email quản trị viên đã được sử dụng',
+    SCHOOL_SUSPENDED: 'Trường đang bị tạm khóa. Vui lòng liên hệ quản trị nền tảng',
+    PLATFORM_FORBIDDEN: 'Chỉ quản trị hệ thống mới được truy cập module nền tảng',
+    SCHOOL_NOT_ACTIVE: 'Chỉ có thể đăng nhập thay trường đang hoạt động',
+    IMPERSONATION_FORBIDDEN: 'Không được phép đăng nhập thay',
+    IMPERSONATION_NOT_ACTIVE: 'Không có phiên đăng nhập thay đang hoạt động',
+    IMPERSONATION_READ_ONLY: 'Phiên xem thay chỉ được phép đọc dữ liệu',
     ACADEMIC_YEAR_NOT_FOUND: 'Không tìm thấy năm học',
     ACADEMIC_YEAR_CODE_EXISTS: 'Mã năm học đã tồn tại',
     ACADEMIC_YEAR_HAS_CLASSES: 'Năm học đang có lớp, không thể ngừng hoạt động',
@@ -33,6 +44,8 @@ const ERROR_MESSAGES: Record<string, string> = {
     NO_SOURCE_COURSE_SECTIONS:
         'Không có lớp môn đang hoạt động (ACTIVE) ở học kỳ nguồn',
     INVALID_HOMEROOM_TEACHER: 'Giáo viên chủ nhiệm không hợp lệ',
+    HOMEROOM_TEACHER_ALREADY_ASSIGNED:
+        'Giáo viên đã là GVCN một lớp khác trong năm học này',
     GRADE_LEVEL_SUBJECT_NOT_FOUND: 'Môn học chưa được cấu hình cho khối này',
     TENANT_MISMATCH: 'Dữ liệu không thuộc cùng trường hoặc năm học',
     INVALID_DATE_RANGE: 'Khoảng ngày không hợp lệ',
@@ -44,6 +57,32 @@ const ERROR_MESSAGES: Record<string, string> = {
         'Không có ghi danh đang học (ACTIVE) ở học kỳ nguồn',
     ENROLLMENT_COPY_SAME_SEMESTER:
         'Học kỳ nguồn và học kỳ đích phải khác nhau',
+    YEAR_PROMOTION_SAME_YEAR:
+        'Học kỳ đích phải thuộc năm học khác với năm nguồn',
+    NO_YEAR_PROMOTION_SUMMARIES:
+        'Không có tổng kết năm đã chốt với quyết định lên lớp',
+    YEAR_PREP_SAME_YEAR: 'Năm học nguồn và năm học đích phải khác nhau',
+    YEAR_PREP_SOURCE_NOT_CLOSED:
+        'Năm học nguồn chưa chốt lên lớp — không thể chuẩn bị năm sau',
+    YEAR_PREP_SEMESTER_YEAR_MISMATCH:
+        'Học kỳ đích phải thuộc năm học đích đã chọn',
+    CLASS_PLACEMENT_NO_CLASSES:
+        'Không có lớp hành chính ACTIVE trong khối đã chọn',
+    CLASS_PLACEMENT_NO_ASSIGNMENTS:
+        'Không xếp được học sinh nào — kiểm tra danh sách chờ và sức chứa lớp',
+    CLASS_PLACEMENT_GRADE_MISMATCH:
+        'Học sinh ở lại chỉ được xếp vào lớp cùng khối với năm trước',
+    YEAR_SUMMARY_NOT_FOUND: 'Không tìm thấy tổng kết năm',
+    NEXT_HOMEROOM_NOT_ALLOWED_FOR_GRADUATED:
+        'Học sinh tốt nghiệp không gán lớp năm sau',
+    NEXT_HOMEROOM_NOT_ALLOWED_FOR_RETAINED:
+        'Học sinh ở lại lớp không gán lớp năm sau',
+    INVALID_NEXT_HOMEROOM_CLASS:
+        'Lớp năm sau không hợp lệ hoặc không còn hoạt động',
+    INVALID_HOMEROOM_CLASS:
+        'Một hoặc nhiều lớp không hợp lệ hoặc không còn hoạt động',
+    NEXT_HOMEROOM_SAME_YEAR:
+        'Lớp năm sau phải thuộc năm học khác với năm tổng kết',
     ASSIGNMENT_COPY_SAME_SEMESTER:
         'Học kỳ nguồn và học kỳ đích phải khác nhau',
     NO_SOURCE_ASSIGNMENTS:

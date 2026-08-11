@@ -6,14 +6,19 @@ import { ROUTES } from '@/app/router/routes';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RoleGate } from '@/components/auth/role-gate';
 import { LoginPage } from '@/features/auth/pages/login-page';
+import { ChangePasswordPage } from '@/features/auth/pages/change-password-page';
 import { AcademicYearDetailPage } from '@/features/academic-years/pages/academic-year-detail-page';
 import { AcademicYearsPage } from '@/features/academic-years/pages/academic-years-page';
 import { SemesterDetailPage } from '@/features/academic-years/pages/semester-detail-page';
 import { CourseSectionDetailPage } from '@/features/course-sections/pages/course-section-detail-page';
 import { CourseSectionsPage } from '@/features/course-sections/pages/course-sections-page';
 import { DashboardPage } from '@/features/dashboard/pages/dashboard-page';
+import { PlatformDashboardPage } from '@/features/platform/pages/platform-dashboard-page';
+import { PlatformSchoolsPage } from '@/features/platform/pages/platform-schools-page';
+import { PlatformSchoolDetailPage } from '@/features/platform/pages/platform-school-detail-page';
 import { GradeLevelSubjectsPage } from '@/features/grade-level-subjects/pages/grade-level-subjects-page';
 import { GradeLevelsPage } from '@/features/grade-levels/pages/grade-levels-page';
+import { HomeroomClassDetailPage } from '@/features/homeroom-classes/pages/homeroom-class-detail-page';
 import { HomeroomClassesPage } from '@/features/homeroom-classes/pages/homeroom-classes-page';
 import { ParentDetailPage } from '@/features/parents/pages/parent-detail-page';
 import { ParentsPage } from '@/features/parents/pages/parents-page';
@@ -45,6 +50,7 @@ import { SchoolSettingsPage } from '@/features/schools/pages/school-settings-pag
 import { StudentDetailPage } from '@/features/students/pages/student-detail-page';
 import { StudentEnrollmentDetailPage } from '@/features/student-enrollments/pages/student-enrollment-detail-page';
 import { StudentsPage } from '@/features/students/pages/students-page';
+import { ClassPlacementPage } from '@/features/class-placement/pages/class-placement-page';
 import { SubjectsPage } from '@/features/subjects/pages/subjects-page';
 import { TeacherDetailPage } from '@/features/teachers/pages/teacher-detail-page';
 import { TeachersPage } from '@/features/teachers/pages/teachers-page';
@@ -70,7 +76,43 @@ export const router = createBrowserRouter([
         children: [
             {
                 index: true,
-                element: <DashboardPage />,
+                element: (
+                    <RoleGate roles={['SCHOOL_ADMIN']}>
+                        <DashboardPage />
+                    </RoleGate>
+                ),
+            },
+            {
+                path: ROUTES.platform.slice(1),
+                element: (
+                    <RoleGate roles={['SYSTEM_ADMIN']}>
+                        <PlatformDashboardPage />
+                    </RoleGate>
+                ),
+            },
+            {
+                path: ROUTES.platformSchools.slice(1),
+                element: (
+                    <RoleGate roles={['SYSTEM_ADMIN']}>
+                        <PlatformSchoolsPage />
+                    </RoleGate>
+                ),
+            },
+            {
+                path: `${ROUTES.platformSchools.slice(1)}/:id`,
+                element: (
+                    <RoleGate roles={['SYSTEM_ADMIN']}>
+                        <PlatformSchoolDetailPage />
+                    </RoleGate>
+                ),
+            },
+            {
+                path: `${ROUTES.platformSchools.slice(1)}/:id`,
+                element: (
+                    <RoleGate roles={['SYSTEM_ADMIN']}>
+                        <PlatformSchoolDetailPage />
+                    </RoleGate>
+                ),
             },
             {
                 path: ROUTES.users.slice(1),
@@ -85,6 +127,14 @@ export const router = createBrowserRouter([
                 element: (
                     <RoleGate roles={['SCHOOL_ADMIN']}>
                         <SchoolSettingsPage />
+                    </RoleGate>
+                ),
+            },
+            {
+                path: ROUTES.changePassword.slice(1),
+                element: (
+                    <RoleGate roles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT']}>
+                        <ChangePasswordPage />
                     </RoleGate>
                 ),
             },
@@ -145,6 +195,14 @@ export const router = createBrowserRouter([
                 ),
             },
             {
+                path: `${ROUTES.homeroomClasses.slice(1)}/:id`,
+                element: (
+                    <RoleGate roles={['SCHOOL_ADMIN']}>
+                        <HomeroomClassDetailPage />
+                    </RoleGate>
+                ),
+            },
+            {
                 path: ROUTES.courseSections.slice(1),
                 element: (
                     <RoleGate roles={['SCHOOL_ADMIN']}>
@@ -167,6 +225,14 @@ export const router = createBrowserRouter([
                 element: (
                     <RoleGate roles={['SCHOOL_ADMIN']}>
                         <StudentsPage />
+                    </RoleGate>
+                ),
+            },
+            {
+                path: ROUTES.classPlacement.slice(1),
+                element: (
+                    <RoleGate roles={['SCHOOL_ADMIN']}>
+                        <ClassPlacementPage />
                     </RoleGate>
                 ),
             },

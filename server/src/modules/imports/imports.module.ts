@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { AuthModule } from '@/modules/auth/auth.module';
+import { ClassPlacementModule } from '@/modules/class-placement/class-placement.module';
 import { ImportsController } from '@/modules/imports/imports.controller';
 import { HomeroomClassesImportTemplateService } from '@/modules/imports/homeroom-classes-import-template.service';
 import { HomeroomClassesImportService } from '@/modules/imports/homeroom-classes-import.service';
@@ -14,12 +15,22 @@ import { TeachersImportTemplateService } from '@/modules/imports/teachers-import
 import { TeachersImportService } from '@/modules/imports/teachers-import.service';
 import { TeachingAssignmentsImportTemplateService } from '@/modules/imports/teaching-assignments-import-template.service';
 import { TeachingAssignmentsImportService } from '@/modules/imports/teaching-assignments-import.service';
+import { ClassPlacementImportTemplateService } from '@/modules/imports/class-placement-import-template.service';
+import { ClassPlacementImportService } from '@/modules/imports/class-placement-import.service';
+import { CourseSectionsImportTemplateService } from '@/modules/imports/course-sections-import-template.service';
+import { CourseSectionsImportService } from '@/modules/imports/course-sections-import.service';
 import { ScoresModule } from '@/modules/scores/scores.module';
 import { TimetableEntriesModule } from '@/modules/timetable-entries/timetable-entries.module';
 import { TimetableImportService } from '@/modules/imports/timetable-import.service';
+import { TimetableImportTemplateService } from '@/modules/imports/timetable-import-template.service';
 
 @Module({
-  imports: [AuthModule, ScoresModule, TimetableEntriesModule],
+  imports: [
+    AuthModule,
+    ScoresModule,
+    TimetableEntriesModule,
+    ClassPlacementModule,
+  ],
   controllers: [ImportsController],
   providers: [
     StudentsImportService,
@@ -32,7 +43,12 @@ import { TimetableImportService } from '@/modules/imports/timetable-import.servi
     HomeroomClassesImportTemplateService,
     TeachingAssignmentsImportService,
     TeachingAssignmentsImportTemplateService,
+    ClassPlacementImportService,
+    ClassPlacementImportTemplateService,
+    CourseSectionsImportService,
+    CourseSectionsImportTemplateService,
     TimetableImportService,
+    TimetableImportTemplateService,
     ScoresImportService,
     ScoresImportTemplateService,
   ],

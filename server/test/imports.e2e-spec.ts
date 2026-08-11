@@ -155,6 +155,16 @@ describe('Imports API (e2e)', () => {
     expect(body.code).toBe('UNAUTHORIZED');
   });
 
+  it('GET /api/v1/imports/templates/timetable without auth returns 401', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/api/v1/imports/templates/timetable')
+      .expect(401);
+
+    const body = res.body as { success: boolean; code: string };
+    expect(body.success).toBe(false);
+    expect(body.code).toBe('UNAUTHORIZED');
+  });
+
   it('POST /api/v1/imports/teaching-assignments without auth returns 401', async () => {
     const res = await request(app.getHttpServer())
       .post('/api/v1/imports/teaching-assignments')

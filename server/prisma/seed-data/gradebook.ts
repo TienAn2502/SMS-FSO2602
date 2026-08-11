@@ -240,21 +240,40 @@ export async function seedGradebook(
   prisma: PrismaClient,
   schoolId: string,
   semesterId: string,
+  options?: {
+    /** Chỉ seed các lớp HC này (mã lớp). */
+    homeroomClassCodes?: string[];
+    /**
+     * true (mặc định): xóa toàn bộ assessment/score của học kỳ rồi seed lại.
+     * false: chỉ bổ sung lớp/môn chưa có sổ điểm (không đụng dữ liệu đã có).
+     */
+    replaceExisting?: boolean;
+  },
 ): Promise<GradebookSeedResult> {
+  const replaceExisting = options?.replaceExisting ?? true;
+  const filterCodes = options?.homeroomClassCodes?.map((code) =>
+    code.trim().toUpperCase(),
+  );
+
   const semester = await prisma.semester.findFirstOrThrow({
     where: { id: semesterId, schoolId },
     select: { startDate: true, endDate: true },
   });
 
-  await prisma.score.deleteMany({
-    where: { schoolId, assessment: { semesterId } },
-  });
-  await prisma.assessment.deleteMany({ where: { schoolId, semesterId } });
+  if (replaceExisting) {
+    await prisma.score.deleteMany({
+      where: { schoolId, assessment: { semesterId } },
+    });
+    await prisma.assessment.deleteMany({ where: { schoolId, semesterId } });
+  }
 
   const homeroomClasses = await prisma.homeroomClass.findMany({
     where: {
       schoolId,
       courseSections: { some: { semesterId } },
+      ...(filterCodes && filterCodes.length > 0
+        ? { code: { in: filterCodes, mode: 'insensitive' } }
+        : {}),
     },
     select: { id: true, code: true },
     orderBy: { code: 'asc' },
@@ -306,11 +325,16 @@ export async function seedGradebook(
             subject: { select: { code: true } },
           },
         },
+        _count: { select: { assessments: true } },
       },
       orderBy: { code: 'asc' },
     });
 
     for (const courseSection of courseSections) {
+      if (!replaceExisting && courseSection._count.assessments > 0) {
+        continue;
+      }
+
       const assignment = courseSection.teachingAssignments[0];
       if (!assignment) {
         throw new Error(`No teaching assignment for ${courseSection.code}`);

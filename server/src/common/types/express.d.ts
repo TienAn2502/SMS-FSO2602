@@ -8,8 +8,10 @@ declare global {
       fullName: string;
       role: UserRole;
       status: UserStatus;
-      schoolId: string;
+      schoolId: string | null;
       activeSchoolId: string;
+      impersonatedBy?: string;
+      impersonationMode?: 'read_only' | 'full';
     }
   }
 }

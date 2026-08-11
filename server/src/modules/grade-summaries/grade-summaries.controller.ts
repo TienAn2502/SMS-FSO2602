@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -25,12 +26,14 @@ import {
   listSubjectResultsQuerySchema,
   listYearSummariesQuerySchema,
   recomputeYearSummariesSchema,
+  updateYearSummaryNextHomeroomSchema,
   type FinalizePromotionInput,
   type FinalizeSemesterSummariesInput,
   type ListSemesterSummariesQuery,
   type ListSubjectResultsQuery,
   type ListYearSummariesQuery,
   type RecomputeYearSummariesInput,
+  type UpdateYearSummaryNextHomeroomInput,
 } from '@/modules/grade-summaries/schemas/grade-summaries-list.schema';
 import {
   recomputeGradeSummariesSchema,
@@ -102,6 +105,27 @@ export class GradeSummariesController {
       data: result.items,
       meta: result.meta,
       message: null,
+    };
+  }
+
+  @Patch('year-summaries/:id')
+  @ApiOperation({ summary: 'Gán lớp hành chính năm sau cho tổng kết năm' })
+  async updateYearSummaryNextHomeroom(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', new ZodValidationPipe(uuidParamSchema)) id: string,
+    @Body(new ZodValidationPipe(updateYearSummaryNextHomeroomSchema))
+    body: UpdateYearSummaryNextHomeroomInput,
+  ) {
+    const data = await this.gradeSummariesService.updateYearSummaryNextHomeroom(
+      user.activeSchoolId,
+      id,
+      body,
+    );
+
+    return {
+      success: true,
+      data,
+      message: 'Cập nhật lớp năm sau thành công',
     };
   }
 

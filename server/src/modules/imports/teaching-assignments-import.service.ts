@@ -8,7 +8,6 @@ import { AppException } from '@/common/exceptions/app.exception';
 import type { ParsedSpreadsheetRow } from '@/common/files/file-format.types';
 import { parseUploadedSpreadsheet } from '@/common/files/parse-uploaded-file.util';
 import { parseIsoDate } from '@/common/schemas/academic.schema';
-import { teachingAssignmentInclude } from '@/modules/teaching-assignments/mappers/teaching-assignment.mapper';
 import {
   teachingAssignmentImportRowSchema,
   type ImportTeachingAssignmentsFormInput,
@@ -21,6 +20,14 @@ import { validateTeachingAssignmentImportHeaders } from '@/modules/imports/utils
 interface ParsedTeachingAssignmentImportRow {
   rowNumber: number;
   row: TeachingAssignmentImportRow;
+}
+
+interface ExistingAssignmentRow {
+  id: string;
+  teacherId: string;
+  courseSectionId: string;
+  status: AcademicEntityStatus;
+  assignAt: Date;
 }
 
 @Injectable()
@@ -55,10 +62,20 @@ export class TeachingAssignmentsImportService {
 
     await this.assertSemesterInTenant(schoolId, form.semesterId);
 
-    const { rows, errors } = this.parseRows(parsed.rows);
+    const { rows, errors, skippedEmptyEmail } = this.parseRows(parsed.rows);
 
     if (errors.length > 0) {
       throw this.buildValidationException(errors);
+    }
+
+    if (rows.length === 0) {
+      throw new AppException(
+        'IMPORT_EMPTY',
+        skippedEmptyEmail > 0
+          ? `Không có dòng nào có email_gv để import (${skippedEmptyEmail} dòng bỏ qua vì trống email)`
+          : 'File không có dòng dữ liệu',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     errors.push(...this.validateDuplicateRows(rows));
@@ -73,35 +90,104 @@ export class TeachingAssignmentsImportService {
         this.loadActiveAssignmentsBySectionId(schoolId, form.semesterId),
       ]);
 
-    try {
-      return await this.prisma.$transaction(async (tx) => {
-        let created = 0;
-        let updated = 0;
+    const resolvedRows: Array<{
+      rowNumber: number;
+      teacherId: string;
+      courseSectionId: string;
+      assignAt: Date;
+    }> = [];
 
-        for (const item of rows) {
-          const outcome = await this.upsertAssignmentRow(tx, schoolId, {
-            rowNumber: item.rowNumber,
-            row: item.row,
-            teacherByEmail,
-            sectionByCode,
-            activeAssignmentBySectionId,
-          });
+    for (const item of rows) {
+      const teacherId = teacherByEmail.get(item.row.email_gv.toLowerCase());
+      if (!teacherId) {
+        errors.push({
+          row: item.rowNumber,
+          field: 'email_gv',
+          message: `Không tìm thấy giáo viên với email ${item.row.email_gv}`,
+        });
+        continue;
+      }
 
-          if (outcome === 'created') {
-            created += 1;
-          } else {
-            updated += 1;
-          }
-        }
+      const courseSectionId = sectionByCode.get(
+        item.row.ma_lop_mon.toLowerCase(),
+      );
+      if (!courseSectionId) {
+        errors.push({
+          row: item.rowNumber,
+          field: 'ma_lop_mon',
+          message: `Không tìm thấy lớp môn ${item.row.ma_lop_mon} trong học kỳ đã chọn`,
+        });
+        continue;
+      }
 
-        return {
-          successCount: rows.length,
-          errorCount: 0,
-          created,
-          updated,
-          errors: [],
-        };
+      const activeOnSection = activeAssignmentBySectionId.get(courseSectionId);
+      if (activeOnSection && activeOnSection.teacherId !== teacherId) {
+        errors.push({
+          row: item.rowNumber,
+          field: 'ma_lop_mon',
+          message: `Lớp môn ${item.row.ma_lop_mon} đã có giáo viên phân công khác`,
+        });
+        continue;
+      }
+
+      resolvedRows.push({
+        rowNumber: item.rowNumber,
+        teacherId,
+        courseSectionId,
+        assignAt: parseIsoDate(item.row.ngay_phan_cong),
       });
+    }
+
+    if (errors.length > 0) {
+      throw this.buildValidationException(errors);
+    }
+
+    const existingByPair = await this.loadExistingAssignmentsByPair(
+      schoolId,
+      resolvedRows,
+    );
+
+    const transactionTimeoutMs = Math.min(
+      300_000,
+      30_000 + resolvedRows.length * 200,
+    );
+
+    try {
+      return await this.prisma.$transaction(
+        async (tx) => {
+          let created = 0;
+          let updated = 0;
+
+          for (const item of resolvedRows) {
+            const outcome = await this.upsertAssignmentRow(tx, schoolId, {
+              teacherId: item.teacherId,
+              courseSectionId: item.courseSectionId,
+              assignAt: item.assignAt,
+              existingByPair,
+              activeAssignmentBySectionId,
+            });
+
+            if (outcome === 'created') {
+              created += 1;
+            } else {
+              updated += 1;
+            }
+          }
+
+          return {
+            successCount: resolvedRows.length,
+            errorCount: 0,
+            created,
+            updated,
+            skippedEmptyEmail,
+            errors: [],
+          };
+        },
+        {
+          maxWait: 15_000,
+          timeout: transactionTimeoutMs,
+        },
+      );
     } catch (error: unknown) {
       if (
         error instanceof AppException &&
@@ -128,12 +214,21 @@ export class TeachingAssignmentsImportService {
   private parseRows(rows: ParsedSpreadsheetRow[]): {
     rows: ParsedTeachingAssignmentImportRow[];
     errors: TeachingAssignmentImportRowError[];
+    skippedEmptyEmail: number;
   } {
     const parsedRows: ParsedTeachingAssignmentImportRow[] = [];
     const errors: TeachingAssignmentImportRowError[] = [];
+    let skippedEmptyEmail = 0;
 
     for (const spreadsheetRow of rows) {
       const normalizedData = this.normalizeRowData(spreadsheetRow.data);
+
+      // Khối đầu cấp: email trống trong mẫu → bỏ qua, không coi là lỗi
+      if (!normalizedData.email_gv) {
+        skippedEmptyEmail += 1;
+        continue;
+      }
+
       const result = teachingAssignmentImportRowSchema.safeParse(normalizedData);
 
       if (!result.success) {
@@ -153,7 +248,7 @@ export class TeachingAssignmentsImportService {
       });
     }
 
-    return { rows: parsedRows, errors };
+    return { rows: parsedRows, errors, skippedEmptyEmail };
   }
 
   private normalizeRowData(data: Record<string, string>): Record<string, string> {
@@ -161,6 +256,10 @@ export class TeachingAssignmentsImportService {
 
     for (const [key, value] of Object.entries(data)) {
       normalized[key] = value.trim();
+    }
+
+    if (!normalized.email_gv) {
+      delete normalized.email_gv;
     }
 
     return normalized;
@@ -301,14 +400,50 @@ export class TeachingAssignmentsImportService {
     );
   }
 
+  private async loadExistingAssignmentsByPair(
+    schoolId: string,
+    rows: Array<{ teacherId: string; courseSectionId: string }>,
+  ): Promise<Map<string, ExistingAssignmentRow>> {
+    const teacherIds = [...new Set(rows.map((row) => row.teacherId))];
+    const courseSectionIds = [
+      ...new Set(rows.map((row) => row.courseSectionId)),
+    ];
+
+    if (teacherIds.length === 0 || courseSectionIds.length === 0) {
+      return new Map();
+    }
+
+    const existing = await this.prisma.teachingAssignment.findMany({
+      where: {
+        schoolId,
+        teacherId: { in: teacherIds },
+        courseSectionId: { in: courseSectionIds },
+      },
+      select: {
+        id: true,
+        teacherId: true,
+        courseSectionId: true,
+        status: true,
+        assignAt: true,
+      },
+    });
+
+    return new Map(
+      existing.map((row) => [
+        `${row.teacherId}|${row.courseSectionId}`,
+        row,
+      ]),
+    );
+  }
+
   private async upsertAssignmentRow(
     tx: Prisma.TransactionClient,
     schoolId: string,
     params: {
-      rowNumber: number;
-      row: TeachingAssignmentImportRow;
-      teacherByEmail: Map<string, string>;
-      sectionByCode: Map<string, string>;
+      teacherId: string;
+      courseSectionId: string;
+      assignAt: Date;
+      existingByPair: Map<string, ExistingAssignmentRow>;
       activeAssignmentBySectionId: Map<
         string,
         { id: string; teacherId: string }
@@ -316,56 +451,16 @@ export class TeachingAssignmentsImportService {
     },
   ): Promise<'created' | 'updated'> {
     const {
-      rowNumber,
-      row,
-      teacherByEmail,
-      sectionByCode,
+      teacherId,
+      courseSectionId,
+      assignAt,
+      existingByPair,
       activeAssignmentBySectionId,
     } = params;
 
-    const teacherId = teacherByEmail.get(row.email_gv.toLowerCase());
-    if (!teacherId) {
-      throw this.buildValidationException([
-        {
-          row: rowNumber,
-          field: 'email_gv',
-          message: `Không tìm thấy giáo viên với email ${row.email_gv}`,
-        },
-      ]);
-    }
-
-    const courseSectionId = sectionByCode.get(row.ma_lop_mon.toLowerCase());
-    if (!courseSectionId) {
-      throw this.buildValidationException([
-        {
-          row: rowNumber,
-          field: 'ma_lop_mon',
-          message: `Không tìm thấy lớp môn ${row.ma_lop_mon} trong học kỳ đã chọn`,
-        },
-      ]);
-    }
-
+    const pairKey = `${teacherId}|${courseSectionId}`;
+    const existing = existingByPair.get(pairKey);
     const activeOnSection = activeAssignmentBySectionId.get(courseSectionId);
-    if (activeOnSection && activeOnSection.teacherId !== teacherId) {
-      throw this.buildValidationException([
-        {
-          row: rowNumber,
-          field: 'ma_lop_mon',
-          message: `Lớp môn ${row.ma_lop_mon} đã có giáo viên phân công khác`,
-        },
-      ]);
-    }
-
-    const assignAt = parseIsoDate(row.ngay_phan_cong);
-
-    const existing = await tx.teachingAssignment.findUnique({
-      where: {
-        teacherId_courseSectionId: {
-          teacherId,
-          courseSectionId,
-        },
-      },
-    });
 
     if (existing) {
       if (existing.status === AcademicEntityStatus.ACTIVE) {
@@ -379,8 +474,8 @@ export class TeachingAssignmentsImportService {
         await tx.teachingAssignment.update({
           where: { id: existing.id },
           data: { assignAt },
-          include: teachingAssignmentInclude,
         });
+        existing.assignAt = assignAt;
         return 'updated';
       }
 
@@ -391,8 +486,9 @@ export class TeachingAssignmentsImportService {
           assignAt,
           endAt: null,
         },
-        include: teachingAssignmentInclude,
       });
+      existing.status = AcademicEntityStatus.ACTIVE;
+      existing.assignAt = assignAt;
       activeAssignmentBySectionId.set(courseSectionId, {
         id: existing.id,
         teacherId,
@@ -408,9 +504,16 @@ export class TeachingAssignmentsImportService {
         assignAt,
         status: AcademicEntityStatus.ACTIVE,
       },
-      include: teachingAssignmentInclude,
+      select: { id: true },
     });
 
+    existingByPair.set(pairKey, {
+      id: created.id,
+      teacherId,
+      courseSectionId,
+      status: AcademicEntityStatus.ACTIVE,
+      assignAt,
+    });
     activeAssignmentBySectionId.set(courseSectionId, {
       id: created.id,
       teacherId,
@@ -434,6 +537,7 @@ export class TeachingAssignmentsImportService {
         errorCount: errors.length,
         created: 0,
         updated: 0,
+        skippedEmptyEmail: 0,
         errors,
       },
     );

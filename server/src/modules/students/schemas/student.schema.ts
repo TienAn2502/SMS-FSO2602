@@ -28,14 +28,28 @@ const studentProfileFieldsSchema = z.object({
   address: z.string().trim().max(2000).optional(),
 });
 
+/** @deprecated Giữ tương thích — ưu tiên createLogin */
 export const createStudentAccountSchema = z.object({
-  email: z.email('Email không đúng định dạng'),
-  password: z.string().min(8, 'Mật khẩu phải có ít nhất 8 ký tự'),
+  email: z.email('Email không đúng định dạng').optional(),
+  password: z.string().min(8).optional(),
 });
 
-export const createStudentSchema = studentProfileFieldsSchema.extend({
-  account: createStudentAccountSchema.optional(),
-});
+export const createStudentSchema = studentProfileFieldsSchema
+  .extend({
+    /** Tạo tài khoản: đăng nhập bằng mã HS, mật khẩu = mã + ngày sinh */
+    createLogin: z.boolean().optional(),
+    account: createStudentAccountSchema.optional(),
+  })
+  .superRefine((value, ctx) => {
+    const wantsLogin = Boolean(value.createLogin || value.account);
+    if (wantsLogin && !value.dateOfBirth) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Ngày sinh là bắt buộc khi tạo tài khoản đăng nhập',
+        path: ['dateOfBirth'],
+      });
+    }
+  });
 
 export type CreateStudentInput = z.infer<typeof createStudentSchema>;
 
@@ -63,6 +77,6 @@ export const linkStudentUserSchema = z.object({
 
 export type LinkStudentUserInput = z.infer<typeof linkStudentUserSchema>;
 
-export const createStudentUserSchema = createStudentAccountSchema;
+export const createStudentUserSchema = z.object({}).default({});
 
 export type CreateStudentUserInput = z.infer<typeof createStudentUserSchema>;

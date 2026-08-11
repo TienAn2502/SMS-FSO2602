@@ -16,6 +16,8 @@ import { SchoolsModule } from '@/modules/schools/schools.module';
 import { SemestersModule } from '@/modules/semesters/semesters.module';
 import { SemesterPreparationModule } from '@/modules/semester-preparation/semester-preparation.module';
 import { StudentEnrollmentsModule } from '@/modules/student-enrollments/student-enrollments.module';
+import { YearPreparationModule } from '@/modules/year-preparation/year-preparation.module';
+import { ClassPlacementModule } from '@/modules/class-placement/class-placement.module';
 import { StudentsModule } from '@/modules/students/students.module';
 import { SubjectsModule } from '@/modules/subjects/subjects.module';
 import { TeachersModule } from '@/modules/teachers/teachers.module';
@@ -30,6 +32,7 @@ import { GradeSummariesModule } from '@/modules/grade-summaries/grade-summaries.
 import { UsersModule } from '@/modules/users/users.module';
 import { ImportsModule } from '@/modules/imports/imports.module';
 import { ExportsModule } from '@/modules/exports/exports.module';
+import { PlatformModule } from '@/modules/platform/platform.module';
 
 @Module({
   imports: [
@@ -46,6 +49,8 @@ import { ExportsModule } from '@/modules/exports/exports.module';
     AcademicYearsModule,
     SemestersModule,
     SemesterPreparationModule,
+    YearPreparationModule,
+    ClassPlacementModule,
     GradeLevelsModule,
     GradeLevelSubjectsModule,
     SubjectsModule,
@@ -66,6 +71,7 @@ import { ExportsModule } from '@/modules/exports/exports.module';
     UsersModule,
     ImportsModule,
     ExportsModule,
+    PlatformModule,
   ],
 })
 export class AppModule {}

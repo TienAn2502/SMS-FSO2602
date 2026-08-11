@@ -12,8 +12,8 @@ export const dayOfWeekSchema = z.coerce
 export const periodNumberSchema = z.coerce
   .number()
   .int('Tiết phải là số nguyên')
-  .min(1, 'Tiết phải >= 1')
-  .max(12, 'Tiết phải <= 12');
+  .min(1, 'Tiết phải từ 1 đến 10 (1–5 sáng, 6–10 chiều)')
+  .max(10, 'Tiết phải từ 1 đến 10 (1–5 sáng, 6–10 chiều)');
 
 export const listTimetableEntriesQuerySchema = paginationSchema.extend({
   semesterId: z.uuid().optional(),

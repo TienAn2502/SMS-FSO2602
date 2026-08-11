@@ -44,6 +44,14 @@ export interface CreateAcademicYearInput {
   isCurrent?: boolean;
 }
 
+export interface UpdateAcademicYearInput {
+  name?: string;
+  code?: string;
+  startDate?: string;
+  endDate?: string;
+  isCurrent?: boolean;
+}
+
 export interface CreateSemesterInput {
   name: string;
   code: string;
@@ -81,6 +89,17 @@ export async function createAcademicYear(
 ): Promise<AcademicYear> {
   const { data } = await api.post<ApiSuccessResponse<AcademicYear>>(
     '/academic-years',
+    input,
+  );
+  return data.data;
+}
+
+export async function updateAcademicYear(
+  id: string,
+  input: UpdateAcademicYearInput,
+): Promise<AcademicYear> {
+  const { data } = await api.patch<ApiSuccessResponse<AcademicYear>>(
+    `/academic-years/${id}`,
     input,
   );
   return data.data;

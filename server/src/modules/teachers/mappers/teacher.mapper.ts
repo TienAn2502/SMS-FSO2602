@@ -27,6 +27,7 @@ export interface TeacherResponse {
   phone: string | null;
   address: string | null;
   specialization: string | null;
+  externalCode: string | null;
   avatarFileId: string | null;
   status: Teacher['status'];
   teachingAssignments: TeachingAssignmentSummary[];
@@ -70,6 +71,7 @@ export function toTeacherResponse(
     phone: teacher.phone,
     address: teacher.address,
     specialization: teacher.specialization,
+    externalCode: teacher.externalCode,
     avatarFileId: teacher.avatarFileId,
     status: teacher.status,
     teachingAssignments: teacher.teachingAssignments.map(
@@ -108,6 +110,7 @@ export function toTeacherListResponse(
     phone: teacher.phone,
     address: teacher.address,
     specialization: teacher.specialization,
+    externalCode: teacher.externalCode,
     avatarFileId: teacher.avatarFileId,
     status: teacher.status,
     teachingAssignments: [],

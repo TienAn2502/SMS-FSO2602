@@ -14,6 +14,11 @@ import {
   getSkip,
 } from '@/common/utils/pagination.util';
 import { PasswordService } from '@/common/utils/password.service';
+import { PersonCodeService } from '@/common/utils/person-code.service';
+import {
+  buildDefaultPersonPassword,
+  buildPersonLoginEmail,
+} from '@/common/utils/person-login-credentials.util';
 import { StudentsService } from '@/modules/students/students.service';
 import {
   parentInclude,
@@ -37,6 +42,7 @@ export class ParentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly passwordService: PasswordService,
+    private readonly personCodeService: PersonCodeService,
     private readonly studentsService: StudentsService,
   ) {}
 
@@ -52,6 +58,12 @@ export class ParentsService {
             OR: [
               {
                 fullName: {
+                  contains: query.search,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                externalCode: {
                   contains: query.search,
                   mode: 'insensitive',
                 },
@@ -99,8 +111,7 @@ export class ParentsService {
     schoolId: string,
     input: CreateParentInput,
   ): Promise<ParentResponse> {
-    // tạo hồ sơ phụ huynh và tài khoản đăng nhập cùng lúc nếu có thông tin tài khoản
-    if (input.account) {
+    if (input.createLogin || input.account) {
       return this.createWithAccount(schoolId, input);
     }
 
@@ -109,6 +120,7 @@ export class ParentsService {
         schoolId,
         fullName: input.fullName,
         phone: input.phone,
+        externalCode: await this.personCodeService.nextParentCode(schoolId),
       },
       include: parentInclude,
     });
@@ -192,7 +204,7 @@ export class ParentsService {
   async createUser(
     schoolId: string,
     parentId: string,
-    input: CreateParentUserInput,
+    _input: CreateParentUserInput,
   ): Promise<ParentResponse> {
     const parent = await this.findParentInTenant(schoolId, parentId);
 
@@ -204,25 +216,47 @@ export class ParentsService {
       );
     }
 
-    const existingEmail = await this.prisma.user.findUnique({
-      where: { email: input.email },
-    });
-
-    if (existingEmail) {
+    if (!parent.phone?.trim()) {
       throw new AppException(
-        'EMAIL_ALREADY_EXISTS',
-        'Email đã được sử dụng',
-        HttpStatus.CONFLICT,
+        'VALIDATION_ERROR',
+        'Số điện thoại là bắt buộc khi tạo tài khoản đăng nhập',
+        HttpStatus.UNPROCESSABLE_ENTITY,
       );
     }
 
-    const passwordHash = await this.passwordService.hash(input.password);
-
     try {
       const updated = await this.prisma.$transaction(async (tx) => {
+        let externalCode = parent.externalCode;
+        if (!externalCode) {
+          externalCode = await this.personCodeService.nextParentCode(
+            schoolId,
+            tx,
+          );
+          await tx.parent.update({
+            where: { id: parentId },
+            data: { externalCode },
+          });
+        }
+
+        const email = buildPersonLoginEmail(schoolId, externalCode);
+        const password = buildDefaultPersonPassword({
+          externalCode,
+          phone: parent.phone,
+        });
+
+        const existingEmail = await tx.user.findUnique({ where: { email } });
+        if (existingEmail) {
+          throw new AppException(
+            'EMAIL_ALREADY_EXISTS',
+            'Email nội bộ đã được sử dụng',
+            HttpStatus.CONFLICT,
+          );
+        }
+
+        const passwordHash = await this.passwordService.hash(password);
         const user = await tx.user.create({
           data: {
-            email: input.email,
+            email,
             passwordHash,
             fullName: parent.fullName,
             role: UserRole.PARENT,
@@ -240,6 +274,9 @@ export class ParentsService {
 
       return toParentResponse(updated);
     } catch (error: unknown) {
+      if (error instanceof AppException) {
+        throw error;
+      }
       this.handleUserLinkViolation(error);
       throw error;
     }
@@ -356,34 +393,39 @@ export class ParentsService {
     schoolId: string,
     input: CreateParentInput,
   ): Promise<ParentResponse> {
-    const account = input.account;
-    if (!account) {
+    if (!input.phone?.trim()) {
       throw new AppException(
         'VALIDATION_ERROR',
-        'Thiếu thông tin tài khoản',
+        'Số điện thoại là bắt buộc khi tạo tài khoản đăng nhập',
         HttpStatus.UNPROCESSABLE_ENTITY,
       );
     }
 
-    const existingEmail = await this.prisma.user.findUnique({
-      where: { email: account.email },
-    });
-
-    if (existingEmail) {
-      throw new AppException(
-        'EMAIL_ALREADY_EXISTS',
-        'Email đã được sử dụng',
-        HttpStatus.CONFLICT,
-      );
-    }
-
-    const passwordHash = await this.passwordService.hash(account.password);
-
     try {
       const parent = await this.prisma.$transaction(async (tx) => {
+        const externalCode = await this.personCodeService.nextParentCode(
+          schoolId,
+          tx,
+        );
+        const email = buildPersonLoginEmail(schoolId, externalCode);
+        const password = buildDefaultPersonPassword({
+          externalCode,
+          phone: input.phone,
+        });
+
+        const existingEmail = await tx.user.findUnique({ where: { email } });
+        if (existingEmail) {
+          throw new AppException(
+            'EMAIL_ALREADY_EXISTS',
+            'Email nội bộ đã được sử dụng',
+            HttpStatus.CONFLICT,
+          );
+        }
+
+        const passwordHash = await this.passwordService.hash(password);
         const user = await tx.user.create({
           data: {
-            email: account.email,
+            email,
             passwordHash,
             fullName: input.fullName,
             role: UserRole.PARENT,
@@ -397,6 +439,7 @@ export class ParentsService {
             schoolId,
             fullName: input.fullName,
             phone: input.phone,
+            externalCode,
             userId: user.id,
           },
           include: parentInclude,
@@ -405,6 +448,9 @@ export class ParentsService {
 
       return toParentResponse(parent);
     } catch (error: unknown) {
+      if (error instanceof AppException) {
+        throw error;
+      }
       this.handleUserLinkViolation(error);
       throw error;
     }

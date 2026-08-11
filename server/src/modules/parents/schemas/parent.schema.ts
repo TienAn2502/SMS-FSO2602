@@ -20,15 +20,27 @@ export const listParentsQuerySchema = paginationSchema.extend({
 export type ListParentsQuery = z.infer<typeof listParentsQuerySchema>;
 
 export const createParentAccountSchema = z.object({
-  email: z.email('Email không đúng định dạng'),
-  password: z.string().min(8, 'Mật khẩu phải có ít nhất 8 ký tự'),
+  email: z.email('Email không đúng định dạng').optional(),
+  password: z.string().min(8).optional(),
 });
 
-export const createParentSchema = z.object({
-  fullName: z.string().trim().min(1, 'Họ tên là bắt buộc').max(255),
-  phone: z.string().trim().max(11).optional(),
-  account: createParentAccountSchema.optional(),
-});
+export const createParentSchema = z
+  .object({
+    fullName: z.string().trim().min(1, 'Họ tên là bắt buộc').max(255),
+    phone: z.string().trim().max(11).optional(),
+    createLogin: z.boolean().optional(),
+    account: createParentAccountSchema.optional(),
+  })
+  .superRefine((value, ctx) => {
+    const wantsLogin = Boolean(value.createLogin || value.account);
+    if (wantsLogin && !value.phone?.trim()) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Số điện thoại là bắt buộc khi tạo tài khoản đăng nhập',
+        path: ['phone'],
+      });
+    }
+  });
 
 export type CreateParentInput = z.infer<typeof createParentSchema>;
 
@@ -51,7 +63,7 @@ export const linkParentUserSchema = z.object({
 
 export type LinkParentUserInput = z.infer<typeof linkParentUserSchema>;
 
-export const createParentUserSchema = createParentAccountSchema;
+export const createParentUserSchema = z.object({}).default({});
 
 export type CreateParentUserInput = z.infer<typeof createParentUserSchema>;
 

@@ -172,7 +172,7 @@ export function UsersPage() {
           <CardHeader>
             <CardTitle>Tạo người dùng mới</CardTitle>
             <CardDescription>
-              Tài khoản sẽ thuộc trường {session?.activeSchool.name}
+              Tài khoản sẽ thuộc trường {session?.activeSchool?.name}
             </CardDescription>
           </CardHeader>
           <CardContent>

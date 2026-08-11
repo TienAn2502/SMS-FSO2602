@@ -52,14 +52,24 @@ export function DashboardPage() {
             <CardDescription>Tenant hiện tại</CardDescription>
           </CardHeader>
           <CardContent className='space-y-1 text-sm'>
-            <p>
-              <span className='text-muted-foreground'>Tên:</span>{' '}
-              {session.activeSchool.name}
-            </p>
-            <p>
-              <span className='text-muted-foreground'>Mã:</span>{' '}
-              {session.activeSchool.code}
-            </p>
+            {session.activeSchool ? (
+              <>
+                <p>
+                  <span className='text-muted-foreground'>Tên:</span>{' '}
+                  {session.activeSchool.name}
+                </p>
+                <p>
+                  <span className='text-muted-foreground'>Mã:</span>{' '}
+                  {session.activeSchool.code}
+                </p>
+              </>
+            ) : (
+              <p className='text-muted-foreground'>
+                {session.user.role === 'SYSTEM_ADMIN'
+                  ? 'Quản trị nền tảng — chưa vào xem trường nào'
+                  : 'Không xác định được trường đang hoạt động'}
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>

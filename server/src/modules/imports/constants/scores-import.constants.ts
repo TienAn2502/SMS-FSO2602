@@ -41,7 +41,7 @@ export const SCORE_IMPORT_SAMPLE_METADATA = {
 };
 
 export const SCORE_IMPORT_SAMPLE_ROWS: Record<string, string>[] = [
-  { ma_hs: 'HS001', ho_ten: 'Nguyễn Văn A', diem: '8', ghi_chu: '' },
-  { ma_hs: 'HS002', ho_ten: 'Trần Thị B', diem: '7.5', ghi_chu: '' },
-  { ma_hs: 'HS003', ho_ten: 'Lê Văn C', diem: '', ghi_chu: '' },
+  { ma_hs: 'HS-261', ho_ten: 'Nguyễn Văn A', diem: '8', ghi_chu: '' },
+  { ma_hs: 'HS-262', ho_ten: 'Trần Thị B', diem: '7.5', ghi_chu: '' },
+  { ma_hs: 'HS-263', ho_ten: 'Lê Văn C', diem: '', ghi_chu: '' },
 ];

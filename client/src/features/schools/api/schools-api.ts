@@ -6,7 +6,7 @@ export interface School {
   code: string;
   name: string;
   shortName: string | null;
-  schoolType: 'TH' | 'THCS' | 'THPT' | 'OTHER' | null;
+  schoolType: 'TH' | 'THCS' | 'THPT' | null;
   email: string | null;
   phone: string | null;
   address: string | null;
@@ -17,7 +17,6 @@ export interface School {
 export interface UpdateSchoolInput {
   name?: string;
   shortName?: string | null;
-  schoolType?: 'TH' | 'THCS' | 'THPT' | 'OTHER';
   email?: string | null;
   phone?: string | null;
   address?: string | null;

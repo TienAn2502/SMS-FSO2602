@@ -192,8 +192,9 @@ export function StudentImportSheet({
         <SheetHeader>
           <SheetTitle>Import học sinh từ Excel</SheetTitle>
           <SheetDescription>
-            Tải file mẫu, điền dữ liệu rồi chọn file để import. Đăng nhập vẫn
-            qua email nếu có cột email trong file.
+            Tải file mẫu, điền dữ liệu rồi chọn file để import. Cột mã lớp
+            (`ma_lop_hc`) có thể bỏ trống — xếp lớp sau tại menu Xếp lớp đầu
+            năm. Đăng nhập vẫn qua email nếu có cột email trong file.
           </SheetDescription>
         </SheetHeader>
 

@@ -154,3 +154,25 @@ export function buildStudentDemoEmail(globalIndex: number): string {
 export function buildParentDemoEmail(index: number): string {
   return `parent${String(index + 1).padStart(2, '0')}@demo.edu.vn`;
 }
+
+/** SĐT demo GV: 0910000001 … (10 số, khớp VarChar(11)) */
+export function buildTeacherDemoPhone(index: number): string {
+  return `091${String(index + 1).padStart(7, '0')}`;
+}
+
+/** SĐT demo HS: 0980000001 … */
+export function buildStudentDemoPhone(index: number): string {
+  return `098${String(index + 1).padStart(7, '0')}`;
+}
+
+/**
+ * SĐT demo PH — dải 090… tách với GV (091) / HS (098).
+ * `suffix` phân biệt bố/mẹ cùng HS.
+ */
+export function buildParentDemoPhone(
+  studentIndex: number,
+  suffix: number,
+): string {
+  const base = String(900000000 + studentIndex * 10 + suffix).slice(-9);
+  return `0${base}`;
+}

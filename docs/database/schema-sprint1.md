@@ -31,7 +31,7 @@ users
 | code | VARCHAR(50) | UNIQUE | Mã trường |
 | name | VARCHAR(255) | NOT NULL | Tên đầy đủ |
 | short_name | VARCHAR(100) | | Tên viết tắt |
-| school_type | ENUM | | TH, THCS, THPT, OTHER |
+| school_type | ENUM | | TH, THCS, THPT |
 | email | VARCHAR(255) | | |
 | phone | VARCHAR(20) | | |
 | address | TEXT | | |
@@ -49,7 +49,7 @@ users
 | Cột | Kiểu | Ràng buộc | Mô tả |
 |-----|------|-----------|-------|
 | id | UUID | PK | |
-| school_id | UUID | FK → schools, NOT NULL | Trường user thuộc về |
+| school_id | UUID | FK → schools, **NULL** chỉ với `SYSTEM_ADMIN` | Trường user thuộc về; null = quản trị nền tảng |
 | email | VARCHAR(255) | UNIQUE | |
 | password_hash | VARCHAR(255) | NOT NULL | bcrypt |
 | full_name | VARCHAR(255) | NOT NULL | |
@@ -98,7 +98,7 @@ Các bảng **không có** trong MVP, có thể thêm sau:
 ```typescript
 // School
 SchoolStatus: ACTIVE | INACTIVE | SUSPENDED
-SchoolType: TH | THCS | THPT | OTHER
+SchoolType: TH | THCS | THPT
 
 // User
 UserStatus: ACTIVE | INACTIVE | LOCKED
@@ -108,9 +108,9 @@ UserRole: SCHOOL_ADMIN | TEACHER | STUDENT
 ## Ràng buộc quan trọng
 
 1. Email user unique toàn hệ thống
-2. Mỗi user thuộc **một trường** (`users.school_id`)
+2. User nghiệp vụ thuộc **một trường** (`users.school_id` NOT NULL). `SYSTEM_ADMIN` có `school_id = null`
 3. Role là enum trên user — không tùy chỉnh theo trường trong MVP
-4. Tenant lấy từ `user.school_id` — không qua membership lookup
+4. Tenant lấy từ JWT `activeSchoolId` (login: = `user.school_id` với user thuộc trường; system admin chỉ có khi impersonate)
 
 ## Schema Sprint 2
 

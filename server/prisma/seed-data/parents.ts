@@ -8,6 +8,7 @@ import {
 
 import {
   buildParentDemoEmail,
+  buildParentDemoPhone,
   DEMO_PARENT_ACCOUNT_COUNT,
   DEMO_STUDENTS_WITH_PARENTS,
 } from './thpt-curriculum';
@@ -28,11 +29,6 @@ function deriveParentNames(
     fatherName: `${ho} Văn ${fatherTen}`,
     motherName: `${ho} Thị ${motherTen}`,
   };
-}
-
-function buildParentPhone(studentIndex: number, suffix: number): string {
-  const base = String(900000000 + studentIndex * 10 + suffix).slice(-9);
-  return `0${base}`;
 }
 
 export async function seedParents(
@@ -57,6 +53,7 @@ export async function seedParents(
 
   let parentProfileCount = 0;
   let studentParentLinkCount = 0;
+  let parentCodeSeq = 0;
 
   for (let i = 0; i < Math.min(DEMO_PARENT_ACCOUNT_COUNT, students.length); i++) {
     const student = students[i]!;
@@ -80,8 +77,9 @@ export async function seedParents(
           schoolId,
           userId: user.id,
           fullName: fatherName,
-          phone: buildParentPhone(i, 1),
+          phone: buildParentDemoPhone(i, 1),
           status: AcademicEntityStatus.ACTIVE,
+          externalCode: `PH-${++parentCodeSeq}`,
         },
       });
 
@@ -121,8 +119,9 @@ export async function seedParents(
       data: {
         schoolId,
         fullName: motherName,
-        phone: buildParentPhone(i, 2),
+        phone: buildParentDemoPhone(i, 2),
         status: AcademicEntityStatus.ACTIVE,
+        externalCode: `PH-${++parentCodeSeq}`,
       },
     });
 
@@ -146,8 +145,9 @@ export async function seedParents(
         data: {
           schoolId,
           fullName: fatherName,
-          phone: buildParentPhone(i, 1),
+          phone: buildParentDemoPhone(i, 1),
           status: AcademicEntityStatus.ACTIVE,
+          externalCode: `PH-${++parentCodeSeq}`,
         },
       });
 

@@ -2,6 +2,11 @@ import type { SpreadsheetColumnDef } from '@/common/files/file-format.types';
 
 export const TIMETABLE_MATRIX_DAYS = [1, 2, 3, 4, 5] as const;
 
+/** Tiết 1–5 sáng, 6–10 chiều. */
+export const TIMETABLE_MATRIX_PERIODS = [
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+] as const;
+
 export const TIMETABLE_MATRIX_DAY_LABELS: Record<number, string> = {
   1: 'Thứ 2',
   2: 'Thứ 3',
@@ -9,6 +14,16 @@ export const TIMETABLE_MATRIX_DAY_LABELS: Record<number, string> = {
   4: 'Thứ 5',
   5: 'Thứ 6',
 };
+
+export function formatTimetablePeriodLabel(period: number): string {
+  if (period >= 1 && period <= 5) {
+    return `${period} (Sáng)`;
+  }
+  if (period >= 6 && period <= 10) {
+    return `${period} (Chiều)`;
+  }
+  return String(period);
+}
 
 export const TIMETABLE_UNASSIGNED_HOMEROOM_KEY = '__unassigned__';
 
@@ -49,11 +64,10 @@ function formatMatrixCell(entry: TimetableMatrixEntry): string {
 }
 
 export function formatTimetableImportCell(
-  courseSectionCode: string,
-  teacherEmail: string,
+  subjectOrSectionKey: string,
   room?: string | null,
 ): string {
-  const lines = [courseSectionCode.trim(), teacherEmail.trim()];
+  const lines = [subjectOrSectionKey.trim()];
 
   if (room?.trim()) {
     lines.push(room.trim());
@@ -63,8 +77,8 @@ export function formatTimetableImportCell(
 }
 
 export interface ParsedTimetableImportCell {
-  courseSectionCode: string;
-  teacherIdentifier: string;
+  /** Mã môn (TOAN), tên môn, hoặc mã lớp môn (TOAN-10A1). */
+  subjectOrSectionKey: string;
   room: string | null;
 }
 
@@ -80,14 +94,26 @@ export function parseTimetableImportCell(
     return null;
   }
 
-  if (lines.length < 2) {
-    throw new Error('TIMETABLE_IMPORT_CELL_INCOMPLETE');
+  const subjectOrSectionKey = lines[0] ?? '';
+  if (!subjectOrSectionKey) {
+    return null;
+  }
+
+  // Format mới: dòng 1 = môn; dòng 2 (tuỳ chọn) = phòng.
+  // Format cũ (tương thích): dòng 2 = email/họ tên GV → bỏ qua; dòng 3 = phòng.
+  let room: string | null = null;
+  if (lines.length >= 2) {
+    const second = lines[1] ?? '';
+    if (second.includes('@')) {
+      room = lines[2] ?? null;
+    } else {
+      room = second;
+    }
   }
 
   return {
-    courseSectionCode: lines[0],
-    teacherIdentifier: lines[1],
-    room: lines[2] ?? null,
+    subjectOrSectionKey,
+    room,
   };
 }
 
@@ -169,11 +195,13 @@ export function buildTimetableMatrix(
   entries: TimetableMatrixEntry[],
   formatCell: (entry: TimetableMatrixEntry) => string = formatMatrixCell,
 ): TimetableMatrixBuildResult {
-  const periodSet = new Set(entries.map((entry) => entry.periodNumber));
-  const periods =
-    periodSet.size > 0
-      ? [...periodSet].sort((left, right) => left - right)
-      : [1, 2, 3, 4, 5];
+  const periodSet = new Set<number>(TIMETABLE_MATRIX_PERIODS);
+  for (const entry of entries) {
+    if (Number.isInteger(entry.periodNumber) && entry.periodNumber >= 1) {
+      periodSet.add(entry.periodNumber);
+    }
+  }
+  const periods = [...periodSet].sort((left, right) => left - right);
 
   const cellMap = new Map<string, TimetableMatrixEntry>();
   for (const entry of entries) {
@@ -181,7 +209,7 @@ export function buildTimetableMatrix(
   }
 
   const columns: SpreadsheetColumnDef[] = [
-    { header: 'Tiết', key: 'tiet', width: 8 },
+    { header: 'Tiết', key: 'tiet', width: 12 },
     ...TIMETABLE_MATRIX_DAYS.map((day) => ({
       header: TIMETABLE_MATRIX_DAY_LABELS[day],
       key: `thu_${day}`,
@@ -191,7 +219,7 @@ export function buildTimetableMatrix(
 
   const rows = periods.map((period) => {
     const row: Record<string, string> = {
-      tiet: String(period),
+      tiet: formatTimetablePeriodLabel(period),
     };
 
     for (const day of TIMETABLE_MATRIX_DAYS) {

@@ -9,6 +9,10 @@ import type { ParsedSpreadsheetRow } from '@/common/files/file-format.types';
 import { parseUploadedSpreadsheet } from '@/common/files/parse-uploaded-file.util';
 import { parseIsoDate } from '@/common/schemas/academic.schema';
 import { PasswordService } from '@/common/utils/password.service';
+import {
+  PersonCodeAllocator,
+  PersonCodeService,
+} from '@/common/utils/person-code.service';
 import { parseStudentImportGender } from '@/modules/imports/utils/parse-student-import-gender.util';
 import { validateTeacherImportHeaders } from '@/modules/imports/utils/validate-teacher-import-headers.util';
 import {
@@ -28,6 +32,7 @@ export class TeachersImportService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly passwordService: PasswordService,
+    private readonly personCodeService: PersonCodeService,
     private readonly configService: ConfigService<EnvConfig, true>,
   ) {}
 
@@ -73,12 +78,15 @@ export class TeachersImportService {
       return await this.prisma.$transaction(async (tx) => {
         let created = 0;
         let updated = 0;
+        const codeAllocator = this.personCodeService.createAllocator(tx);
+        await codeAllocator.prepareTeacher(schoolId);
 
         for (const item of rows) {
           const outcome = await this.upsertTeacherRow(tx, schoolId, {
             rowNumber: item.rowNumber,
             row: item.row,
             defaultPassword,
+            codeAllocator,
           });
 
           if (outcome === 'created') {
@@ -110,7 +118,7 @@ export class TeachersImportService {
       ) {
         throw new AppException(
           'IMPORT_CONFLICT',
-          'Dữ liệu import trùng email',
+          'Dữ liệu import trùng email hoặc mã giáo viên',
           HttpStatus.CONFLICT,
         );
       }
@@ -222,9 +230,10 @@ export class TeachersImportService {
       rowNumber: number;
       row: TeacherImportRow;
       defaultPassword: string;
+      codeAllocator: PersonCodeAllocator;
     },
   ): Promise<'created' | 'updated'> {
-    const { rowNumber, row, defaultPassword } = params;
+    const { rowNumber, row, defaultPassword, codeAllocator } = params;
 
     const existing = row.email
       ? await tx.teacher.findFirst({
@@ -266,6 +275,7 @@ export class TeachersImportService {
           phone: row.phone,
           address: row.dia_chi,
           specialization: row.chuyen_mon,
+          externalCode: await codeAllocator.nextTeacherCode(schoolId),
           userId,
         },
       });
@@ -317,6 +327,9 @@ export class TeachersImportService {
         phone: row.phone,
         address: row.dia_chi,
         specialization: row.chuyen_mon,
+        ...(!existing!.externalCode
+          ? { externalCode: await codeAllocator.nextTeacherCode(schoolId) }
+          : {}),
       },
     });
 

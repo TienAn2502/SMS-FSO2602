@@ -6,9 +6,14 @@ import type { Request } from 'express';
 
 import type { EnvConfig } from '@/common/config/env.schema';
 import { PrismaService } from '@/common/database/prisma.service';
+import { UserRole } from '@prisma/client';
+
 import { AppException } from '@/common/exceptions/app.exception';
 import { AUTH_COOKIE, JWT_ACCESS_STRATEGY } from '@/common/auth/auth.constants';
-import type { AccessTokenPayload, AuthenticatedUser } from '@/common/auth/auth.types';
+import type {
+  AccessTokenPayload,
+  AuthenticatedUser,
+} from '@/common/auth/auth.types';
 
 @Injectable()
 export class JwtAccessStrategy extends PassportStrategy(
@@ -52,7 +57,22 @@ export class JwtAccessStrategy extends PassportStrategy(
       );
     }
 
-    if (user.schoolId !== payload.activeSchoolId) {
+    const activeSchoolId = payload.activeSchoolId;
+    const impersonating =
+      user.role === UserRole.SYSTEM_ADMIN &&
+      Boolean(activeSchoolId) &&
+      payload.impersonatedBy === user.id &&
+      payload.impersonatedBy === payload.sub;
+
+    if (user.role === UserRole.SYSTEM_ADMIN) {
+      if (activeSchoolId && !impersonating) {
+        throw new AppException(
+          'TENANT_MISMATCH',
+          'Thông tin trường không khớp',
+          HttpStatus.FORBIDDEN,
+        );
+      }
+    } else if (!user.schoolId || user.schoolId !== activeSchoolId) {
       throw new AppException(
         'TENANT_MISMATCH',
         'Thông tin trường không khớp',
@@ -60,7 +80,6 @@ export class JwtAccessStrategy extends PassportStrategy(
       );
     }
 
-    // Gán vào user bên jwt-auth.guard.ts
     return {
       id: user.id,
       email: user.email,
@@ -68,7 +87,9 @@ export class JwtAccessStrategy extends PassportStrategy(
       role: user.role,
       status: user.status,
       schoolId: user.schoolId,
-      activeSchoolId: payload.activeSchoolId,
+      activeSchoolId: activeSchoolId ?? '',
+      impersonatedBy: payload.impersonatedBy,
+      impersonationMode: payload.impersonationMode,
     };
   }
 }

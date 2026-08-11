@@ -244,6 +244,8 @@ Service load data từ DB
 
 ## Bước tiếp theo
 
-1. Cài package server (Phase 8A)  
-2. Scaffold `imports/` + `exports/` module  
-3. Implement import HS (Phase 8B) làm vertical slice đầu tiên
+Sau Sprint 8 (học vụ) → chuyển sang **Platform SaaS**:
+
+1. [Sprint 9](./sprint-9-plan.md) — onboard tenant, CRUD trường, system admin UI  
+2. [Sprint 10](./sprint-10-plan.md) — impersonation, audit log, dashboard vận hành  
+3. [Sprint 11](./sprint-11-plan.md) — quota, feature flags, billing (tuỳ chọn)

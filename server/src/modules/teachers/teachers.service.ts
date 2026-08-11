@@ -7,6 +7,11 @@ import { parseIsoDate } from '@/common/schemas/academic.schema';
 import type { PaginationMeta } from '@/common/types/api-response.types';
 import { buildPaginationMeta, getSkip } from '@/common/utils/pagination.util';
 import { PasswordService } from '@/common/utils/password.service';
+import { PersonCodeService } from '@/common/utils/person-code.service';
+import {
+  buildDefaultPersonPassword,
+  buildPersonLoginEmail,
+} from '@/common/utils/person-login-credentials.util';
 import {
   teacherInclude,
   teacherListInclude,
@@ -28,6 +33,7 @@ export class TeachersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly passwordService: PasswordService,
+    private readonly personCodeService: PersonCodeService,
   ) {}
 
   async list(
@@ -47,6 +53,12 @@ export class TeachersService {
                 },
               },
               {
+                externalCode: {
+                  contains: query.search,
+                  mode: 'insensitive',
+                },
+              },
+              {
                 user: {
                   email: {
                     contains: query.search,
@@ -55,6 +67,21 @@ export class TeachersService {
                 },
               },
             ],
+          }
+        : {}),
+      ...(query.availableAsHomeroomForAcademicYearId
+        ? {
+            NOT: {
+              homeroomClasses: {
+                some: {
+                  academicYearId: query.availableAsHomeroomForAcademicYearId,
+                  status: 'ACTIVE',
+                  ...(query.excludeHomeroomClassId
+                    ? { id: { not: query.excludeHomeroomClassId } }
+                    : {}),
+                },
+              },
+            },
           }
         : {}),
     };
@@ -92,13 +119,12 @@ export class TeachersService {
     schoolId: string,
     input: CreateTeacherInput,
   ): Promise<TeacherResponse> {
-    // Nếu có tài khoản, tạo hồ sơ giáo viên và gắn tài khoản
-    if (input.account) {
+    if (input.createLogin || input.account) {
       return this.createWithAccount(schoolId, input);
     }
 
     const teacher = await this.prisma.teacher.create({
-      data: this.buildTeacherCreateData(schoolId, input),
+      data: await this.buildTeacherCreateData(schoolId, input),
       include: teacherInclude,
     });
 
@@ -193,7 +219,7 @@ export class TeachersService {
   async createUser(
     schoolId: string,
     teacherId: string,
-    input: CreateTeacherUserInput,
+    _input: CreateTeacherUserInput,
   ): Promise<TeacherResponse> {
     const teacher = await this.findTeacherInTenant(schoolId, teacherId);
 
@@ -205,26 +231,47 @@ export class TeachersService {
       );
     }
 
-    const existingEmail = await this.prisma.user.findUnique({
-      where: { email: input.email },
-    });
-
-    if (existingEmail) {
+    if (!teacher.dateOfBirth) {
       throw new AppException(
-        'EMAIL_ALREADY_EXISTS',
-        'Email đã được sử dụng',
-        HttpStatus.CONFLICT,
+        'VALIDATION_ERROR',
+        'Ngày sinh là bắt buộc khi tạo tài khoản đăng nhập',
+        HttpStatus.UNPROCESSABLE_ENTITY,
       );
     }
 
-    const passwordHash = await this.passwordService.hash(input.password);
-
     try {
       const updated = await this.prisma.$transaction(async (tx) => {
-        // Tạo tài khoản và gắn role giáo viên
+        let externalCode = teacher.externalCode;
+        if (!externalCode) {
+          externalCode = await this.personCodeService.nextTeacherCode(
+            schoolId,
+            tx,
+          );
+          await tx.teacher.update({
+            where: { id: teacherId },
+            data: { externalCode },
+          });
+        }
+
+        const email = buildPersonLoginEmail(schoolId, externalCode);
+        const password = buildDefaultPersonPassword({
+          externalCode,
+          dateOfBirth: teacher.dateOfBirth,
+        });
+
+        const existingEmail = await tx.user.findUnique({ where: { email } });
+        if (existingEmail) {
+          throw new AppException(
+            'EMAIL_ALREADY_EXISTS',
+            'Email nội bộ đã được sử dụng',
+            HttpStatus.CONFLICT,
+          );
+        }
+
+        const passwordHash = await this.passwordService.hash(password);
         const user = await tx.user.create({
           data: {
-            email: input.email,
+            email,
             passwordHash,
             fullName: teacher.fullName,
             role: UserRole.TEACHER,
@@ -233,7 +280,6 @@ export class TeachersService {
           },
         });
 
-        // Gắn tài khoản vào hồ sơ giáo viên
         return tx.teacher.update({
           where: { id: teacherId },
           data: { userId: user.id },
@@ -243,6 +289,9 @@ export class TeachersService {
 
       return toTeacherResponse(updated);
     } catch (error: unknown) {
+      if (error instanceof AppException) {
+        throw error;
+      }
       this.handleUserLinkViolation(error);
       throw error;
     }
@@ -269,34 +318,39 @@ export class TeachersService {
     schoolId: string,
     input: CreateTeacherInput,
   ): Promise<TeacherResponse> {
-    const account = input.account;
-    if (!account) {
+    if (!input.dateOfBirth) {
       throw new AppException(
         'VALIDATION_ERROR',
-        'Thiếu thông tin tài khoản',
+        'Ngày sinh là bắt buộc khi tạo tài khoản đăng nhập',
         HttpStatus.UNPROCESSABLE_ENTITY,
       );
     }
 
-    const existingEmail = await this.prisma.user.findUnique({
-      where: { email: account.email },
-    });
-
-    if (existingEmail) {
-      throw new AppException(
-        'EMAIL_ALREADY_EXISTS',
-        'Email đã được sử dụng',
-        HttpStatus.CONFLICT,
-      );
-    }
-
-    const passwordHash = await this.passwordService.hash(account.password);
-
     try {
       const teacher = await this.prisma.$transaction(async (tx) => {
+        const externalCode = await this.personCodeService.nextTeacherCode(
+          schoolId,
+          tx,
+        );
+        const email = buildPersonLoginEmail(schoolId, externalCode);
+        const password = buildDefaultPersonPassword({
+          externalCode,
+          dateOfBirth: input.dateOfBirth,
+        });
+
+        const existingEmail = await tx.user.findUnique({ where: { email } });
+        if (existingEmail) {
+          throw new AppException(
+            'EMAIL_ALREADY_EXISTS',
+            'Email nội bộ đã được sử dụng',
+            HttpStatus.CONFLICT,
+          );
+        }
+
+        const passwordHash = await this.passwordService.hash(password);
         const user = await tx.user.create({
           data: {
-            email: account.email,
+            email,
             passwordHash,
             fullName: input.fullName,
             role: UserRole.TEACHER,
@@ -309,13 +363,12 @@ export class TeachersService {
           data: {
             schoolId,
             fullName: input.fullName,
-            dateOfBirth: input.dateOfBirth
-              ? parseIsoDate(input.dateOfBirth)
-              : undefined,
+            dateOfBirth: parseIsoDate(input.dateOfBirth!),
             gender: input.gender,
             phone: input.phone,
             address: input.address,
             specialization: input.specialization,
+            externalCode,
             userId: user.id,
           },
           include: teacherInclude,
@@ -324,15 +377,20 @@ export class TeachersService {
 
       return toTeacherResponse(teacher);
     } catch (error: unknown) {
+      if (error instanceof AppException) {
+        throw error;
+      }
       this.handleUserLinkViolation(error);
       throw error;
     }
   }
 
-  private buildTeacherCreateData(
+  private async buildTeacherCreateData(
     schoolId: string,
     input: CreateTeacherInput,
-  ): Prisma.TeacherCreateInput {
+  ): Promise<Prisma.TeacherCreateInput> {
+    const externalCode = await this.personCodeService.nextTeacherCode(schoolId);
+
     return {
       school: { connect: { id: schoolId } },
       fullName: input.fullName,
@@ -343,6 +401,7 @@ export class TeachersService {
       phone: input.phone,
       address: input.address,
       specialization: input.specialization,
+      externalCode,
     };
   }
 

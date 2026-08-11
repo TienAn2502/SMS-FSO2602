@@ -165,8 +165,26 @@ export const syncStaleEnrollmentsSchema = z.object({
 
 
 export type SyncStaleEnrollmentsInput = z.infer<
-
   typeof syncStaleEnrollmentsSchema
+>;
 
+export const fromYearPromotionsPreviewQuerySchema = z.object({
+  sourceAcademicYearId: z.uuid('Năm học nguồn không hợp lệ'),
+  targetSemesterId: z.uuid('Học kỳ đích không hợp lệ'),
+});
+
+export type FromYearPromotionsPreviewQuery = z.infer<
+  typeof fromYearPromotionsPreviewQuerySchema
+>;
+
+export const createFromYearPromotionsSchema = z.object({
+  sourceAcademicYearId: z.uuid('Năm học nguồn không hợp lệ'),
+  targetSemesterId: z.uuid('Học kỳ đích không hợp lệ'),
+  enrolledAt: isoDateSchema.optional(),
+  note: z.string().trim().max(2000).optional(),
+});
+
+export type CreateFromYearPromotionsInput = z.infer<
+  typeof createFromYearPromotionsSchema
 >;
 

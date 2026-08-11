@@ -50,6 +50,10 @@ import { TeachersImportTemplateService } from '@/modules/imports/teachers-import
 import { TeachersImportService } from '@/modules/imports/teachers-import.service';
 import { TeachingAssignmentsImportTemplateService } from '@/modules/imports/teaching-assignments-import-template.service';
 import { TeachingAssignmentsImportService } from '@/modules/imports/teaching-assignments-import.service';
+import { ClassPlacementImportTemplateService } from '@/modules/imports/class-placement-import-template.service';
+import { ClassPlacementImportService } from '@/modules/imports/class-placement-import.service';
+import { CourseSectionsImportTemplateService } from '@/modules/imports/course-sections-import-template.service';
+import { CourseSectionsImportService } from '@/modules/imports/course-sections-import.service';
 import {
   importTeachingAssignmentsFormSchema,
   teachingAssignmentsImportTemplateQuerySchema,
@@ -57,10 +61,25 @@ import {
   type TeachingAssignmentsImportTemplateQuery,
 } from '@/modules/imports/schemas/teaching-assignments-import.schema';
 import {
+  importClassPlacementFormSchema,
+  classPlacementImportTemplateQuerySchema,
+  type ImportClassPlacementFormInput,
+  type ClassPlacementImportTemplateQuery,
+} from '@/modules/imports/schemas/class-placement-import.schema';
+import {
+  importCourseSectionsFormSchema,
+  courseSectionsImportTemplateQuerySchema,
+  type ImportCourseSectionsFormInput,
+  type CourseSectionsImportTemplateQuery,
+} from '@/modules/imports/schemas/course-sections-import.schema';
+import {
   importTimetableFormSchema,
+  timetableImportTemplateQuerySchema,
   type ImportTimetableFormInput,
+  type TimetableImportTemplateQuery,
 } from '@/modules/imports/schemas/timetable-import.schema';
 import { TimetableImportService } from '@/modules/imports/timetable-import.service';
+import { TimetableImportTemplateService } from '@/modules/imports/timetable-import-template.service';
 
 @ApiTags('Imports')
 @ApiCookieAuth('access_token')
@@ -79,7 +98,12 @@ export class ImportsController {
     private readonly homeroomClassesImportTemplateService: HomeroomClassesImportTemplateService,
     private readonly teachingAssignmentsImportService: TeachingAssignmentsImportService,
     private readonly teachingAssignmentsImportTemplateService: TeachingAssignmentsImportTemplateService,
+    private readonly classPlacementImportService: ClassPlacementImportService,
+    private readonly classPlacementImportTemplateService: ClassPlacementImportTemplateService,
+    private readonly courseSectionsImportService: CourseSectionsImportService,
+    private readonly courseSectionsImportTemplateService: CourseSectionsImportTemplateService,
     private readonly timetableImportService: TimetableImportService,
+    private readonly timetableImportTemplateService: TimetableImportTemplateService,
   ) {}
 
   @Get('templates/students')
@@ -137,6 +161,132 @@ export class ImportsController {
       success: true,
       data,
       message: `Import thành công ${data.successCount} học sinh (${data.created} mới, ${data.updated} cập nhật)`,
+    };
+  }
+
+  @Get('templates/class-placement')
+  @ApiOperation({
+    summary: 'Tải file mẫu import chia lớp đầu năm (.xlsx, mỗi sheet một lớp)',
+  })
+  @Header(
+    'Content-Type',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  )
+  @Header(
+    'Content-Disposition',
+    'attachment; filename="mau-import-chia-lop.xlsx"',
+  )
+  async downloadClassPlacementTemplate(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query(new ZodValidationPipe(classPlacementImportTemplateQuerySchema))
+    query: ClassPlacementImportTemplateQuery,
+  ): Promise<StreamableFile> {
+    const buffer =
+      await this.classPlacementImportTemplateService.buildTemplateBuffer(
+        user.activeSchoolId,
+        query,
+      );
+    return new StreamableFile(buffer);
+  }
+
+  @Post('class-placement')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary:
+      'Import chia lớp đầu năm: mỗi sheet = một lớp; tự tạo lớp nếu chưa có',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file', 'academicYearId', 'semesterId'],
+      properties: {
+        file: { type: 'string', format: 'binary' },
+        academicYearId: { type: 'string', format: 'uuid' },
+        semesterId: { type: 'string', format: 'uuid' },
+      },
+    },
+  })
+  async importClassPlacement(
+    @CurrentUser() user: AuthenticatedUser,
+    @UploadedFile() file: Express.Multer.File,
+    @Body(new ZodValidationPipe(importClassPlacementFormSchema))
+    body: ImportClassPlacementFormInput,
+  ) {
+    const data = await this.classPlacementImportService.importClassPlacement(
+      user.activeSchoolId,
+      file,
+      body,
+    );
+
+    return {
+      success: true,
+      data,
+      message: `Import chia lớp thành công ${data.successCount} HS (lớp mới ${data.classesCreated}, lớp có sẵn ${data.classesExisting})`,
+    };
+  }
+
+  @Get('templates/course-sections')
+  @ApiOperation({
+    summary:
+      'Tải file mẫu import lớp môn (.xlsx, mỗi sheet một lớp HC)',
+  })
+  @Header(
+    'Content-Type',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  )
+  @Header(
+    'Content-Disposition',
+    'attachment; filename="mau-import-lop-mon.xlsx"',
+  )
+  async downloadCourseSectionsTemplate(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query(new ZodValidationPipe(courseSectionsImportTemplateQuerySchema))
+    query: CourseSectionsImportTemplateQuery,
+  ): Promise<StreamableFile> {
+    const buffer =
+      await this.courseSectionsImportTemplateService.buildTemplateBuffer(
+        user.activeSchoolId,
+        query,
+      );
+    return new StreamableFile(buffer);
+  }
+
+  @Post('course-sections')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary:
+      'Import lớp môn: mỗi sheet = một lớp HC; tạo record mới (không copy năm cũ)',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file', 'semesterId'],
+      properties: {
+        file: { type: 'string', format: 'binary' },
+        semesterId: { type: 'string', format: 'uuid' },
+      },
+    },
+  })
+  async importCourseSections(
+    @CurrentUser() user: AuthenticatedUser,
+    @UploadedFile() file: Express.Multer.File,
+    @Body(new ZodValidationPipe(importCourseSectionsFormSchema))
+    body: ImportCourseSectionsFormInput,
+  ) {
+    const data = await this.courseSectionsImportService.importCourseSections(
+      user.activeSchoolId,
+      file,
+      body,
+    );
+
+    return {
+      success: true,
+      data,
+      message: `Import lớp môn: tạo ${data.created}, bỏ qua ${data.skippedExisting}, phân công ${data.assignmentsCreated}`,
     };
   }
 
@@ -345,6 +495,30 @@ export class ImportsController {
     };
   }
 
+  @Get('templates/timetable')
+  @ApiOperation({
+    summary: 'Tải file mẫu import TKB (.xlsx); query semesterId → điền từ DB',
+  })
+  @Header(
+    'Content-Type',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  )
+  @Header(
+    'Content-Disposition',
+    'attachment; filename="mau-import-thoi-khoa-bieu.xlsx"',
+  )
+  async downloadTimetableTemplate(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query(new ZodValidationPipe(timetableImportTemplateQuerySchema))
+    query: TimetableImportTemplateQuery,
+  ): Promise<StreamableFile> {
+    const buffer = await this.timetableImportTemplateService.buildTemplateBuffer(
+      user.activeSchoolId,
+      query,
+    );
+    return new StreamableFile(buffer);
+  }
+
   @Post('timetable')
   @HttpCode(HttpStatus.OK)
   @UseInterceptors(FileInterceptor('file'))
@@ -359,7 +533,6 @@ export class ImportsController {
       properties: {
         file: { type: 'string', format: 'binary' },
         semesterId: { type: 'string', format: 'uuid' },
-        mode: { type: 'string', enum: ['replace', 'merge'] },
       },
     },
   })

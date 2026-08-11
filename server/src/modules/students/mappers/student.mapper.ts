@@ -3,9 +3,11 @@ import type {
   EnrollmentStatus,
   Gender,
   HomeroomClass,
+  Parent,
   Semester,
   Student,
   StudentEnrollment,
+  StudentParent,
   User,
 } from '@prisma/client';
 
@@ -42,6 +44,16 @@ export interface StudentEnrollmentSummary {
   status: EnrollmentStatus;
 }
 
+export interface LinkedParentSummary {
+  id: string;
+  parentId: string;
+  parentFullName: string;
+  parentPhone: string | null;
+  parentExternalCode: string | null;
+  relationship: StudentParent['relationship'];
+  isPrimaryContact: boolean;
+}
+
 export interface StudentResponse {
   id: string;
 
@@ -67,15 +79,23 @@ export interface StudentResponse {
 
   currentEnrollment: StudentEnrollmentSummary | null;
 
+  linkedParents: LinkedParentSummary[];
+
   createdAt: string;
 
   updatedAt: string;
 }
 
+type StudentParentWithParent = StudentParent & {
+  parent: Pick<Parent, 'id' | 'fullName' | 'phone' | 'externalCode'>;
+};
+
 type StudentWithRelations = Student & {
   user: Pick<User, 'email'> | null;
 
   enrollments: StudentEnrollmentWithRelations[];
+
+  studentParents?: StudentParentWithParent[];
 };
 
 export function pickCurrentEnrollment(
@@ -145,6 +165,20 @@ export function toEnrollmentSummary(
   };
 }
 
+export function toLinkedParentSummary(
+  link: StudentParentWithParent,
+): LinkedParentSummary {
+  return {
+    id: link.id,
+    parentId: link.parentId,
+    parentFullName: link.parent.fullName,
+    parentPhone: link.parent.phone,
+    parentExternalCode: link.parent.externalCode,
+    relationship: link.relationship,
+    isPrimaryContact: link.isPrimaryContact,
+  };
+}
+
 export function toStudentResponse(
   student: StudentWithRelations,
 ): StudentResponse {
@@ -178,6 +212,8 @@ export function toStudentResponse(
     currentEnrollment: currentEnrollment
       ? toEnrollmentSummary(currentEnrollment)
       : null,
+
+    linkedParents: (student.studentParents ?? []).map(toLinkedParentSummary),
 
     createdAt: student.createdAt.toISOString(),
 
@@ -218,5 +254,20 @@ export const studentInclude = {
     },
 
     orderBy: { enrolledAt: 'desc' as const },
+  },
+
+  studentParents: {
+    include: {
+      parent: {
+        select: {
+          id: true,
+          fullName: true,
+          phone: true,
+          externalCode: true,
+        },
+      },
+    },
+    // Object (not array): outer `as const` would make array orderBy readonly and break Prisma types
+    orderBy: { isPrimaryContact: 'desc' as const },
   },
 } as const;

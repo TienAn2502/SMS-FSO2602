@@ -41,6 +41,7 @@ import {
 import {
   ACADEMIC_STATUS_LABELS,
   GENDER_LABELS,
+  PARENT_RELATIONSHIP_LABELS,
 } from '@/lib/labels';
 import { cn } from '@/lib/utils';
 
@@ -254,6 +255,44 @@ export function StudentDetailPage() {
               </Button>
             </div>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Phụ huynh liên kết</CardTitle>
+          <CardDescription>Thông tin PH gắn với học sinh này</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {(student.linkedParents?.length ?? 0) === 0 ? (
+            <p className='text-sm text-muted-foreground'>Chưa gắn phụ huynh</p>
+          ) : (
+            <ul className='space-y-2'>
+              {student.linkedParents!.map((link) => (
+                <li
+                  key={link.id}
+                  className='flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm'
+                >
+                  <div>
+                    <Link
+                      to={`${ROUTES.parents}/${link.parentId}`}
+                      className='font-medium text-primary hover:underline'
+                    >
+                      {link.parentFullName}
+                    </Link>
+                    <p className='mt-0.5 text-muted-foreground'>
+                      {PARENT_RELATIONSHIP_LABELS[link.relationship]}
+                      {link.isPrimaryContact ? ' · Liên hệ chính' : ''}
+                      {link.parentExternalCode
+                        ? ` · ${link.parentExternalCode}`
+                        : ''}
+                      {link.parentPhone ? ` · ${link.parentPhone}` : ''}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </CardContent>
       </Card>
 

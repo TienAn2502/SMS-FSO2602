@@ -26,6 +26,8 @@ import {
   THPT_SUBJECTS,
   buildHomeroomClassCode,
   buildStudentDemoEmail,
+  buildStudentDemoPhone,
+  buildTeacherDemoPhone,
   getThptBgdTotalPeriodsPerYear,
   getThptBgdEvaluationMode,
   DEMO_PARENT_ACCOUNT_COUNT,
@@ -40,16 +42,25 @@ config({ path: resolve(__dirname, '../.env.development') });
 config({ path: resolve(__dirname, '../.env') });
 
 const seedEnvSchema = z.object({
-  SEED_ADMIN_EMAIL: z.string().email(),
-  SEED_ADMIN_PASSWORD: z.string().min(8),
+  SEED_ADMIN_EMAIL: z.string().email().default('school_admin@demo.edu.vn'),
+  SEED_ADMIN_PASSWORD: z.string().min(8).default('SchoolAdmin@123456'),
+  SEED_SYSTEM_ADMIN_EMAIL: z
+    .string()
+    .email()
+    .default('system_admin@demo.edu.vn'),
+  SEED_SYSTEM_ADMIN_PASSWORD: z
+    .string()
+    .min(8)
+    .default('SystemAdmin@123456'),
   SEED_DEMO_PASSWORD: z.string().min(8).default('Demo@123456'),
   SEED_SCHOOL_CODE: z.string().min(1),
   SEED_SCHOOL_NAME: z.string().min(1),
-  SEED_SCHOOL_TYPE: z.enum(['TH', 'THCS', 'THPT', 'OTHER']).default('THPT'),
+  SEED_SCHOOL_TYPE: z.enum(['TH', 'THCS', 'THPT']).default('THPT'),
   SEED_CLEAR_DEMO: z
     .enum(['true', 'false'])
     .default('true')
     .transform((value) => value === 'true'),
+  LEGACY_ADMIN_EMAIL: z.string().email().default('admin@demo.edu.vn'),
 });
 
 const prisma = new PrismaClient();
@@ -59,7 +70,7 @@ interface SeedUserInput {
   fullName: string;
   role: UserRole;
   passwordHash: string;
-  schoolId: string;
+  schoolId: string | null;
 }
 
 interface HomeroomClassSeed {
@@ -75,6 +86,7 @@ async function upsertUser(input: SeedUserInput) {
       fullName: input.fullName,
       schoolId: input.schoolId,
       role: input.role,
+      passwordHash: input.passwordHash,
     },
     create: {
       email: input.email,
@@ -110,12 +122,6 @@ async function seedTeachers(schoolId: string, demoPasswordHash: string) {
           userId: user.id,
         },
       },
-      update: {
-        fullName,
-        specialization,
-        gender: i % 2 === 0 ? Gender.MALE : Gender.FEMALE,
-        status: AcademicEntityStatus.ACTIVE,
-      },
       create: {
         schoolId,
         userId: user.id,
@@ -123,6 +129,16 @@ async function seedTeachers(schoolId: string, demoPasswordHash: string) {
         specialization,
         gender: i % 2 === 0 ? Gender.MALE : Gender.FEMALE,
         status: AcademicEntityStatus.ACTIVE,
+        externalCode: `GV-${i + 1}`,
+        phone: buildTeacherDemoPhone(i),
+      },
+      update: {
+        fullName,
+        specialization,
+        gender: i % 2 === 0 ? Gender.MALE : Gender.FEMALE,
+        status: AcademicEntityStatus.ACTIVE,
+        externalCode: `GV-${i + 1}`,
+        phone: buildTeacherDemoPhone(i),
       },
     });
 
@@ -358,7 +374,9 @@ async function seedStudentsAndEnrollments(
             fullName: profile.fullName,
             dateOfBirth: profile.dateOfBirth,
             gender: profile.gender,
+            phone: buildStudentDemoPhone(globalIndex),
             status: AcademicEntityStatus.ACTIVE,
+            externalCode: `HS-25${globalIndex + 1}`,
           },
         });
 
@@ -410,13 +428,51 @@ async function main(): Promise<void> {
 
   console.log(`Seeding admin user: ${env.SEED_ADMIN_EMAIL}`);
   const adminPasswordHash = await bcrypt.hash(env.SEED_ADMIN_PASSWORD, 12);
+  const systemAdminPasswordHash = await bcrypt.hash(
+    env.SEED_SYSTEM_ADMIN_PASSWORD,
+    12,
+  );
+
+  const legacyAdmin = await prisma.user.findUnique({
+    where: { email: env.LEGACY_ADMIN_EMAIL },
+  });
+
+  if (legacyAdmin && legacyAdmin.email !== env.SEED_ADMIN_EMAIL) {
+    const existingTarget = await prisma.user.findUnique({
+      where: { email: env.SEED_ADMIN_EMAIL },
+    });
+
+    if (existingTarget && existingTarget.id !== legacyAdmin.id) {
+      await prisma.user.delete({ where: { id: legacyAdmin.id } });
+    } else {
+      await prisma.user.update({
+        where: { id: legacyAdmin.id },
+        data: {
+          email: env.SEED_ADMIN_EMAIL,
+          passwordHash: adminPasswordHash,
+          fullName: 'Quản trị viên trường Demo',
+          role: UserRole.SCHOOL_ADMIN,
+          schoolId: school.id,
+        },
+      });
+    }
+  }
 
   const admin = await upsertUser({
     email: env.SEED_ADMIN_EMAIL,
     passwordHash: adminPasswordHash,
-    fullName: 'Quản trị viên Demo',
+    fullName: 'Quản trị viên trường Demo',
     schoolId: school.id,
     role: UserRole.SCHOOL_ADMIN,
+  });
+
+  console.log(`Seeding system admin: ${env.SEED_SYSTEM_ADMIN_EMAIL}`);
+  const systemAdmin = await upsertUser({
+    email: env.SEED_SYSTEM_ADMIN_EMAIL,
+    passwordHash: systemAdminPasswordHash,
+    fullName: 'Quản trị viên hệ thống',
+    schoolId: null,
+    role: UserRole.SYSTEM_ADMIN,
   });
 
   console.log(`Seeding ${DEMO_TEACHER_COUNT} demo teachers...`);
@@ -473,7 +529,8 @@ async function main(): Promise<void> {
 
   console.log('Seed completed.');
   console.log(`  School: ${school.name} (${school.code})`);
-  console.log(`  Admin: ${admin.email} (${admin.role})`);
+  console.log(`  School admin: ${admin.email} (${admin.role})`);
+  console.log(`  System admin: ${systemAdmin.email} (${systemAdmin.role})`);
   console.log(
     `  Teachers: ${DEMO_TEACHER_COUNT} accounts (password: ${env.SEED_DEMO_PASSWORD})`,
   );

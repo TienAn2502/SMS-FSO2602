@@ -45,7 +45,7 @@ Access token payload tối thiểu:
 }
 ```
 
-`activeSchoolId` = `users.school_id` — xem [ADR 008](../decisions/008-simplify-rbac-mvp.md).
+`activeSchoolId` = `users.school_id` khi login (user thuộc trường). `SYSTEM_ADMIN` có `school_id = null` và chỉ có `activeSchoolId` khi impersonate — xem [ADR 013](../decisions/013-platform-admin-module.md), [ADR 008](../decisions/008-simplify-rbac-mvp.md).
 
 ### 2. Mọi truy vấn theo ID phải kèm tenant
 
@@ -87,7 +87,7 @@ schools ──< users
               └── role
 ```
 
-Không có `school_memberships` trong MVP. User gắn trực tiếp `school_id`.
+Không có `school_memberships` trong MVP. User nghiệp vụ gắn trực tiếp `school_id`. `SYSTEM_ADMIN` để `school_id` null.
 
 > Multi-school (user thuộc nhiều trường) và `switch-school` **hoãn** — [ADR 006](../decisions/006-defer-switch-school.md), [ADR 008](../decisions/008-simplify-rbac-mvp.md)
 
@@ -96,7 +96,8 @@ Không có `school_memberships` trong MVP. User gắn trực tiếp `school_id`.
 ```text
 Đăng nhập thành công
 → Backend đọc user.school_id
-→ Set activeSchoolId = user.school_id vào access JWT
+→ Nếu có school_id: set activeSchoolId = user.school_id vào access JWT
+→ Nếu SYSTEM_ADMIN (school_id null): JWT không có activeSchoolId (chỉ set khi impersonate)
 → Mọi API nghiệp vụ lọc theo activeSchoolId từ token
 ```
 

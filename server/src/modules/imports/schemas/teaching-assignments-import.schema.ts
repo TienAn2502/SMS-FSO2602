@@ -11,6 +11,7 @@ export interface TeachingAssignmentImportResult {
   errorCount: number;
   created: number;
   updated: number;
+  skippedEmptyEmail: number;
   errors: TeachingAssignmentImportRowError[];
 }
 

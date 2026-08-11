@@ -20,6 +20,16 @@ export interface StudentEnrollmentSummary {
   status: 'ACTIVE' | 'TRANSFERRED' | 'WITHDRAWN' | 'SEMESTER_COMPLETED' | 'COMPLETED';
 }
 
+export interface LinkedParentSummary {
+  id: string;
+  parentId: string;
+  parentFullName: string;
+  parentPhone: string | null;
+  parentExternalCode: string | null;
+  relationship: 'FATHER' | 'MOTHER' | 'GUARDIAN' | 'OTHER';
+  isPrimaryContact: boolean;
+}
+
 export interface Student {
   id: string;
   userId: string | null;
@@ -33,6 +43,7 @@ export interface Student {
   avatarFileId: string | null;
   status: AcademicEntityStatus;
   currentEnrollment: StudentEnrollmentSummary | null;
+  linkedParents?: LinkedParentSummary[];
   createdAt: string;
   updatedAt: string;
 }
@@ -53,10 +64,7 @@ export interface CreateStudentInput {
   gender?: Gender;
   phone?: string;
   address?: string;
-  account?: {
-    email: string;
-    password: string;
-  };
+  createLogin?: boolean;
 }
 
 export interface UpdateStudentInput {

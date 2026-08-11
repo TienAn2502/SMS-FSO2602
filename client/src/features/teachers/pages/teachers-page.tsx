@@ -31,7 +31,6 @@ import { getApiError } from '@/lib/api';
 import {
   buildOptionalAccountPayload,
   createAccountFields,
-  refineCreateAccountFields,
 } from '@/lib/create-account-schema';
 import { getErrorMessage } from '@/lib/error-messages';
 import { ACADEMIC_STATUS_LABELS } from '@/lib/labels';
@@ -43,11 +42,20 @@ const PAGE_SIZE = 20;
 const createSchema = z
   .object({
     fullName: z.string().trim().min(1, 'Họ tên là bắt buộc'),
+    dateOfBirth: z.string().optional(),
     specialization: z.string().optional(),
     phone: z.string().optional(),
     ...createAccountFields,
   })
-  .superRefine(refineCreateAccountFields);
+  .superRefine((values, ctx) => {
+    if (values.createAccount && !values.dateOfBirth?.trim()) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Ngày sinh là bắt buộc khi tạo tài khoản',
+        path: ['dateOfBirth'],
+      });
+    }
+  });
 
 type CreateFormValues = z.infer<typeof createSchema>;
 
@@ -175,6 +183,7 @@ export function TeachersPage() {
               onSubmit={handleSubmit((values) =>
                 createMutation.mutate({
                   fullName: values.fullName,
+                  dateOfBirth: values.dateOfBirth || undefined,
                   specialization: values.specialization || undefined,
                   phone: values.phone || undefined,
                   ...buildOptionalAccountPayload(values),
@@ -187,6 +196,13 @@ export function TeachersPage() {
                 {errors.fullName ? <p className='text-sm text-destructive'>{errors.fullName.message}</p> : null}
               </div>
               <div className='space-y-2'>
+                <Label htmlFor='dateOfBirth'>Ngày sinh</Label>
+                <Input id='dateOfBirth' type='date' {...register('dateOfBirth')} />
+                {errors.dateOfBirth ? (
+                  <p className='text-sm text-destructive'>{errors.dateOfBirth.message}</p>
+                ) : null}
+              </div>
+              <div className='space-y-2'>
                 <Label htmlFor='specialization'>Chuyên môn</Label>
                 <Input id='specialization' {...register('specialization')} />
               </div>
@@ -196,9 +212,9 @@ export function TeachersPage() {
               </div>
               <CreateAccountFields
                 idPrefix='teacher-create'
+                personKind='GV'
                 createAccount={Boolean(createAccount)}
                 register={register}
-                errors={errors}
               />
               <div className='md:col-span-2'>
                 <Button type='submit' disabled={isSubmitting || createMutation.isPending}>

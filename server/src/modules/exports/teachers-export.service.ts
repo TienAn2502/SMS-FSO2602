@@ -91,6 +91,12 @@ export class TeachersExportService {
                 },
               },
               {
+                externalCode: {
+                  contains: query.search,
+                  mode: 'insensitive',
+                },
+              },
+              {
                 user: {
                   email: {
                     contains: query.search,
@@ -118,6 +124,7 @@ export class TeachersExportService {
     const response = toTeacherListResponse(teacher);
 
     return {
+      ma_gv: response.externalCode ?? '',
       ho_ten: response.fullName,
       ngay_sinh: response.dateOfBirth ?? '',
       gioi_tinh: response.gender ?? '',

@@ -15,19 +15,18 @@ export const STUDENT_IMPORT_COLUMNS: SpreadsheetColumnDef[] = [
 export const STUDENT_IMPORT_REQUIRED_HEADERS = [
   'ho_ten',
   'ngay_sinh',
-  'ma_lop_hc',
 ] as const;
 
 export const STUDENT_IMPORT_INSTRUCTION_LINES = [
   'Hướng dẫn import học sinh',
   '',
-  'Cột bắt buộc: ho_ten, ngay_sinh (YYYY-MM-DD), ma_lop_hc',
-  'Cột tuỳ chọn: gioi_tinh (MALE/FEMALE/OTHER hoặc Nam/Nữ), email, mat_khau, external_code',
+  'Cột bắt buộc: ho_ten, ngay_sinh (YYYY-MM-DD)',
+  'Cột tuỳ chọn: gioi_tinh (MALE/FEMALE/OTHER hoặc Nam/Nữ), email, mat_khau, ma_lop_hc, external_code',
   '',
   'Quy tắc:',
-  '- ma_lop_hc phải tồn tại trong năm học đã chọn khi import',
+  '- ma_lop_hc nếu có phải tồn tại trong năm học đã chọn; bỏ trống = chỉ tạo hồ sơ (xếp lớp sau tại màn Xếp lớp)',
   '- Nếu có email: tạo tài khoản đăng nhập (mat_khau tuỳ chọn; bỏ trống dùng mật khẩu mặc định hệ thống)',
-  '- external_code dùng để cập nhật học sinh đã có (mã HS nội bộ)',
+  '- external_code = mã HS (vd HS-261); bỏ trống → hệ thống tự cấp HS-{YY}{số}',
   '- Một học sinh chỉ ghi danh một lớp HC trong cùng học kỳ',
 ];
 
@@ -39,7 +38,7 @@ export const STUDENT_IMPORT_SAMPLE_ROWS: Record<string, string>[] = [
     email: 'nguyenvanan.import@demo.edu.vn',
     mat_khau: 'Demo@123456',
     ma_lop_hc: '10A1',
-    external_code: '2509001',
+    external_code: 'HS-261',
   },
   {
     ho_ten: 'Trần Thị Bình',
@@ -48,7 +47,7 @@ export const STUDENT_IMPORT_SAMPLE_ROWS: Record<string, string>[] = [
     email: '',
     mat_khau: '',
     ma_lop_hc: '10A1',
-    external_code: '2509002',
+    external_code: 'HS-262',
   },
   {
     ho_ten: 'Lê Văn Cường',
@@ -57,7 +56,7 @@ export const STUDENT_IMPORT_SAMPLE_ROWS: Record<string, string>[] = [
     email: 'levancuong.import@demo.edu.vn',
     mat_khau: '',
     ma_lop_hc: '11A2',
-    external_code: '2509150',
+    external_code: 'HS-26150',
   },
   {
     ho_ten: 'Phạm Thị Dung',
@@ -75,6 +74,6 @@ export const STUDENT_IMPORT_SAMPLE_ROWS: Record<string, string>[] = [
     email: 'hoangminhtuan.import@demo.edu.vn',
     mat_khau: 'Demo@123456',
     ma_lop_hc: '10A2',
-    external_code: '2509003',
+    external_code: 'HS-263',
   },
 ];

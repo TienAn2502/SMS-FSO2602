@@ -25,6 +25,7 @@ import { ACADEMIC_STATUS_LABELS } from '@/lib/labels';
 
 const profileSchema = z.object({
   fullName: z.string().trim().min(1),
+  dateOfBirth: z.string().optional(),
   specialization: z.string().optional(),
   phone: z.string().optional(),
 });
@@ -49,13 +50,20 @@ export function TeacherDetailPage() {
     resolver: zodResolver(profileSchema),
     values: {
       fullName: teacherQuery.data?.fullName ?? '',
+      dateOfBirth: teacherQuery.data?.dateOfBirth ?? '',
       specialization: teacherQuery.data?.specialization ?? '',
       phone: teacherQuery.data?.phone ?? '',
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: (values: z.infer<typeof profileSchema>) => updateTeacher(id, values),
+    mutationFn: (values: z.infer<typeof profileSchema>) =>
+      updateTeacher(id, {
+        fullName: values.fullName,
+        dateOfBirth: values.dateOfBirth || null,
+        specialization: values.specialization || undefined,
+        phone: values.phone || undefined,
+      }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['teachers', id] });
       toast.success('Cập nhật hồ sơ thành công');
@@ -67,8 +75,7 @@ export function TeacherDetailPage() {
   });
 
   const createUserMutation = useMutation({
-    mutationFn: (values: { email: string; password: string }) =>
-      createTeacherUser(id, values),
+    mutationFn: () => createTeacherUser(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['teachers', id] });
       toast.success('Cấp tài khoản thành công');
@@ -120,6 +127,10 @@ export function TeacherDetailPage() {
               <Input {...profileForm.register('fullName')} />
             </div>
             <div className='space-y-2'>
+              <Label>Ngày sinh</Label>
+              <Input type='date' {...profileForm.register('dateOfBirth')} />
+            </div>
+            <div className='space-y-2'>
               <Label>Chuyên môn</Label>
               <Input {...profileForm.register('specialization')} />
             </div>
@@ -133,9 +144,10 @@ export function TeacherDetailPage() {
           </form>
 
           <ProvisionLoginAccountSection
-            userEmail={teacher.userEmail}
+            loginCode={teacher.externalCode}
             hasAccount={Boolean(teacher.userId)}
-            onProvision={(values) => createUserMutation.mutate(values)}
+            passwordHint='mã GV + ngày sinh (YYYYMMDD)'
+            onProvision={() => createUserMutation.mutate()}
             isPending={createUserMutation.isPending}
           />
         </CardContent>

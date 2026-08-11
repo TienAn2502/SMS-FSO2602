@@ -107,6 +107,16 @@ Admin: Chốt lên lớp (toàn trường)
         ↓
   • Tái tính năm lần cuối
   • student_year_summary DRAFT → CLOSED
+        ↓
+Admin: tạo năm học mới + học kỳ (thường HK1)
+        ↓
+Admin: POST /year-preparation/prepare-next-year
+  • Tạo lớp HC năm sau cho HS lên lớp (cấu trúc + GVCN từ năm cũ)
+  • Gán nextHomeroomClassId (PROMOTED → khối+1)
+  • Tạo ghi danh ACTIVE vào HK đích
+  • RETAINED / GRADUATED: bỏ qua
+        ↓
+(Tuỳ chọn) chỉnh tay PATCH year-summaries / POST from-year-promotions
 ```
 
 ### Tiền đề chốt lên lớp
@@ -149,8 +159,54 @@ Tính tự động khi **Tái tính năm** (`resolvePromotionDecision`):
 | Kiểm tra readiness | `GET` | `/grade-summaries/academic-years/:academicYearId/finalize-promotion-readiness` |
 | Chốt lên lớp toàn trường | `POST` | `/grade-summaries/academic-years/:academicYearId/finalize-promotion-all` |
 | Chốt theo lớp CN (legacy) | `POST` | `/grade-summaries/academic-years/:academicYearId/finalize-promotion` |
+| Gán lớp năm sau | `PATCH` | `/grade-summaries/year-summaries/:id` |
+| Xem trước chuẩn bị năm sau | `GET` | `/year-preparation/preview` |
+| Chuẩn bị năm sau (lớp + map + ghi danh) | `POST` | `/year-preparation/prepare-next-year` |
+| Xem trước ghi danh năm sau | `GET` | `/student-enrollments/from-year-promotions/preview` |
+| Tạo ghi danh năm sau | `POST` | `/student-enrollments/from-year-promotions` |
 
-**UI admin:** `Tổng kết học tập` → tab **Cả năm / Lên lớp** → panel **Chốt lên lớp toàn trường**.
+**UI admin:** `Tổng kết học tập` → tab **Cả năm / Lên lớp** → panel **Chốt lên lớp toàn trường**, sau khi chốt → panel **Chuẩn bị & ghi danh năm sau**.
+
+### Tạo ghi danh năm sau (Phase 7E #5)
+
+**Cách nhanh (khuyến nghị):** sau khi đã tạo năm học mới + học kỳ đích, dùng `POST /year-preparation/prepare-next-year`:
+
+| Bước | Hành vi |
+|------|---------|
+| Tạo lớp HC | Mirror cấu trúc năm cũ cho lớp có HS `PROMOTED`: mã khối+1 (10A1→11A1); giữ GVCN & sức chứa. `RETAINED` không tạo lớp |
+| Map HS | Chỉ gán `nextHomeroomClassId` cho `PROMOTED`; `RETAINED` / `GRADUATED` bỏ qua |
+| Ghi danh | Gọi cùng logic `from-year-promotions` vào `targetSemesterId` (chỉ PROMOTED; idempotent) |
+
+**Cách thủ công:** 
+
+1. Năm nguồn đã chốt lên lớp (`student_year_summaries.status = CLOSED`)
+2. Năm học mới + học kỳ đích (thường HK1) + lớp HC đã tồn tại
+3. Gán `nextHomeroomClassId` cho HS `PROMOTED` (lớp thuộc năm đích)
+4. `POST /student-enrollments/from-year-promotions`
+
+Hành vi ghi danh:
+
+| Quyết định | Kết quả |
+|------------|---------|
+| `PROMOTED` + có lớp năm sau hợp lệ | Tạo enrollment `ACTIVE` (idempotent nếu đã có) |
+| Thiếu lớp / lớp sai năm | Đếm `missingNextClass` / `invalidNextClass`, không tạo |
+| `RETAINED` / `GRADUATED` | Bỏ qua |
+
+### Xếp lớp đầu năm (ở lại + mới lên cấp)
+
+HS **ở lại** và **mới lên cấp** không đi qua `prepare-next-year`. Dùng màn **Xếp lớp đầu năm** (`/class-placement`):
+
+| API | Việc |
+|-----|------|
+| `GET /class-placement/unassigned` | List HS ACTIVE chưa có ghi danh HK đích (`RETAINED` / `NEW_INTAKE`) |
+| `POST /class-placement/assign` | Xếp tay → tạo enrollment (HS ở lại chỉ cùng khối năm trước) |
+| `GET/POST /class-placement/auto-balance` | Chia đều vào lớp ACTIVE của khối (tôn trọng capacity; ở lại lọc theo khối) |
+
+Import HS: `ma_lop_hc` **tuỳ chọn** — bỏ trống thì chỉ tạo hồ sơ, xếp lớp sau trên màn này.
+
+**Import Excel chia lớp:** `POST /imports/class-placement` — mỗi sheet = một lớp (tên sheet = mã lớp). Lớp chưa có → tự tạo (suy khối từ mã, vd. `10A1` → khối 10) + ghi danh HS. Tải mẫu `GET /imports/templates/class-placement?academicYearId&semesterId` điền sẵn HS ở lại / mới lên cấp chưa có lớp từ DB.
+
+**Lớp môn năm mới:** import Excel trên `/course-sections` (`POST /imports/course-sections`) — mỗi sheet = một lớp HC, tạo record mới. Tải mẫu có `semesterId`: khối 10 lấy môn từ cấu hình khối; khối 11/12 ưu tiên môn từ HK2 năm trước trong DB (đã lọc theo cấu hình khối hiện tại).
 
 **Body tái tính năm** (rỗng = toàn trường):
 
@@ -181,21 +237,21 @@ Chỉ chốt lên lớp cho **năm học hiện tại**, sau khi kết thúc HK2
 | `pnpm prisma:seed-summaries-semester` | TB môn + tổng kết HK + hạnh kiểm (DRAFT) cho một HK |
 | `pnpm prisma:seed-conduct-semester` | Chỉ hạnh kiểm (upsert); `SEED_CONDUCT_STATUS=CLOSED` để khóa sẵn |
 | `pnpm prisma:lock-semester` | Khóa assessment (sổ điểm) — chưa tính tổng kết |
+| `pnpm prisma:seed-year-complete` | **Năm hiện tại:** điểm + điểm danh HK1/HK2, khóa sổ, tổng kết CLOSED, xét lên lớp DRAFT, đặt HK2 hiện hành |
 | `SEED_SUMMARIES_SEMESTER_ID=<uuid>` | Chỉ định học kỳ khi seed summaries |
+| `SEED_SKIP_HK1=true` | Bỏ qua seed lại HK1 (chỉ khóa/đóng nếu đã có) khi chạy `seed-year-complete` |
 
 **Thứ tự seed demo gợi ý:**
 
 ```bash
-# HK1 rồi HK2: gradebook → summaries → lock semester (hoặc admin Khóa học kỳ)
-pnpm prisma:seed-gradebook-semester      # từng HK
-pnpm prisma:seed-summaries-semester
-pnpm prisma:lock-semester                # hoặc Khóa học kỳ trên UI
+# Sau prisma:seed (đã có HK1 điểm/tổng kết DRAFT)
+pnpm prisma:seed-year-complete
 
-# Hạnh kiểm riêng (nếu thiếu)
-SEED_CONDUCT_SEMESTER_ID=<uuid> SEED_CONDUCT_STATUS=CLOSED pnpm prisma:seed-conduct-semester
+# Hoặc bỏ qua tái tạo HK1 nếu đã khóa tay:
+SEED_SKIP_HK1=true pnpm prisma:seed-year-complete
 ```
 
-Sau đó trên UI: **Tái tính năm** → **Chốt lên lớp**.
+Sau đó trên UI: **Tái tính năm** (tuỳ chọn) → **Chốt lên lớp**.
 
 ---
 

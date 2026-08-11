@@ -87,10 +87,33 @@ pnpm prisma db seed
 
 Seed tạo:
 
-- 1 trường mẫu
-- 1 tài khoản admin trường (`role = SCHOOL_ADMIN`)
+- Trường demo (`DEMO`)
+- Tài khoản school admin và system admin (system admin: `school_id = null`)
 
-Chi tiết: [Migration và Seed](../database/migrations-and-seed.md)
+Cập nhật / tạo lại admin demo (không chạy full seed):
+
+```bash
+cd server
+pnpm prisma:seed-demo-admins
+```
+
+Seed phân công giảng dạy + TKB mẫu (mặc định HK1 năm `2025-26`, trường `DEMO`, ghi đè):
+
+```bash
+cd server
+pnpm prisma:seed-teaching-timetable
+# tuỳ chọn: SEED_YEAR_CODE=2025-26 SEED_SEMESTER_CODE=HK1 SEED_TEACHING_TIMETABLE_REPLACE=true
+```
+
+Hoàn thiện năm học hiện tại (điểm + điểm danh HK1/HK2, khóa sổ, tổng kết CLOSED, xét lên lớp DRAFT):
+
+```bash
+cd server
+pnpm prisma:seed-year-complete
+# hoặc giữ HK1 đã có: SEED_SKIP_HK1=true pnpm prisma:seed-year-complete
+```
+
+Chi tiết: [Migration và Seed](../database/migrations-and-seed.md) · [Luồng tổng kết](../flows/grade-summaries.md)
 
 ## Chạy ứng dụng
 
@@ -130,12 +153,16 @@ pnpm run build
 
 ## Tài khoản dev sau seed
 
-| Vai trò | Email | Mật khẩu |
-|---------|-------|----------|
-| Admin trường | `admin@demo.edu.vn` | `Admin@123456` (đổi qua `SEED_ADMIN_PASSWORD`) |
-| Giáo viên | `teacher1@demo.edu.vn`, `teacher2@demo.edu.vn`, `teacher3@demo.edu.vn` | `Demo@123456` (đổi qua `SEED_DEMO_PASSWORD`) |
-| Học sinh | `student1@demo.edu.vn` … `student5@demo.edu.vn` | `Demo@123456` |
-| Trường | Trường THPT Demo (`DEMO`) | — |
+| Vai trò | Đăng nhập bằng | Mật khẩu |
+|---------|----------------|----------|
+| System admin (nền tảng) | Email `system_admin@demo.edu.vn` | `SystemAdmin@123456` |
+| Admin trường (DEMO) | Email `school_admin@demo.edu.vn` | `SchoolAdmin@123456` |
+| Giáo viên | Mã `GV-1`… hoặc SĐT `0910000001`… | `Demo@123456` (`SEED_DEMO_PASSWORD`) |
+| Học sinh | Mã `HS-25…` hoặc SĐT `0980000001`… | `Demo@123456` |
+| Phụ huynh | Mã `PH-1`… hoặc SĐT `090…` trên hồ sơ | `Demo@123456` |
+| Trường demo | Trường THPT Demo (`DEMO`) | — |
+
+> Email cũ `admin@demo.edu.vn` đã đổi thành `school_admin@demo.edu.vn`. Override qua env: `SEED_SCHOOL_ADMIN_EMAIL`, `SEED_SYSTEM_ADMIN_EMAIL`, … (xem `server/.env.example`).
 
 > Chỉ dùng cho môi trường development. Không dùng mật khẩu mặc định trên production.
 

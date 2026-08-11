@@ -5,7 +5,7 @@ import { TIMETABLE_IMPORT_TEMPLATE_FILENAME } from '@/modules/imports/constants/
 import { TimetableImportTemplateService } from '@/modules/imports/timetable-import-template.service';
 
 async function main() {
-  const service = new TimetableImportTemplateService();
+  const service = new TimetableImportTemplateService({} as never);
   const buffer = await service.buildSampleFileBuffer();
   const outputPath = resolve(
     process.cwd(),

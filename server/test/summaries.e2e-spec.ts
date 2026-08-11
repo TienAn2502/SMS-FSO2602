@@ -104,6 +104,19 @@ describe('Summaries API (e2e)', () => {
     expect(body.code).toBe('UNAUTHORIZED');
   });
 
+  it('PATCH /api/v1/grade-summaries/year-summaries/:id without auth returns 401', async () => {
+    const res = await request(app.getHttpServer())
+      .patch(
+        '/api/v1/grade-summaries/year-summaries/00000000-0000-4000-8000-000000000001',
+      )
+      .send({ nextHomeroomClassId: null })
+      .expect(401);
+
+    const body = res.body as { success: boolean; code: string };
+    expect(body.success).toBe(false);
+    expect(body.code).toBe('UNAUTHORIZED');
+  });
+
   it('GET /api/v1/portal/my-summaries without auth returns 401', async () => {
     const res = await request(app.getHttpServer())
       .get('/api/v1/portal/my-summaries')

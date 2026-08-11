@@ -8,6 +8,10 @@ import { AppException } from '@/common/exceptions/app.exception';
 import type { ParsedSpreadsheetRow } from '@/common/files/file-format.types';
 import { parseUploadedSpreadsheet } from '@/common/files/parse-uploaded-file.util';
 import { PasswordService } from '@/common/utils/password.service';
+import {
+  PersonCodeAllocator,
+  PersonCodeService,
+} from '@/common/utils/person-code.service';
 import { parseImportBoolean } from '@/modules/imports/utils/parse-import-boolean.util';
 import { parseParentImportRelationship } from '@/modules/imports/utils/parse-parent-import-relationship.util';
 import { validateParentImportHeaders } from '@/modules/imports/utils/validate-parent-import-headers.util';
@@ -28,6 +32,7 @@ export class ParentsImportService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly passwordService: PasswordService,
+    private readonly personCodeService: PersonCodeService,
     private readonly configService: ConfigService<EnvConfig, true>,
   ) {}
 
@@ -78,6 +83,8 @@ export class ParentsImportService {
       return await this.prisma.$transaction(async (tx) => {
         let created = 0;
         let updated = 0;
+        const codeAllocator = this.personCodeService.createAllocator(tx);
+        await codeAllocator.prepareParent(schoolId);
 
         for (const item of rows) {
           const outcome = await this.upsertParentRow(tx, schoolId, {
@@ -85,6 +92,7 @@ export class ParentsImportService {
             row: item.row,
             defaultPassword,
             studentByCode,
+            codeAllocator,
           });
 
           if (outcome === 'created') {
@@ -116,7 +124,7 @@ export class ParentsImportService {
       ) {
         throw new AppException(
           'IMPORT_CONFLICT',
-          'Dữ liệu import trùng email hoặc liên kết phụ huynh-học sinh',
+          'Dữ liệu import trùng email, mã phụ huynh hoặc liên kết phụ huynh-học sinh',
           HttpStatus.CONFLICT,
         );
       }
@@ -285,9 +293,11 @@ export class ParentsImportService {
       row: ParentImportRow;
       defaultPassword: string;
       studentByCode: Map<string, string>;
+      codeAllocator: PersonCodeAllocator;
     },
   ): Promise<'created' | 'updated'> {
-    const { rowNumber, row, defaultPassword, studentByCode } = params;
+    const { rowNumber, row, defaultPassword, studentByCode, codeAllocator } =
+      params;
 
     const existing = row.email
       ? await tx.parent.findFirst({
@@ -326,6 +336,7 @@ export class ParentsImportService {
           schoolId,
           fullName: row.ho_ten,
           phone: row.phone,
+          externalCode: await codeAllocator.nextParentCode(schoolId),
           userId,
         },
       });
@@ -373,6 +384,9 @@ export class ParentsImportService {
         data: {
           fullName: row.ho_ten,
           phone: row.phone,
+          ...(!existing!.externalCode
+            ? { externalCode: await codeAllocator.nextParentCode(schoolId) }
+            : {}),
         },
       });
     }

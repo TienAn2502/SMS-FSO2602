@@ -3,15 +3,17 @@ import { type ColumnDef, type ColumnFiltersState } from '@tanstack/react-table';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { Link } from 'react-router';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
+import { ROUTES } from '@/app/router/routes';
 import { DataTableGrid } from '@/components/common/data-table-grid';
 import { DataPagination } from '@/components/common/data-pagination';
 import { EmptyState } from '@/components/feedback/empty-state';
 import { ErrorState } from '@/components/feedback/error-state';
 import { LoadingState } from '@/components/feedback/loading-state';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -92,11 +94,56 @@ export function HomeroomClassesPage() {
     enabled: Boolean(session?.activeSchoolId),
   });
 
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<CreateFormValues>({
+    resolver: zodResolver(createSchema),
+    defaultValues: {
+      academicYearId: '',
+      gradeLevelId: '',
+      name: '',
+      code: '',
+      homeroomTeacherId: '',
+    },
+  });
+
+  const selectedAcademicYearId = watch('academicYearId');
+
   const teachersQuery = useQuery({
+    queryKey: [
+      'teachers',
+      session?.activeSchoolId,
+      'available-homeroom',
+      selectedAcademicYearId,
+    ],
+    queryFn: () =>
+      fetchAllTeachers({
+        availableAsHomeroomForAcademicYearId: selectedAcademicYearId,
+      }),
+    enabled: Boolean(session?.activeSchoolId && selectedAcademicYearId),
+  });
+
+  const teachersForListQuery = useQuery({
     queryKey: ['teachers', session?.activeSchoolId, 'all'],
-    queryFn: fetchAllTeachers,
+    queryFn: () => fetchAllTeachers(),
     enabled: Boolean(session?.activeSchoolId),
   });
+
+  const teachers = teachersQuery.data ?? [];
+  const teachersForMap = teachersForListQuery.data ?? [];
+
+  const teacherMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const teacher of teachersForMap) {
+      map.set(teacher.id, teacher.fullName);
+    }
+    return map;
+  }, [teachersForMap]);
 
   const listQuery = useQuery({
     queryKey: [
@@ -121,26 +168,11 @@ export function HomeroomClassesPage() {
     placeholderData: keepPreviousData,
   });
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors, isSubmitting },
-  } = useForm<CreateFormValues>({
-    resolver: zodResolver(createSchema),
-    defaultValues: {
-      academicYearId: '',
-      gradeLevelId: '',
-      name: '',
-      code: '',
-      homeroomTeacherId: '',
-    },
-  });
-
   const createMutation = useMutation({
     mutationFn: createHomeroomClass,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['homeroom-classes'] });
+      void queryClient.invalidateQueries({ queryKey: ['teachers'] });
       toast.success('Tạo lớp hành chính thành công');
       reset();
       setShowForm(false);
@@ -183,18 +215,32 @@ export function HomeroomClassesPage() {
     [gradesQuery.data?.items],
   );
 
-  const teacherMap = useMemo(
-    () =>
-      new Map(
-        (teachersQuery.data ?? []).map((t) => [t.id, t.fullName]),
-      ),
-    [teachersQuery.data],
-  );
-
   const columns = useMemo<ColumnDef<HomeroomClass>[]>(
     () => [
-      { accessorKey: 'code', header: 'Mã lớp' },
-      { accessorKey: 'name', header: 'Tên lớp' },
+      {
+        accessorKey: 'code',
+        header: 'Mã lớp',
+        cell: ({ row }) => (
+          <Link
+            to={`${ROUTES.homeroomClasses}/${row.original.id}`}
+            className='font-medium text-primary hover:underline'
+          >
+            {row.original.code}
+          </Link>
+        ),
+      },
+      {
+        accessorKey: 'name',
+        header: 'Tên lớp',
+        cell: ({ row }) => (
+          <Link
+            to={`${ROUTES.homeroomClasses}/${row.original.id}`}
+            className='hover:underline'
+          >
+            {row.original.name}
+          </Link>
+        ),
+      },
       {
         id: 'year',
         header: 'Năm học',
@@ -231,19 +277,27 @@ export function HomeroomClassesPage() {
         id: 'actions',
         header: () => <span className='sr-only'>Thao tác</span>,
         cell: ({ row }) => (
-          <Button
-            variant='outline'
-            size='sm'
-            disabled={statusMutation.isPending}
-            onClick={() =>
-              handleToggleStatus(
-                row.original.id,
-                row.original.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE',
-              )
-            }
-          >
-            {row.original.status === 'ACTIVE' ? 'Ngưng' : 'Kích hoạt'}
-          </Button>
+          <div className='flex flex-wrap gap-2'>
+            <Link
+              to={`${ROUTES.homeroomClasses}/${row.original.id}`}
+              className={buttonVariants({ variant: 'outline', size: 'sm' })}
+            >
+              Chi tiết
+            </Link>
+            <Button
+              variant='outline'
+              size='sm'
+              disabled={statusMutation.isPending}
+              onClick={() =>
+                handleToggleStatus(
+                  row.original.id,
+                  row.original.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE',
+                )
+              }
+            >
+              {row.original.status === 'ACTIVE' ? 'Ngưng' : 'Kích hoạt'}
+            </Button>
+          </div>
         ),
       },
     ],
@@ -254,7 +308,6 @@ export function HomeroomClassesPage() {
   const filtersActive = hasColumnFilters(columnFilters, globalFilter);
   const years = yearsQuery.data?.items ?? [];
   const grades = gradesQuery.data?.items ?? [];
-  const teachers = teachersQuery.data ?? [];
 
   return (
     <div className='space-y-6'>
@@ -294,7 +347,13 @@ export function HomeroomClassesPage() {
             >
               <div className='space-y-2'>
                 <Label htmlFor='year'>Năm học</Label>
-                <select id='year' className={selectClassName} {...register('academicYearId')}>
+                <select
+                  id='year'
+                  className={selectClassName}
+                  {...register('academicYearId', {
+                    onChange: () => setValue('homeroomTeacherId', ''),
+                  })}
+                >
                   <option value=''>Chọn năm học</option>
                   {years.map((y) => (
                     <option key={y.id} value={y.id}>
@@ -338,14 +397,27 @@ export function HomeroomClassesPage() {
               </div>
               <div className='space-y-2'>
                 <Label htmlFor='teacher'>GVCN (tuỳ chọn)</Label>
-                <select id='teacher' className={selectClassName} {...register('homeroomTeacherId')}>
-                  <option value=''>Chưa gán</option>
+                <select
+                  id='teacher'
+                  className={selectClassName}
+                  disabled={!selectedAcademicYearId}
+                  {...register('homeroomTeacherId')}
+                >
+                  <option value=''>
+                    {selectedAcademicYearId
+                      ? 'Chưa gán'
+                      : 'Chọn năm học trước'}
+                  </option>
                   {teachers.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.fullName}
                     </option>
                   ))}
                 </select>
+                <p className='text-xs text-muted-foreground'>
+                  Chỉ hiện GV chưa làm GVCN lớp ACTIVE trong năm học đã chọn
+                  (GV mới hoặc GVCN năm trước đã hết năm vẫn hiện).
+                </p>
               </div>
               <div className='md:col-span-2'>
                 <Button type='submit' disabled={isSubmitting}>

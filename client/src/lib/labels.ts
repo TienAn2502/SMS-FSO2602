@@ -1,6 +1,7 @@
 import type { UserRole } from '@/types/api.types';
 
 export const ROLE_LABELS: Record<UserRole, string> = {
+  SYSTEM_ADMIN: 'Quản trị hệ thống',
   SCHOOL_ADMIN: 'Quản trị trường',
   TEACHER: 'Giáo viên',
   STUDENT: 'Học sinh',
@@ -16,6 +17,18 @@ export const STATUS_LABELS = {
 export const ACADEMIC_STATUS_LABELS = {
   ACTIVE: 'Hoạt động',
   INACTIVE: 'Ngưng hoạt động',
+} as const;
+
+export const SCHOOL_STATUS_LABELS = {
+  ACTIVE: 'Hoạt động',
+  INACTIVE: 'Ngưng hoạt động',
+  SUSPENDED: 'Tạm khóa',
+} as const;
+
+export const SCHOOL_TYPE_LABELS = {
+  TH: 'Tiểu học',
+  THCS: 'THCS',
+  THPT: 'THPT',
 } as const;
 
 export const GENDER_LABELS = {

@@ -8,6 +8,11 @@ import { parseIsoDate } from '@/common/schemas/academic.schema';
 import type { PaginationMeta } from '@/common/types/api-response.types';
 import { buildPaginationMeta, getSkip } from '@/common/utils/pagination.util';
 import { PasswordService } from '@/common/utils/password.service';
+import { PersonCodeService } from '@/common/utils/person-code.service';
+import {
+  buildDefaultPersonPassword,
+  buildPersonLoginEmail,
+} from '@/common/utils/person-login-credentials.util';
 import {
   studentInclude,
   toStudentResponse,
@@ -27,6 +32,7 @@ export class StudentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly passwordService: PasswordService,
+    private readonly personCodeService: PersonCodeService,
   ) {}
 
   async list(
@@ -41,6 +47,12 @@ export class StudentsService {
             OR: [
               {
                 fullName: {
+                  contains: query.search,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                externalCode: {
                   contains: query.search,
                   mode: 'insensitive',
                 },
@@ -111,13 +123,12 @@ export class StudentsService {
     schoolId: string,
     input: CreateStudentInput,
   ): Promise<StudentResponse> {
-    // nếu có account thì tạo cả hồ sơ (table student) và tài khoản (table user)
-    if (input.account) {
+    if (input.createLogin || input.account) {
       return this.createWithAccount(schoolId, input);
     }
 
     const student = await this.prisma.student.create({
-      data: this.buildStudentCreateData(schoolId, input),
+      data: await this.buildStudentCreateData(schoolId, input),
       include: studentInclude,
     });
 
@@ -209,7 +220,7 @@ export class StudentsService {
   async createUser(
     schoolId: string,
     studentId: string,
-    input: CreateStudentUserInput,
+    _input: CreateStudentUserInput,
   ): Promise<StudentResponse> {
     const student = await this.findStudentInTenant(schoolId, studentId);
 
@@ -221,74 +232,109 @@ export class StudentsService {
       );
     }
 
-    const existingEmail = await this.prisma.user.findUnique({
-      where: { email: input.email },
-    });
-
-    if (existingEmail) {
+    if (!student.dateOfBirth) {
       throw new AppException(
-        'EMAIL_ALREADY_EXISTS',
-        'Email đã được sử dụng',
-        HttpStatus.CONFLICT,
+        'VALIDATION_ERROR',
+        'Ngày sinh là bắt buộc khi tạo tài khoản đăng nhập',
+        HttpStatus.UNPROCESSABLE_ENTITY,
       );
     }
 
-    const passwordHash = await this.passwordService.hash(input.password);
+    try {
+      const updated = await this.prisma.$transaction(async (tx) => {
+        let externalCode = student.externalCode;
+        if (!externalCode) {
+          externalCode = await this.personCodeService.nextStudentCode(
+            schoolId,
+            tx,
+          );
+          await tx.student.update({
+            where: { id: studentId },
+            data: { externalCode },
+          });
+        }
 
-    const updated = await this.prisma.$transaction(async (tx) => {
-      const user = await tx.user.create({
-        data: {
-          email: input.email,
-          passwordHash,
-          fullName: student.fullName,
-          role: UserRole.STUDENT,
-          schoolId,
-          status: UserStatus.ACTIVE,
-        },
+        const email = buildPersonLoginEmail(schoolId, externalCode);
+        const password = buildDefaultPersonPassword({
+          externalCode,
+          dateOfBirth: student.dateOfBirth,
+        });
+
+        const existingEmail = await tx.user.findUnique({ where: { email } });
+        if (existingEmail) {
+          throw new AppException(
+            'EMAIL_ALREADY_EXISTS',
+            'Email nội bộ đã được sử dụng',
+            HttpStatus.CONFLICT,
+          );
+        }
+
+        const passwordHash = await this.passwordService.hash(password);
+        const user = await tx.user.create({
+          data: {
+            email,
+            passwordHash,
+            fullName: student.fullName,
+            role: UserRole.STUDENT,
+            schoolId,
+            status: UserStatus.ACTIVE,
+          },
+        });
+
+        return tx.student.update({
+          where: { id: studentId },
+          data: { userId: user.id },
+          include: studentInclude,
+        });
       });
 
-      return tx.student.update({
-        where: { id: studentId },
-        data: { userId: user.id },
-        include: studentInclude,
-      });
-    });
-
-    return toStudentResponse(updated);
+      return toStudentResponse(updated);
+    } catch (error: unknown) {
+      if (error instanceof AppException) {
+        throw error;
+      }
+      this.handleUserLinkViolation(error);
+      throw error;
+    }
   }
 
   private async createWithAccount(
     schoolId: string,
     input: CreateStudentInput,
   ): Promise<StudentResponse> {
-    const account = input.account;
-    if (!account) {
+    if (!input.dateOfBirth) {
       throw new AppException(
         'VALIDATION_ERROR',
-        'Thiếu thông tin tài khoản',
+        'Ngày sinh là bắt buộc khi tạo tài khoản đăng nhập',
         HttpStatus.UNPROCESSABLE_ENTITY,
       );
     }
 
-    const existingEmail = await this.prisma.user.findUnique({
-      where: { email: account.email },
-    });
-
-    if (existingEmail) {
-      throw new AppException(
-        'EMAIL_ALREADY_EXISTS',
-        'Email đã được sử dụng',
-        HttpStatus.CONFLICT,
-      );
-    }
-
-    const passwordHash = await this.passwordService.hash(account.password);
-
     try {
       const student = await this.prisma.$transaction(async (tx) => {
+        const externalCode = await this.personCodeService.nextStudentCode(
+          schoolId,
+          tx,
+        );
+        const email = buildPersonLoginEmail(schoolId, externalCode);
+        const password = buildDefaultPersonPassword({
+          externalCode,
+          dateOfBirth: input.dateOfBirth,
+        });
+
+        const existingEmail = await tx.user.findUnique({ where: { email } });
+        if (existingEmail) {
+          throw new AppException(
+            'EMAIL_ALREADY_EXISTS',
+            'Email nội bộ đã được sử dụng',
+            HttpStatus.CONFLICT,
+          );
+        }
+
+        const passwordHash = await this.passwordService.hash(password);
         const user = await tx.user.create({
           data: {
-            email: account.email,
+            email,
             passwordHash,
             fullName: input.fullName,
             role: UserRole.STUDENT,
@@ -301,12 +347,11 @@ export class StudentsService {
           data: {
             schoolId,
             fullName: input.fullName,
-            dateOfBirth: input.dateOfBirth
-              ? parseIsoDate(input.dateOfBirth)
-              : undefined,
+            dateOfBirth: parseIsoDate(input.dateOfBirth!),
             gender: input.gender,
             phone: input.phone,
             address: input.address,
+            externalCode,
             userId: user.id,
           },
           include: studentInclude,
@@ -315,15 +360,20 @@ export class StudentsService {
 
       return toStudentResponse(student);
     } catch (error: unknown) {
+      if (error instanceof AppException) {
+        throw error;
+      }
       this.handleUserLinkViolation(error);
       throw error;
     }
   }
 
-  private buildStudentCreateData(
+  private async buildStudentCreateData(
     schoolId: string,
     input: CreateStudentInput,
-  ): Prisma.StudentCreateInput {
+  ): Promise<Prisma.StudentCreateInput> {
+    const externalCode = await this.personCodeService.nextStudentCode(schoolId);
+
     return {
       school: { connect: { id: schoolId } },
       fullName: input.fullName,
@@ -333,6 +383,7 @@ export class StudentsService {
       gender: input.gender,
       phone: input.phone,
       address: input.address,
+      externalCode,
     };
   }
 

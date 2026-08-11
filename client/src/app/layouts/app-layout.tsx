@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router';
 
+import { ImpersonationBanner } from '@/components/layout/impersonation-banner';
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 
@@ -8,6 +9,7 @@ export function AppLayout() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
+        <ImpersonationBanner />
         <header className='flex h-12 shrink-0 items-center border-b px-6'>
           <span className='text-sm font-medium text-muted-foreground'>
             eSchool SaaS

@@ -16,10 +16,84 @@
 | POST | `/grade-summaries/semesters/:semesterId/finalize-all` | SCHOOL_ADMIN | Khóa tổng kết học kỳ toàn trường |
 | GET | `/grade-summaries/semester-summaries` | SCHOOL_ADMIN | Danh sách tổng kết học kỳ HS |
 | GET | `/grade-summaries/year-summaries` | SCHOOL_ADMIN | Danh sách tổng kết năm / lên lớp |
+| PATCH | `/grade-summaries/year-summaries/:id` | SCHOOL_ADMIN | Gán / xóa `nextHomeroomClassId` (lớp năm sau) |
 | POST | `/grade-summaries/academic-years/:academicYearId/recompute-year-summaries` | SCHOOL_ADMIN | Tái tính tổng kết năm (body `homeroomClassId` tùy chọn) |
 | GET | `/grade-summaries/academic-years/:academicYearId/finalize-promotion-readiness` | SCHOOL_ADMIN | Kiểm tra điều kiện chốt lên lớp |
 | POST | `/grade-summaries/academic-years/:academicYearId/finalize-promotion-all` | SCHOOL_ADMIN | Chốt xét lên lớp toàn trường |
 | POST | `/grade-summaries/academic-years/:academicYearId/finalize-promotion` | SCHOOL_ADMIN | Chốt xét lên lớp theo lớp CN |
+
+## Student enrollments — năm sau (Phase 7E #5)
+
+| Method | Path | Role | Mô tả |
+|--------|------|------|-------|
+| GET | `/student-enrollments/from-year-promotions/preview` | SCHOOL_ADMIN | Xem trước số lượng sẽ tạo / thiếu lớp |
+| POST | `/student-enrollments/from-year-promotions` | SCHOOL_ADMIN | Tạo ghi danh ACTIVE từ tổng kết năm đã chốt |
+
+## Year preparation — tự tạo lớp + map + ghi danh
+
+| Method | Path | Role | Mô tả |
+|--------|------|------|-------|
+| GET | `/year-preparation/preview` | SCHOOL_ADMIN | Xem trước lớp sẽ tạo / số HS map |
+| POST | `/year-preparation/prepare-next-year` | SCHOOL_ADMIN | Tạo lớp HC, gán nextHomeroom, tạo ghi danh |
+
+## Class placement — xếp lớp đầu năm (ở lại / mới lên cấp)
+
+| Method | Path | Role | Mô tả |
+|--------|------|------|-------|
+| GET | `/class-placement/unassigned` | SCHOOL_ADMIN | HS chưa có lớp trong HK |
+| GET | `/class-placement/auto-balance/preview` | SCHOOL_ADMIN | Xem trước chia đều |
+| POST | `/class-placement/assign` | SCHOOL_ADMIN | Xếp tay (bulk) |
+| POST | `/class-placement/auto-balance` | SCHOOL_ADMIN | Chia đều theo khối |
+
+Query `unassigned`: `semesterId` (bắt buộc), `reason` (`RETAINED`\|`NEW_INTAKE`), `gradeLevelId`, `search`, phân trang.
+
+Body `assign`:
+
+```json
+{
+  "semesterId": "uuid",
+  "assignments": [{ "studentId": "uuid", "homeroomClassId": "uuid" }]
+}
+```
+
+Body `auto-balance`:
+
+```json
+{
+  "semesterId": "uuid",
+  "gradeLevelId": "uuid",
+  "reason": "NEW_INTAKE",
+  "studentIds": ["uuid"]
+}
+```
+
+Body POST prepare-next-year:
+
+```json
+{
+  "sourceAcademicYearId": "uuid",
+  "targetAcademicYearId": "uuid",
+  "targetSemesterId": "uuid",
+  "createEnrollments": true,
+  "enrolledAt": "2026-08-01",
+  "note": "tuỳ chọn"
+}
+```
+
+`createEnrollments` mặc định `true` → bắt buộc `targetSemesterId`. Đặt `false` để chỉ tạo lớp + map.
+
+Query/body ghi danh thủ công:
+
+```json
+{
+  "sourceAcademicYearId": "uuid",
+  "targetSemesterId": "uuid",
+  "enrolledAt": "2026-08-01",
+  "note": "tuỳ chọn"
+}
+```
+
+`enrolledAt` / `note` chỉ dùng cho POST. Lớp năm sau lấy từ `student_year_summaries.nextHomeroomClassId`.
 
 > Luồng nghiệp vụ chi tiết: [flows/grade-summaries.md](../flows/grade-summaries.md)
 
@@ -32,8 +106,9 @@ Trong HK: GV nhập điểm → khóa sổ lớp môn (assessment CLOSED)
 GVCN: Lưu hạnh kiểm (conduct DRAFT)
 Admin: Tái tính → GET finalize-readiness → POST finalize-all (khóa HK toàn trường)
 Cuối năm: Tái tính năm → GET finalize-promotion-readiness → POST finalize-promotion-all
+→ tạo năm mới + HK → POST /year-preparation/prepare-next-year
+→ (tuỳ chọn) PATCH year-summaries / POST from-year-promotions
 ```
-
 ### POST /grade-summaries/recompute — Body
 
 ```json

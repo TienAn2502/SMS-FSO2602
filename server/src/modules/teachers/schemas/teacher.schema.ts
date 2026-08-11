@@ -10,6 +10,13 @@ import { genderSchema } from '@/modules/students/schemas/student.schema';
 export const listTeachersQuerySchema = paginationSchema.extend({
   search: z.string().trim().optional(),
   status: academicEntityStatusSchema.optional(),
+  /**
+   * Chỉ GV chưa làm GVCN lớp ACTIVE trong năm học này
+   * (GV mới / GVCN năm trước như lớp 12 đã hết năm vẫn hiện).
+   */
+  availableAsHomeroomForAcademicYearId: z.uuid().optional(),
+  /** Khi sửa lớp: vẫn hiện GVCN hiện tại của lớp này. */
+  excludeHomeroomClassId: z.uuid().optional(),
   sortBy: z.enum(['fullName', 'status']).default('fullName'),
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
 });
@@ -26,13 +33,25 @@ const teacherProfileFieldsSchema = z.object({
 });
 
 export const createTeacherAccountSchema = z.object({
-  email: z.email('Email không đúng định dạng'),
-  password: z.string().min(8, 'Mật khẩu phải có ít nhất 8 ký tự'),
+  email: z.email('Email không đúng định dạng').optional(),
+  password: z.string().min(8).optional(),
 });
 
-export const createTeacherSchema = teacherProfileFieldsSchema.extend({
-  account: createTeacherAccountSchema.optional(),
-});
+export const createTeacherSchema = teacherProfileFieldsSchema
+  .extend({
+    createLogin: z.boolean().optional(),
+    account: createTeacherAccountSchema.optional(),
+  })
+  .superRefine((value, ctx) => {
+    const wantsLogin = Boolean(value.createLogin || value.account);
+    if (wantsLogin && !value.dateOfBirth) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Ngày sinh là bắt buộc khi tạo tài khoản đăng nhập',
+        path: ['dateOfBirth'],
+      });
+    }
+  });
 
 export type CreateTeacherInput = z.infer<typeof createTeacherSchema>;
 
@@ -61,6 +80,6 @@ export const linkTeacherUserSchema = z.object({
 
 export type LinkTeacherUserInput = z.infer<typeof linkTeacherUserSchema>;
 
-export const createTeacherUserSchema = createTeacherAccountSchema;
+export const createTeacherUserSchema = z.object({}).default({});
 
 export type CreateTeacherUserInput = z.infer<typeof createTeacherUserSchema>;

@@ -16,6 +16,7 @@ export interface ParentResponse {
   userEmail: string | null;
   fullName: string;
   phone: string | null;
+  externalCode: string | null;
   status: Parent['status'];
   linkedStudents: LinkedStudentSummary[];
 }
@@ -48,6 +49,7 @@ export function toParentResponse(parent: ParentWithRelations): ParentResponse {
     userEmail: parent.user?.email ?? null,
     fullName: parent.fullName,
     phone: parent.phone,
+    externalCode: parent.externalCode,
     status: parent.status,
     linkedStudents: parent.studentParents.map(toLinkedStudentSummary),
   };
@@ -62,6 +64,7 @@ export function toParentListResponse(
     userEmail: parent.user?.email ?? null,
     fullName: parent.fullName,
     phone: parent.phone,
+    externalCode: parent.externalCode,
     status: parent.status,
     linkedStudents: [],
   };

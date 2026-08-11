@@ -41,7 +41,12 @@ export class AcademicYearsController {
   constructor(private readonly academicYearsService: AcademicYearsService) {}
 
   @Get()
-  @Roles(UserRole.SCHOOL_ADMIN, UserRole.STUDENT, UserRole.TEACHER, UserRole.PARENT)
+  @Roles(
+    UserRole.SCHOOL_ADMIN,
+    UserRole.STUDENT,
+    UserRole.TEACHER,
+    UserRole.PARENT,
+  )
   @ApiOperation({ summary: 'Danh sách năm học' })
   async list(
     @CurrentUser() user: AuthenticatedUser,
@@ -62,14 +67,24 @@ export class AcademicYearsController {
   }
 
   @Get('current')
-  @Roles(UserRole.SCHOOL_ADMIN, UserRole.STUDENT, UserRole.TEACHER, UserRole.PARENT)
+  @Roles(
+    UserRole.SCHOOL_ADMIN,
+    UserRole.STUDENT,
+    UserRole.TEACHER,
+    UserRole.PARENT,
+  )
   @ApiOperation({ summary: 'Năm học hiện hành' })
   findCurrent(@CurrentUser() user: AuthenticatedUser) {
     return this.academicYearsService.findCurrent(user.activeSchoolId);
   }
 
   @Get(':id')
-  @Roles(UserRole.SCHOOL_ADMIN, UserRole.STUDENT, UserRole.TEACHER, UserRole.PARENT)
+  @Roles(
+    UserRole.SCHOOL_ADMIN,
+    UserRole.STUDENT,
+    UserRole.TEACHER,
+    UserRole.PARENT,
+  )
   @ApiOperation({ summary: 'Chi tiết năm học' })
   findById(
     @CurrentUser() user: AuthenticatedUser,

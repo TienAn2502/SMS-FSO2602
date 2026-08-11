@@ -1,14 +1,32 @@
-import { Controller, Get, Post, Body, Req, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { UserRole } from '@prisma/client';
 import type { Request, Response } from 'express';
 
 import { AUTH_COOKIE } from '@/common/auth/auth.constants';
+import type { AuthenticatedUser } from '@/common/auth/auth.types';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { Public } from '@/common/decorators/public.decorator';
+import { Roles } from '@/common/decorators/roles.decorator';
+import { RolesGuard } from '@/common/guards/roles.guard';
 import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe';
-import type { AuthenticatedUser } from '@/common/auth/auth.types';
 import { AuthService } from '@/modules/auth/auth.service';
-import { loginSchema, type LoginInput } from '@/modules/auth/schemas/login.schema';
+import {
+  changePasswordSchema,
+  type ChangePasswordInput,
+} from '@/modules/auth/schemas/change-password.schema';
+import {
+  loginSchema,
+  type LoginInput,
+} from '@/modules/auth/schemas/login.schema';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -40,6 +58,7 @@ export class AuthController {
   ) {
     const data = await this.authService.refresh(
       request.cookies?.[AUTH_COOKIE.REFRESH] as string | undefined,
+      request.cookies?.[AUTH_COOKIE.ACCESS] as string | undefined,
       response,
     );
 
@@ -67,6 +86,25 @@ export class AuthController {
   @ApiCookieAuth('access_token')
   @ApiOperation({ summary: 'Thông tin session hiện tại' })
   async me(@CurrentUser() user: AuthenticatedUser) {
-    return this.authService.getMe(user.id);
+    return this.authService.getMe(user);
+  }
+
+  @Post('change-password')
+  @ApiCookieAuth('access_token')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.SCHOOL_ADMIN, UserRole.TEACHER, UserRole.STUDENT)
+  @ApiOperation({ summary: 'Đổi mật khẩu tài khoản đang đăng nhập' })
+  async changePassword(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body(new ZodValidationPipe(changePasswordSchema))
+    body: ChangePasswordInput,
+  ) {
+    await this.authService.changePassword(user, body);
+
+    return {
+      success: true,
+      data: null,
+      message: 'Đổi mật khẩu thành công',
+    };
   }
 }

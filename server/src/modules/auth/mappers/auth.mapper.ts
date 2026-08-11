@@ -1,10 +1,22 @@
+import { HttpStatus } from '@nestjs/common';
 import type { School, User } from '@prisma/client';
 
-import type { AuthSessionData } from '@/common/auth/auth.types';
+import type {
+  AuthSessionData,
+  AuthenticatedUser,
+  ImpersonationSessionData,
+} from '@/common/auth/auth.types';
+import { isImpersonating } from '@/common/auth/impersonation.util';
+import { AppException } from '@/common/exceptions/app.exception';
+import { PrismaService } from '@/common/database/prisma.service';
 
-type UserWithSchool = User & { school: School };
+type UserWithSchool = User & { school: School | null };
 
-export function toAuthSessionData(user: UserWithSchool): AuthSessionData {
+export function toAuthSessionData(
+  user: UserWithSchool,
+  activeSchool: School | null,
+  impersonation: ImpersonationSessionData | null = null,
+): AuthSessionData {
   return {
     user: {
       id: user.id,
@@ -13,12 +25,62 @@ export function toAuthSessionData(user: UserWithSchool): AuthSessionData {
       role: user.role,
       status: user.status,
     },
-    activeSchoolId: user.schoolId,
-    activeSchool: {
-      id: user.school.id,
-      code: user.school.code,
-      name: user.school.name,
-      shortName: user.school.shortName,
-    },
+    activeSchoolId: activeSchool?.id ?? null,
+    activeSchool: activeSchool
+      ? {
+          id: activeSchool.id,
+          code: activeSchool.code,
+          name: activeSchool.name,
+          shortName: activeSchool.shortName,
+        }
+      : null,
+    impersonation,
   };
+}
+
+export function toImpersonationSessionData(
+  activeSchool: School,
+  actorUserId: string,
+  mode: ImpersonationSessionData['mode'],
+  startedAt = new Date(),
+): ImpersonationSessionData {
+  return {
+    targetSchoolId: activeSchool.id,
+    targetSchoolName: activeSchool.name,
+    impersonatedBy: actorUserId,
+    mode,
+    startedAt: startedAt.toISOString(),
+  };
+}
+
+export async function buildAuthSessionForUser(
+  prisma: PrismaService,
+  user: UserWithSchool,
+  sessionUser: AuthenticatedUser,
+): Promise<AuthSessionData> {
+  if (!sessionUser.activeSchoolId) {
+    return toAuthSessionData(user, null, null);
+  }
+
+  const activeSchool = await prisma.school.findUnique({
+    where: { id: sessionUser.activeSchoolId },
+  });
+
+  if (!activeSchool) {
+    throw new AppException(
+      'SCHOOL_NOT_FOUND',
+      'Không tìm thấy trường đang hoạt động',
+      HttpStatus.NOT_FOUND,
+    );
+  }
+
+  const impersonation = isImpersonating(sessionUser)
+    ? toImpersonationSessionData(
+        activeSchool,
+        sessionUser.id,
+        sessionUser.impersonationMode ?? 'read_only',
+      )
+    : null;
+
+  return toAuthSessionData(user, activeSchool, impersonation);
 }

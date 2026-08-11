@@ -55,6 +55,16 @@ export const recomputeYearSummariesSchema = z.object({
   homeroomClassId: z.uuid('Lớp chủ nhiệm không hợp lệ').optional(),
 });
 
+export const updateYearSummaryNextHomeroomSchema = z.object({
+  nextHomeroomClassId: z
+    .uuid('Lớp năm sau không hợp lệ')
+    .nullable(),
+});
+
+export type UpdateYearSummaryNextHomeroomInput = z.infer<
+  typeof updateYearSummaryNextHomeroomSchema
+>;
+
 export const portalSummariesQuerySchema = z.object({
   semesterId: z.uuid('Học kỳ không hợp lệ').optional(),
   academicYearId: z.uuid('Năm học không hợp lệ').optional(),

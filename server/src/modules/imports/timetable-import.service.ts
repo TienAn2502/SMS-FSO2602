@@ -101,7 +101,11 @@ export class TimetableImportService {
       );
     }
 
-    const { entries, errors: resolvedErrors } = await this.resolveImportEntries(
+    const {
+      entries,
+      errors: resolvedErrors,
+      skippedNoAssignment,
+    } = await this.resolveImportEntries(
       schoolId,
       form.semesterId,
       sheetsWithCells,
@@ -110,6 +114,16 @@ export class TimetableImportService {
     const errors = [...resolvedErrors];
     if (errors.length > 0) {
       throw this.buildValidationException(errors);
+    }
+
+    if (entries.length === 0) {
+      throw new AppException(
+        'IMPORT_EMPTY',
+        skippedNoAssignment > 0
+          ? `Không import được tiết nào. Đã bỏ qua ${skippedNoAssignment} ô vì chưa có phân công GV ACTIVE — hãy phân công tại Phân công giảng dạy, rồi tải lại mẫu theo học kỳ.`
+          : 'File không có tiết học để import',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     errors.push(...this.validateDuplicateSlots(entries));
@@ -121,7 +135,6 @@ export class TimetableImportService {
       ...(await this.validateDatabaseConflicts(
         schoolId,
         form.semesterId,
-        form.mode,
         entries,
       )),
     );
@@ -132,7 +145,6 @@ export class TimetableImportService {
     const persisted = await this.persistEntries(
       schoolId,
       form.semesterId,
-      form.mode,
       entries,
     );
 
@@ -142,6 +154,7 @@ export class TimetableImportService {
       created: persisted.created,
       updated: persisted.updated,
       sheetsProcessed: sheetsWithCells.length,
+      skippedNoAssignment,
       errors: [],
     };
   }
@@ -187,9 +200,11 @@ export class TimetableImportService {
   ): Promise<{
     entries: ResolvedTimetableImportEntry[];
     errors: TimetableImportCellError[];
+    skippedNoAssignment: number;
   }> {
     const errors: TimetableImportCellError[] = [];
     const entries: ResolvedTimetableImportEntry[] = [];
+    let skippedNoAssignment = 0;
 
     const homeroomClasses = await this.prisma.homeroomClass.findMany({
       where: { schoolId, status: AcademicEntityStatus.ACTIVE },
@@ -202,6 +217,80 @@ export class TimetableImportService {
       ]),
     );
 
+    // Nguồn chính: phân công ACTIVE trong học kỳ → suy ra lớp môn + GV
+    const assignments = await this.prisma.teachingAssignment.findMany({
+      where: {
+        schoolId,
+        status: AcademicEntityStatus.ACTIVE,
+        courseSection: {
+          semesterId,
+          status: AcademicEntityStatus.ACTIVE,
+        },
+      },
+      select: {
+        teacherId: true,
+        courseSection: {
+          select: {
+            id: true,
+            code: true,
+            homeroomClassId: true,
+            gradeLevelSubject: {
+              select: {
+                subject: { select: { code: true, name: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    type AssignedSection = {
+      courseSectionId: string;
+      courseSectionCode: string;
+      teacherId: string;
+      homeroomClassId: string;
+      subjectCode: string;
+      subjectName: string;
+    };
+
+    const assignedByHomeroomSubjectCode = new Map<string, AssignedSection>();
+    const assignedByHomeroomSubjectName = new Map<string, AssignedSection>();
+    const assignedByHomeroomSectionCode = new Map<string, AssignedSection>();
+
+    for (const assignment of assignments) {
+      const section = assignment.courseSection;
+      if (!section.homeroomClassId) {
+        continue;
+      }
+
+      const subjectCode = section.gradeLevelSubject.subject.code.toUpperCase();
+      const subjectName = section.gradeLevelSubject.subject.name
+        .trim()
+        .toLowerCase();
+      const row: AssignedSection = {
+        courseSectionId: section.id,
+        courseSectionCode: section.code,
+        teacherId: assignment.teacherId,
+        homeroomClassId: section.homeroomClassId,
+        subjectCode,
+        subjectName,
+      };
+
+      assignedByHomeroomSubjectCode.set(
+        `${section.homeroomClassId}:${subjectCode}`,
+        row,
+      );
+      assignedByHomeroomSubjectName.set(
+        `${section.homeroomClassId}:${subjectName}`,
+        row,
+      );
+      assignedByHomeroomSectionCode.set(
+        `${section.homeroomClassId}:${section.code.toLowerCase()}`,
+        row,
+      );
+    }
+
+    // Lớp môn ACTIVE (kể cả chưa phân công) — để phân biệt "không có lớp môn" vs "chưa phân công"
     const courseSections = await this.prisma.courseSection.findMany({
       where: {
         schoolId,
@@ -212,48 +301,29 @@ export class TimetableImportService {
         id: true,
         code: true,
         homeroomClassId: true,
+        gradeLevelSubject: {
+          select: {
+            subject: { select: { code: true, name: true } },
+          },
+        },
       },
     });
-    const courseSectionByCode = new Map(
-      courseSections.map((section) => [section.code.toLowerCase(), section]),
-    );
-
-    const teachers = await this.prisma.teacher.findMany({
-      where: {
-        schoolId,
-        status: AcademicEntityStatus.ACTIVE,
-      },
-      select: {
-        id: true,
-        fullName: true,
-        user: { select: { email: true } },
-      },
-    });
-    const teacherByEmail = new Map<string, string>();
-    const teacherByFullName = new Map<string, string>();
-    for (const teacher of teachers) {
-      if (teacher.user?.email) {
-        teacherByEmail.set(teacher.user.email.toLowerCase(), teacher.id);
+    const sectionExistsByHomeroomSubject = new Set<string>();
+    const sectionExistsByHomeroomSectionCode = new Set<string>();
+    for (const section of courseSections) {
+      if (!section.homeroomClassId) {
+        continue;
       }
-      teacherByFullName.set(teacher.fullName.trim().toLowerCase(), teacher.id);
+      sectionExistsByHomeroomSubject.add(
+        `${section.homeroomClassId}:${section.gradeLevelSubject.subject.code.toUpperCase()}`,
+      );
+      sectionExistsByHomeroomSubject.add(
+        `${section.homeroomClassId}:${section.gradeLevelSubject.subject.name.trim().toLowerCase()}`,
+      );
+      sectionExistsByHomeroomSectionCode.add(
+        `${section.homeroomClassId}:${section.code.toLowerCase()}`,
+      );
     }
-
-    const assignments = await this.prisma.teachingAssignment.findMany({
-      where: {
-        schoolId,
-        status: AcademicEntityStatus.ACTIVE,
-        courseSection: { semesterId },
-      },
-      select: {
-        teacherId: true,
-        courseSectionId: true,
-      },
-    });
-    const assignmentKey = new Set(
-      assignments.map(
-        (assignment) => `${assignment.teacherId}:${assignment.courseSectionId}`,
-      ),
-    );
 
     for (const sheet of sheets) {
       if (!sheet.homeroomClassCode) {
@@ -288,7 +358,7 @@ export class TimetableImportService {
             periodNumber: cell.periodNumber,
             field: 'cell',
             message:
-              'Ô phải có ít nhất 2 dòng: ma_lop_mon và email_gv (hoặc họ tên GV)',
+              'Ô không hợp lệ — điền mã môn hoặc tên môn (tuỳ chọn thêm dòng phòng)',
           });
           continue;
         }
@@ -297,72 +367,61 @@ export class TimetableImportService {
           continue;
         }
 
-        const courseSection = courseSectionByCode.get(
-          parsedCell.courseSectionCode.toLowerCase(),
-        );
-        if (!courseSection) {
-          errors.push({
-            sheet: sheet.sheetName,
+        const key = parsedCell.subjectOrSectionKey.trim();
+        const assigned =
+          assignedByHomeroomSectionCode.get(
+            `${homeroomClass.id}:${key.toLowerCase()}`,
+          ) ??
+          assignedByHomeroomSubjectCode.get(
+            `${homeroomClass.id}:${key.toUpperCase()}`,
+          ) ??
+          assignedByHomeroomSubjectName.get(
+            `${homeroomClass.id}:${key.toLowerCase()}`,
+          );
+
+        if (assigned) {
+          entries.push({
+            sheetName: sheet.sheetName,
+            homeroomClassId: homeroomClass.id,
+            homeroomClassCode: homeroomClass.code,
+            courseSectionId: assigned.courseSectionId,
+            courseSectionCode: assigned.courseSectionCode,
+            teacherId: assigned.teacherId,
             dayOfWeek: cell.dayOfWeek,
             periodNumber: cell.periodNumber,
-            field: 'ma_lop_mon',
-            message: `Không tìm thấy lớp môn "${parsedCell.courseSectionCode}"`,
+            room: parsedCell.room,
           });
           continue;
         }
 
-        if (courseSection.homeroomClassId !== homeroomClass.id) {
-          errors.push({
-            sheet: sheet.sheetName,
-            dayOfWeek: cell.dayOfWeek,
-            periodNumber: cell.periodNumber,
-            field: 'ma_lop_mon',
-            message: `Lớp môn "${parsedCell.courseSectionCode}" không thuộc lớp HC ${homeroomClass.code}`,
-          });
+        const sectionExists =
+          sectionExistsByHomeroomSectionCode.has(
+            `${homeroomClass.id}:${key.toLowerCase()}`,
+          ) ||
+          sectionExistsByHomeroomSubject.has(
+            `${homeroomClass.id}:${key.toUpperCase()}`,
+          ) ||
+          sectionExistsByHomeroomSubject.has(
+            `${homeroomClass.id}:${key.toLowerCase()}`,
+          );
+
+        if (sectionExists) {
+          // Có lớp môn nhưng chưa có phân công → bỏ qua, không coi là lỗi
+          skippedNoAssignment += 1;
           continue;
         }
 
-        const teacherIdentifier = parsedCell.teacherIdentifier.toLowerCase();
-        const teacherId =
-          teacherByEmail.get(teacherIdentifier) ??
-          teacherByFullName.get(teacherIdentifier);
-        if (!teacherId) {
-          errors.push({
-            sheet: sheet.sheetName,
-            dayOfWeek: cell.dayOfWeek,
-            periodNumber: cell.periodNumber,
-            field: 'email_gv',
-            message: `Không tìm thấy giáo viên "${parsedCell.teacherIdentifier}"`,
-          });
-          continue;
-        }
-
-        if (!assignmentKey.has(`${teacherId}:${courseSection.id}`)) {
-          errors.push({
-            sheet: sheet.sheetName,
-            dayOfWeek: cell.dayOfWeek,
-            periodNumber: cell.periodNumber,
-            field: 'email_gv',
-            message: `Giáo viên chưa được phân công lớp môn "${parsedCell.courseSectionCode}"`,
-          });
-          continue;
-        }
-
-        entries.push({
-          sheetName: sheet.sheetName,
-          homeroomClassId: homeroomClass.id,
-          homeroomClassCode: homeroomClass.code,
-          courseSectionId: courseSection.id,
-          courseSectionCode: courseSection.code,
-          teacherId,
+        errors.push({
+          sheet: sheet.sheetName,
           dayOfWeek: cell.dayOfWeek,
           periodNumber: cell.periodNumber,
-          room: parsedCell.room,
+          field: 'mon',
+          message: `Không tìm thấy lớp môn / môn "${key}" (đã phân công) cho lớp ${homeroomClass.code}`,
         });
       }
     }
 
-    return { entries, errors };
+    return { entries, errors, skippedNoAssignment };
   }
 
   private validateDuplicateSlots(
@@ -394,8 +453,8 @@ export class TimetableImportService {
           sheet: entry.sheetName,
           dayOfWeek: entry.dayOfWeek,
           periodNumber: entry.periodNumber,
-          field: 'email_gv',
-          message: `Giáo viên đã có tiết khác trong file (${existingTeacherSlot.sheetName})`,
+          field: 'mon',
+          message: `Giáo viên (theo phân công) đã có tiết khác trong file (${existingTeacherSlot.sheetName})`,
         });
       } else {
         teacherSlot.set(teacherSlotKey, entry);
@@ -408,13 +467,11 @@ export class TimetableImportService {
   private async validateDatabaseConflicts(
     schoolId: string,
     semesterId: string,
-    mode: ImportTimetableFormInput['mode'],
     entries: ResolvedTimetableImportEntry[],
   ): Promise<TimetableImportCellError[]> {
-    const replacedHomeroomClassIds =
-      mode === 'replace'
-        ? new Set(entries.map((entry) => entry.homeroomClassId))
-        : new Set<string>();
+    const replacedHomeroomClassIds = new Set(
+      entries.map((entry) => entry.homeroomClassId),
+    );
 
     const activeEntries = await this.prisma.timetableEntry.findMany({
       where: {
@@ -440,7 +497,6 @@ export class TimetableImportService {
     for (const entry of entries) {
       for (const existing of activeEntries) {
         if (
-          mode === 'replace' &&
           existing.courseSection.homeroomClassId &&
           replacedHomeroomClassIds.has(existing.courseSection.homeroomClassId)
         ) {
@@ -464,7 +520,7 @@ export class TimetableImportService {
             sheet: entry.sheetName,
             dayOfWeek: entry.dayOfWeek,
             periodNumber: entry.periodNumber,
-            field: 'email_gv',
+            field: 'mon',
             message: 'Giáo viên đã có tiết học khác vào thứ và tiết này',
           });
           break;
@@ -478,26 +534,23 @@ export class TimetableImportService {
   private async persistEntries(
     schoolId: string,
     semesterId: string,
-    mode: ImportTimetableFormInput['mode'],
     entries: ResolvedTimetableImportEntry[],
   ): Promise<{ created: number; updated: number }> {
-    if (mode === 'replace') {
-      const homeroomClassIds = [
-        ...new Set(entries.map((entry) => entry.homeroomClassId)),
-      ];
+    const homeroomClassIds = [
+      ...new Set(entries.map((entry) => entry.homeroomClassId)),
+    ];
 
-      await this.prisma.timetableEntry.updateMany({
-        where: {
-          schoolId,
-          semesterId,
-          status: AcademicEntityStatus.ACTIVE,
-          courseSection: {
-            homeroomClassId: { in: homeroomClassIds },
-          },
+    await this.prisma.timetableEntry.updateMany({
+      where: {
+        schoolId,
+        semesterId,
+        status: AcademicEntityStatus.ACTIVE,
+        courseSection: {
+          homeroomClassId: { in: homeroomClassIds },
         },
-        data: { status: AcademicEntityStatus.INACTIVE },
-      });
-    }
+      },
+      data: { status: AcademicEntityStatus.INACTIVE },
+    });
 
     let created = 0;
     let updated = 0;
@@ -572,6 +625,7 @@ export class TimetableImportService {
         created: 0,
         updated: 0,
         sheetsProcessed: 0,
+        skippedNoAssignment: 0,
         errors,
       },
     );

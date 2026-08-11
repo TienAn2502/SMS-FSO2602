@@ -24,6 +24,7 @@ import {
 } from '@/features/files/api/files-api';
 import { getApiError } from '@/lib/api';
 import { getErrorMessage } from '@/lib/error-messages';
+import { SCHOOL_TYPE_LABELS } from '@/lib/labels';
 
 import {
   fetchCurrentSchool,
@@ -33,7 +34,6 @@ import {
 const schoolFormSchema = z.object({
   name: z.string().min(1, 'Tên trường là bắt buộc'),
   shortName: z.string().optional(),
-  schoolType: z.enum(['TH', 'THCS', 'THPT', 'OTHER']),
   email: z.string().email('Email không hợp lệ').or(z.literal('')),
   phone: z.string().optional(),
   address: z.string().optional(),
@@ -70,7 +70,6 @@ export function SchoolSettingsPage() {
       ? {
           name: schoolQuery.data.name,
           shortName: schoolQuery.data.shortName ?? '',
-          schoolType: schoolQuery.data.schoolType ?? 'THPT',
           email: schoolQuery.data.email ?? '',
           phone: schoolQuery.data.phone ?? '',
           address: schoolQuery.data.address ?? '',
@@ -87,7 +86,6 @@ export function SchoolSettingsPage() {
       reset({
         name: school.name,
         shortName: school.shortName ?? '',
-        schoolType: school.schoolType ?? 'THPT',
         email: school.email ?? '',
         phone: school.phone ?? '',
         address: school.address ?? '',
@@ -174,7 +172,6 @@ export function SchoolSettingsPage() {
     updateMutation.mutate({
       name: values.name,
       shortName: values.shortName || null,
-      schoolType: values.schoolType,
       email: values.email || null,
       phone: values.phone || null,
       address: values.address || null,
@@ -233,16 +230,19 @@ export function SchoolSettingsPage() {
 
             <div className='space-y-2'>
               <Label htmlFor='schoolType'>Loại trường</Label>
-              <select
+              <Input
                 id='schoolType'
-                className='flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm'
-                {...register('schoolType')}
-              >
-                <option value='TH'>Tiểu học</option>
-                <option value='THCS'>THCS</option>
-                <option value='THPT'>THPT</option>
-                <option value='OTHER'>Khác</option>
-              </select>
+                readOnly
+                disabled
+                value={
+                  schoolQuery.data?.schoolType
+                    ? SCHOOL_TYPE_LABELS[schoolQuery.data.schoolType]
+                    : '—'
+                }
+              />
+              <p className='text-xs text-muted-foreground'>
+                Loại trường do quản trị nền tảng thiết lập khi tạo trường
+              </p>
             </div>
 
             <div className='space-y-2'>

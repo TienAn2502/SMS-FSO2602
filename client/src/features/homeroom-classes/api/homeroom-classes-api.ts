@@ -36,6 +36,13 @@ export interface CreateHomeroomClassInput {
   homeroomTeacherId?: string | null;
 }
 
+export interface UpdateHomeroomClassInput {
+  name?: string;
+  code?: string;
+  capacity?: number | null;
+  homeroomTeacherId?: string | null;
+}
+
 export async function fetchHomeroomClasses(
   params: ListHomeroomClassesParams = {},
 ) {
@@ -46,11 +53,29 @@ export async function fetchHomeroomClasses(
   return { items: data.data, meta: data.meta };
 }
 
+export async function fetchHomeroomClass(id: string): Promise<HomeroomClass> {
+  const { data } = await api.get<ApiSuccessResponse<HomeroomClass>>(
+    `/homeroom-classes/${id}`,
+  );
+  return data.data;
+}
+
 export async function createHomeroomClass(
   input: CreateHomeroomClassInput,
 ): Promise<HomeroomClass> {
   const { data } = await api.post<ApiSuccessResponse<HomeroomClass>>(
     '/homeroom-classes',
+    input,
+  );
+  return data.data;
+}
+
+export async function updateHomeroomClass(
+  id: string,
+  input: UpdateHomeroomClassInput,
+): Promise<HomeroomClass> {
+  const { data } = await api.patch<ApiSuccessResponse<HomeroomClass>>(
+    `/homeroom-classes/${id}`,
     input,
   );
   return data.data;

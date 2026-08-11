@@ -213,6 +213,8 @@ Tất cả request đã auth — `schoolId` lấy từ JWT, **không** gửi t�
 > `gradeLevelId` bắt buộc khi **không** gắn `homeroomClassId` (lớp ghép).  
 > Hệ thống tự resolve `grade_level_subject_id` từ `subjectId` + khối (từ lớp HC hoặc `gradeLevelId`).
 
+**Import hàng loạt:** `POST /imports/course-sections` — mỗi sheet = một lớp HC; tạo record mới (xem `docs/api/sprint8-endpoints.md`). Tải mẫu kèm `semesterId`: khối 10 từ cấu hình môn; khối 11/12 ưu tiên môn HK2 năm trước trong DB.
+
 ---
 
 ## Query params chung (GET list)

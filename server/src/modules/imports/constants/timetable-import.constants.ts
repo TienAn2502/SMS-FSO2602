@@ -5,73 +5,163 @@ export const TIMETABLE_IMPORT_HEADER_MARKER = 'Tiết';
 export const TIMETABLE_IMPORT_TEMPLATE_FILENAME =
   'timetable-import-sample.xlsx';
 
-export const TIMETABLE_IMPORT_SAMPLE_CLASSES = [
-  {
-    code: '10A1',
-    name: '10A1',
-    academicYearName: '2025-2026',
-    semesterName: 'Học kỳ 1',
-    entries: [
-      {
-        dayOfWeek: 1,
-        periodNumber: 1,
-        courseSectionCode: 'TOAN-10A1',
-        teacherEmail: 'tranvanhung.import@demo.edu.vn',
-        room: 'P.101',
-      },
-      {
-        dayOfWeek: 1,
-        periodNumber: 2,
-        courseSectionCode: 'VAN-10A1',
-        teacherEmail: 'nguyenthilan.import@demo.edu.vn',
-        room: 'P.101',
-      },
-      {
-        dayOfWeek: 1,
-        periodNumber: 3,
-        courseSectionCode: 'ANH-10A1',
-        teacherEmail: 'lethimai.import@demo.edu.vn',
-        room: 'P.102',
-      },
-      {
-        dayOfWeek: 2,
-        periodNumber: 1,
-        courseSectionCode: 'LY-10A1',
-        teacherEmail: 'phamvanminh.import@demo.edu.vn',
-        room: 'P.201',
-      },
-    ],
-  },
-  {
-    code: '10A2',
-    name: '10A2',
-    academicYearName: '2025-2026',
-    semesterName: 'Học kỳ 1',
-    entries: [
-      {
-        dayOfWeek: 1,
-        periodNumber: 1,
-        courseSectionCode: 'TOAN-10A2',
-        teacherEmail: 'tranvanhung.import@demo.edu.vn',
-        room: 'P.103',
-      },
-      {
-        dayOfWeek: 1,
-        periodNumber: 2,
-        courseSectionCode: 'VAN-10A2',
-        teacherEmail: 'nguyenthilan.import@demo.edu.vn',
-        room: 'P.103',
-      },
-      {
-        dayOfWeek: 3,
-        periodNumber: 2,
-        courseSectionCode: 'HOA-10A2',
-        teacherEmail: 'lethimai.import@demo.edu.vn',
-        room: 'P.LAB1',
-      },
-    ],
-  },
+type SampleTimetableEntry = {
+  dayOfWeek: number;
+  periodNumber: number;
+  subjectCode: string;
+  room: string;
+};
+
+type SampleTimetableClass = {
+  code: string;
+  name: string;
+  academicYearName: string;
+  semesterName: string;
+  entries: SampleTimetableEntry[];
+};
+
+const SAMPLE_YEAR = '2026-2027';
+const SAMPLE_SEMESTER = 'Học kỳ 1';
+
+/** Môn xoay vòng trong mẫu (đủ sáng + chiều). */
+const SAMPLE_SUBJECTS = [
+  'TOAN',
+  'VAN',
+  'ANH',
+  'LY',
+  'HOA',
+  'SINH',
+  'SU',
+  'DIA',
+  'TIN',
+  'TD',
+  'CN',
+  'GDQP',
+  'GKTPL',
 ] as const;
+
+/** Tiết điền trong mẫu: cả sáng (1–5) và một phần chiều (6–8). */
+const SAMPLE_PERIODS = [1, 2, 3, 4, 5, 6, 7, 8] as const;
+
+/**
+ * Sinh TKB mẫu cho một lớp: mỗi ô chỉ ghi mã môn (không cần GV).
+ * GV được hệ thống lấy từ phân công khi import.
+ */
+export function buildSampleTimetableEntriesForClass(
+  classCode: string,
+  classIndex: number,
+): SampleTimetableEntry[] {
+  const room = `P.${100 + classIndex + 1}`;
+  const entries: SampleTimetableEntry[] = [];
+  let subjectCursor = classIndex % SAMPLE_SUBJECTS.length;
+
+  for (let day = 1; day <= 5; day += 1) {
+    for (const period of SAMPLE_PERIODS) {
+      const subject =
+        SAMPLE_SUBJECTS[subjectCursor % SAMPLE_SUBJECTS.length] ?? 'TOAN';
+      subjectCursor += 1;
+
+      entries.push({
+        dayOfWeek: day,
+        periodNumber: period,
+        subjectCode: subject,
+        room,
+      });
+    }
+  }
+
+  return entries;
+}
+
+function buildSampleClass(
+  code: string,
+  classIndex: number,
+): SampleTimetableClass {
+  return {
+    code,
+    name: code,
+    academicYearName: SAMPLE_YEAR,
+    semesterName: SAMPLE_SEMESTER,
+    entries: buildSampleTimetableEntriesForClass(code, classIndex),
+  };
+}
+
+/** Đủ lớp demo seed: 3 khối × 5 lớp, mỗi lớp có TKB mẫu đầy đủ. */
+export const TIMETABLE_IMPORT_SAMPLE_CLASSES: SampleTimetableClass[] = [
+  '10A1',
+  '10A2',
+  '10A3',
+  '10A4',
+  '10A5',
+  '11A1',
+  '11A2',
+  '11A3',
+  '11A4',
+  '11A5',
+  '12A1',
+  '12A2',
+  '12A3',
+  '12A4',
+  '12A5',
+].map((code, index) => buildSampleClass(code, index));
+
+/**
+ * Gợi ý TKB từ danh sách lớp môn đã có GV: mỗi lớp môn một tiết,
+ * ô chỉ ghi mã môn.
+ */
+export function suggestTimetableEntriesFromSections(
+  classCode: string,
+  sections: Array<{ subjectCode: string; teacherEmail: string }>,
+  classIndex = 0,
+): Array<{
+  dayOfWeek: number;
+  periodNumber: number;
+  subjectCode: string;
+  room: string | null;
+}> {
+  const withTeacher = sections.filter((row) => row.teacherEmail.trim());
+  if (withTeacher.length === 0) {
+    return [];
+  }
+
+  const room = `P.${classCode}`;
+  const entries: Array<{
+    dayOfWeek: number;
+    periodNumber: number;
+    subjectCode: string;
+    room: string | null;
+  }> = [];
+
+  const usedSlots = new Set<string>();
+
+  for (let i = 0; i < withTeacher.length; i += 1) {
+    const section = withTeacher[i];
+    if (!section) {
+      continue;
+    }
+
+    let placed = false;
+    for (let attempt = 0; attempt < 50 && !placed; attempt += 1) {
+      const offset = classIndex + i + attempt;
+      const dayOfWeek = (offset % 5) + 1;
+      const periodNumber = (Math.floor(offset / 5) % 10) + 1;
+      const slotKey = `${dayOfWeek}:${periodNumber}`;
+      if (usedSlots.has(slotKey)) {
+        continue;
+      }
+      usedSlots.add(slotKey);
+      entries.push({
+        dayOfWeek,
+        periodNumber,
+        subjectCode: section.subjectCode,
+        room,
+      });
+      placed = true;
+    }
+  }
+
+  return entries;
+}
 
 export const TIMETABLE_IMPORT_INSTRUCTION_LINES = [
   'Hướng dẫn import thời khóa biểu (TKB)',
@@ -80,18 +170,47 @@ export const TIMETABLE_IMPORT_INSTRUCTION_LINES = [
   '- Mỗi sheet = một lớp hành chính (ma trận Thứ x Tiết)',
   '- Dòng metadata: Lớp HC, Năm học, Học kỳ, Số tiết',
   '- Dòng header: Tiết | Thứ 2 | Thứ 3 | Thứ 4 | Thứ 5 | Thứ 6',
+  '- Mỗi ngày có 10 tiết: 1–5 sáng, 6–10 chiều',
   '',
-  'Nội dung mỗi ô (3 dòng):',
-  '  Dòng 1: ma_lop_mon (vd. VAN-10A2)',
-  '  Dòng 2: email_gv (vd. gv.van@demo.edu.vn)',
-  '  Dòng 3: phòng học (tuỳ chọn, vd. P.101)',
+  'Nội dung mỗi ô:',
+  '  Dòng 1 (bắt buộc): mã môn (TOAN) hoặc tên môn (Toán học) hoặc mã lớp môn (TOAN-10A1)',
+  '  Dòng 2 (tuỳ chọn): phòng học (vd. P.101)',
+  '  Không cần ghi giáo viên — hệ thống đối chiếu Phân công giảng dạy (ACTIVE) theo lớp HC + môn',
   '',
   'Quy tắc:',
   '- Chỉ hỗ trợ file .xlsx',
   '- Import vào học kỳ đã chọn trên form',
-  '- GV phải đã được phân công lớp môn tương ứng',
+  '- Ô có môn nhưng chưa phân công GV → bỏ qua (không báo lỗi)',
   '- Không trùng tiết trong cùng lớp môn hoặc lịch GV',
-  '- Chế độ replace: xóa TKB cũ của từng lớp HC trong file rồi ghi mới',
-  '- Chế độ merge: giữ tiết cũ, cập nhật/thêm tiết có trong file',
-  '- File mẫu tham khảo: docs/samples/timetable-import-sample.xlsx',
+  '- Import ghi đè TKB cũ của từng lớp HC có trong file (ô trống = không tạo tiết)',
+  '',
+  'Tải mẫu kèm học kỳ:',
+  '- Khối 11/12: ưu tiên TKB ACTIVE HK2 năm trước',
+  '- Khối 10 hoặc thiếu TKB năm trước: gợi ý lịch từ lớp môn đã phân công',
+  '',
+  'File mẫu tham khảo: docs/samples/timetable-import-sample.xlsx',
 ];
+
+export function buildTimetableImportInstructionLines(meta: {
+  academicYearName: string;
+  semesterLabel: string;
+  entryGradeCode: string | null;
+  totalClasses: number;
+  entryClassCount: number;
+  upperFilledClassCount: number;
+  upperEmptyClassCount: number;
+  suggestedClassCount: number;
+}): string[] {
+  return [
+    ...TIMETABLE_IMPORT_INSTRUCTION_LINES,
+    '',
+    `Năm học: ${meta.academicYearName}`,
+    `Học kỳ: ${meta.semesterLabel}`,
+    `Tổng ${meta.totalClasses} lớp HC.`,
+    meta.entryGradeCode
+      ? `Khối đầu cấp (${meta.entryGradeCode}): ${meta.entryClassCount} lớp.`
+      : `Khối đầu cấp: ${meta.entryClassCount} lớp.`,
+    `Khối trên lấy từ năm trước: ${meta.upperFilledClassCount} lớp; còn thiếu: ${meta.upperEmptyClassCount} lớp.`,
+    `Đã gợi ý lịch từ phân công hiện tại: ${meta.suggestedClassCount} lớp.`,
+  ];
+}

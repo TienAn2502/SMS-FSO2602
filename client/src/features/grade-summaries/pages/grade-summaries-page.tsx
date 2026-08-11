@@ -22,6 +22,7 @@ import {
 import { SemesterFinalizePanel } from '@/features/grade-summaries/components/semester-finalize-panel';
 import { GradeSummariesExportActions } from '@/features/grade-summaries/components/grade-summaries-export-actions';
 import { YearFinalizePanel } from '@/features/grade-summaries/components/year-finalize-panel';
+import { YearNextEnrollmentsPanel } from '@/features/grade-summaries/components/year-next-enrollments-panel';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { useCourseSectionListFilters } from '@/features/course-sections/hooks/use-course-section-list-filters';
 import { getApiError } from '@/lib/api';
@@ -379,13 +380,21 @@ export function GradeSummariesPage() {
       ) : null}
 
       {tab === 'year' && yearFilter ? (
-        <YearFinalizePanel
-          academicYearId={yearFilter}
-          disabledReason={
-            promotionFinalizeState.disabled ? promotionFinalizeState.reason : null
-          }
-          onSelectHomeroom={setHomeroomClassId}
-        />
+        <>
+          <YearFinalizePanel
+            academicYearId={yearFilter}
+            disabledReason={
+              promotionFinalizeState.disabled
+                ? promotionFinalizeState.reason
+                : null
+            }
+            onSelectHomeroom={setHomeroomClassId}
+          />
+          <YearNextEnrollmentsPanel
+            sourceAcademicYearId={yearFilter}
+            homeroomClassId={homeroomClassId || undefined}
+          />
+        </>
       ) : null}
 
       {tab === 'semester' && selectedSemesterName ? (

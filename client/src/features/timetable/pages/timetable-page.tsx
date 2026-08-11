@@ -44,7 +44,7 @@ const createSchema = z.object({
   courseSectionId: z.string().uuid(),
   teacherId: z.string().uuid(),
   dayOfWeek: z.number().int().min(1).max(5),
-  periodNumber: z.number().int().min(1).max(12),
+  periodNumber: z.number().int().min(1).max(10),
   room: z.string().optional(),
 });
 
@@ -276,12 +276,18 @@ export function TimetablePage() {
               </div>
               <div className='space-y-2'>
                 <Label>Tiết</Label>
-                <Input
-                  type='number'
-                  min={1}
-                  max={12}
+                <select
+                  className={selectClassName}
                   {...register('periodNumber', { valueAsNumber: true })}
-                />
+                >
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((period) => (
+                    <option key={period} value={period}>
+                      {period <= 5
+                        ? `Tiết ${period} (Sáng)`
+                        : `Tiết ${period} (Chiều)`}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className='space-y-2'>
                 <Label>Phòng</Label>

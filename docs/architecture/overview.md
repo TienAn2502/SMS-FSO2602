@@ -135,6 +135,9 @@ Không kiểm tra R2 trong mọi health check request.
 | **6** | Sổ điểm — [sprint-6-plan.md](../sprints/sprint-6-plan.md) |
 | **7** | Tổng kết, hạnh kiểm, học lực, lên lớp — [sprint-7-plan.md](../sprints/sprint-7-plan.md) |
 | 8 | Báo cáo import/export (XLSX, CSV, PDF), CI/CD, deployment — [sprint-8-plan.md](../sprints/sprint-8-plan.md) |
+| **9** | Platform 1: onboard tenant, CRUD trường — [sprint-9-plan.md](../sprints/sprint-9-plan.md) |
+| **10** | Platform 2: impersonation, audit, monitoring — [sprint-10-plan.md](../sprints/sprint-10-plan.md) |
+| **11** | Platform 3: quota, feature flags, billing (tuỳ chọn) — [sprint-11-plan.md](../sprints/sprint-11-plan.md) |
 
 Chi tiết Sprint 1: [sprint-1-plan.md](../sprints/sprint-1-plan.md)  
 Chi tiết Sprint 2: [sprint-2-plan.md](../sprints/sprint-2-plan.md)  
@@ -143,4 +146,5 @@ Chi tiết Sprint 4: [sprint-4-plan.md](../sprints/sprint-4-plan.md)
 Chi tiết Sprint 5: [sprint-5-plan.md](../sprints/sprint-5-plan.md)  
 Chi tiết Sprint 6: [sprint-6-plan.md](../sprints/sprint-6-plan.md)  
 Chi tiết Sprint 7: [sprint-7-plan.md](../sprints/sprint-7-plan.md)  
-Chi tiết Sprint 8: [sprint-8-plan.md](../sprints/sprint-8-plan.md)
+Chi tiết Sprint 8: [sprint-8-plan.md](../sprints/sprint-8-plan.md)  
+Chi tiết Sprint 9–11: [sprint-9-plan.md](../sprints/sprint-9-plan.md), [sprint-10-plan.md](../sprints/sprint-10-plan.md), [sprint-11-plan.md](../sprints/sprint-11-plan.md)

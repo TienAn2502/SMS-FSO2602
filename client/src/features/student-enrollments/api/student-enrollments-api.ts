@@ -184,3 +184,60 @@ export async function syncStaleEnrollments(
   >('/student-enrollments/sync-stale', input);
   return data.data;
 }
+
+export interface FromYearPromotionsPreview {
+  sourceAcademicYearId: string;
+  sourceAcademicYearName: string;
+  targetSemesterId: string;
+  targetSemesterCode: string;
+  targetAcademicYearId: string;
+  eligibleCount: number;
+  wouldCreateCount: number;
+  skippedExistingCount: number;
+  missingNextClassCount: number;
+  invalidNextClassCount: number;
+  graduatedSkippedCount: number;
+  retainedSkippedCount: number;
+}
+
+export interface CreateFromYearPromotionsInput {
+  sourceAcademicYearId: string;
+  targetSemesterId: string;
+  enrolledAt?: string;
+  note?: string;
+}
+
+export interface CreateFromYearPromotionsResult {
+  sourceAcademicYearId: string;
+  sourceAcademicYearName: string;
+  targetSemesterId: string;
+  targetSemesterCode: string;
+  targetAcademicYearId: string;
+  eligibleCount: number;
+  createdCount: number;
+  skippedExistingCount: number;
+  missingNextClassCount: number;
+  invalidNextClassCount: number;
+  graduatedSkippedCount: number;
+  retainedSkippedCount: number;
+}
+
+export async function previewEnrollmentsFromYearPromotions(params: {
+  sourceAcademicYearId: string;
+  targetSemesterId: string;
+}): Promise<FromYearPromotionsPreview> {
+  const { data } = await api.get<ApiSuccessResponse<FromYearPromotionsPreview>>(
+    '/student-enrollments/from-year-promotions/preview',
+    { params },
+  );
+  return data.data;
+}
+
+export async function createEnrollmentsFromYearPromotions(
+  input: CreateFromYearPromotionsInput,
+): Promise<CreateFromYearPromotionsResult> {
+  const { data } = await api.post<
+    ApiSuccessResponse<CreateFromYearPromotionsResult>
+  >('/student-enrollments/from-year-promotions', input);
+  return data.data;
+}

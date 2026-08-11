@@ -163,7 +163,34 @@ export async function seedTeachingAssignmentsAndTimetable(
   schoolId: string,
   semesterId: string,
   assignAt: Date,
+  options?: { replaceExisting?: boolean },
 ): Promise<TeachingTimetableSeedResult> {
+  const replaceExisting = options?.replaceExisting ?? false;
+
+  if (replaceExisting) {
+    await prisma.timetableEntry.deleteMany({ where: { schoolId, semesterId } });
+    await prisma.teachingAssignment.deleteMany({
+      where: {
+        schoolId,
+        courseSection: { semesterId },
+      },
+    });
+  } else {
+    const [existingAssignments, existingTimetable] = await Promise.all([
+      prisma.teachingAssignment.count({
+        where: { schoolId, courseSection: { semesterId } },
+      }),
+      prisma.timetableEntry.count({ where: { schoolId, semesterId } }),
+    ]);
+
+    if (existingAssignments > 0 || existingTimetable > 0) {
+      return {
+        assignmentCount: 0,
+        timetableCount: 0,
+      };
+    }
+  }
+
   const [teachers, courseSections, homeroomClasses] = await Promise.all([
     prisma.teacher.findMany({
       where: { schoolId, status: AcademicEntityStatus.ACTIVE },
@@ -182,6 +209,15 @@ export async function seedTeachingAssignmentsAndTimetable(
     }),
   ]);
 
+  if (courseSections.length === 0) {
+    throw new Error(
+      'Không có lớp môn ACTIVE trong học kỳ — cần seed lớp môn trước',
+    );
+  }
+
+  if (teachers.length === 0) {
+    throw new Error('Không có giáo viên ACTIVE — cần seed giáo viên trước');
+  }
   const teachersBySubject = buildTeachersBySubjectIndex(teachers);
   const classIndexById = buildHomeroomClassIndexMap(homeroomClasses);
 

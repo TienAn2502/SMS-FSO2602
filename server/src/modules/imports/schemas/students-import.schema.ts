@@ -33,7 +33,7 @@ export const studentImportRowSchema = z.object({
   gioi_tinh: genderSchema.optional(),
   email: z.email('Email không đúng định dạng').optional(),
   mat_khau: z.string().min(8, 'Mật khẩu phải có ít nhất 8 ký tự').optional(),
-  ma_lop_hc: z.string().trim().min(1, 'Mã lớp HC là bắt buộc').max(50),
+  ma_lop_hc: z.string().trim().max(50).optional(),
   external_code: z.string().trim().max(50).optional(),
 });
 

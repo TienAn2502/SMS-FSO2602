@@ -1,8 +1,11 @@
+import type { UserRole } from '@/types/api.types';
+
 export const ROUTES = {
     login: '/login',
     home: '/',
     users: '/users',
     schoolSettings: '/school-settings',
+    changePassword: '/account/change-password',
     academicYears: '/academic-years',
     gradeLevels: '/grade-levels',
     gradeLevelSubjects: '/grade-level-subjects',
@@ -10,6 +13,7 @@ export const ROUTES = {
     homeroomClasses: '/homeroom-classes',
     courseSections: '/course-sections',
     students: '/students',
+    classPlacement: '/class-placement',
     studentEnrollments: '/student-enrollments',
     teachers: '/teachers',
     teachingAssignments: '/teaching-assignments',
@@ -28,17 +32,23 @@ export const ROUTES = {
     portalMyCourseSections: '/portal/my-course-sections',
     attendanceSessions: '/attendance-sessions',
     assessments: '/assessments',
-  assessmentsSection: '/assessments/sections',
+    assessmentsSection: '/assessments/sections',
     gradeSummaries: '/grade-summaries',
+    platform: '/platform',
+    platformSchools: '/platform/schools',
     portalMySummaries: '/portal/my-summaries',
     portalHomeroomConduct: '/portal/my-homeroom/conduct-records',
     portalHomeroomSummaries: '/portal/my-homeroom/summaries',
 } as const;
 
-export function getDefaultRouteForRole(
-    role: 'SCHOOL_ADMIN' | 'TEACHER' | 'STUDENT' | 'PARENT',
-): string {
+export function getPlatformSchoolDetailPath(id: string): string {
+    return `${ROUTES.platformSchools}/${id}`;
+}
+
+export function getDefaultRouteForRole(role: UserRole): string {
     switch (role) {
+        case 'SYSTEM_ADMIN':
+            return ROUTES.platform;
         case 'TEACHER':
         case 'STUDENT':
         case 'PARENT':

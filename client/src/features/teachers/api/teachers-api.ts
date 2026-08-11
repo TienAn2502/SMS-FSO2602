@@ -27,6 +27,7 @@ export interface Teacher {
   phone: string | null;
   address: string | null;
   specialization: string | null;
+  externalCode: string | null;
   avatarFileId: string | null;
   status: AcademicEntityStatus;
   teachingAssignments: TeachingAssignmentSummary[];
@@ -37,6 +38,8 @@ export interface ListTeachersParams {
   limit?: number;
   search?: string;
   status?: AcademicEntityStatus;
+  availableAsHomeroomForAcademicYearId?: string;
+  excludeHomeroomClassId?: string;
 }
 
 export interface CreateTeacherInput {
@@ -46,7 +49,7 @@ export interface CreateTeacherInput {
   phone?: string;
   address?: string;
   specialization?: string;
-  account?: { email: string; password: string };
+  createLogin?: boolean;
 }
 
 export interface UpdateTeacherInput {
@@ -65,8 +68,14 @@ export async function fetchTeachers(params: ListTeachersParams = {}) {
   return { items: data.data, meta: data.meta };
 }
 
-export async function fetchAllTeachers() {
-  const { items } = await fetchTeachers({ limit: 100, status: 'ACTIVE' });
+export async function fetchAllTeachers(
+  params: Omit<ListTeachersParams, 'page' | 'limit'> = {},
+) {
+  const { items } = await fetchTeachers({
+    limit: 100,
+    status: 'ACTIVE',
+    ...params,
+  });
   return items;
 }
 
@@ -102,13 +111,10 @@ export async function updateTeacherStatus(
   return data.data;
 }
 
-export async function createTeacherUser(
-  id: string,
-  input: { email: string; password: string },
-): Promise<Teacher> {
+export async function createTeacherUser(id: string): Promise<Teacher> {
   const { data } = await api.post<ApiSuccessResponse<Teacher>>(
     `/teachers/${id}/create-user`,
-    input,
+    {},
   );
   return data.data;
 }

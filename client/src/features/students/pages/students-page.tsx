@@ -61,25 +61,14 @@ const createSchema = z
         phone: z.string().trim().optional(),
         address: z.string().trim().optional(),
         createAccount: z.boolean().optional(),
-        email: z.string().optional(),
-        password: z.string().optional(),
     })
     .superRefine((values, ctx) => {
-        if (values.createAccount) {
-            if (!values.email?.trim()) {
-                ctx.addIssue({
-                    code: 'custom',
-                    message: 'Email là bắt buộc khi tạo tài khoản',
-                    path: ['email'],
-                });
-            }
-            if (!values.password || values.password.length < 8) {
-                ctx.addIssue({
-                    code: 'custom',
-                    message: 'Mật khẩu phải có ít nhất 8 ký tự',
-                    path: ['password'],
-                });
-            }
+        if (values.createAccount && !values.dateOfBirth?.trim()) {
+            ctx.addIssue({
+                code: 'custom',
+                message: 'Ngày sinh là bắt buộc khi tạo tài khoản',
+                path: ['dateOfBirth'],
+            });
         }
     });
 
@@ -138,17 +127,19 @@ export function StudentsPage() {
             return;
         }
 
+        filtersInitializedRef.current = true;
+
         if (!years.length) {
             setFiltersReady(true);
             return;
         }
 
-        const currentYear = years.find((year) => year.isCurrent);
-        filtersInitializedRef.current = true;
+        const defaultYear =
+            years.find((year) => year.isCurrent) ?? years[0] ?? null;
 
-        if (currentYear) {
+        if (defaultYear) {
             setColumnFilters([
-                { id: 'academicYearId', value: currentYear.id },
+                { id: 'academicYearId', value: defaultYear.id },
             ]);
         }
 
@@ -159,7 +150,7 @@ export function StudentsPage() {
         queryKey: [
             'homeroom-classes',
             session?.activeSchoolId,
-            'filter',
+            'students-filter',
             yearFilter,
         ],
         queryFn: () =>
@@ -219,8 +210,6 @@ export function StudentsPage() {
             phone: '',
             address: '',
             createAccount: false,
-            email: '',
-            password: '',
         },
     });
 
@@ -358,7 +347,39 @@ export function StudentsPage() {
 
     const items = listQuery.data?.items ?? [];
     const filtersActive = hasColumnFilters(columnFilters, globalFilter);
-    const classes = classesQuery.data?.items ?? [];
+    // Chỉ lấy lớp HC của năm đã chọn (không lẫn lớp năm khác / cache cũ)
+    const classes = yearFilter
+        ? (classesQuery.data?.items ?? []).filter(
+              (row) => row.academicYearId === yearFilter,
+          )
+        : [];
+
+    useEffect(() => {
+        if (!classFilter) {
+            return;
+        }
+        if (!yearFilter) {
+            setColumnFilters((prev) =>
+                setColumnFilterValue(prev, 'homeroomClassId', undefined),
+            );
+            return;
+        }
+        if (classesQuery.isFetching || classesQuery.isLoading) {
+            return;
+        }
+        const belongsToYear = classes.some((row) => row.id === classFilter);
+        if (!belongsToYear) {
+            setColumnFilters((prev) =>
+                setColumnFilterValue(prev, 'homeroomClassId', undefined),
+            );
+        }
+    }, [
+        yearFilter,
+        classFilter,
+        classes,
+        classesQuery.isFetching,
+        classesQuery.isLoading,
+    ]);
 
     return (
         <div className='space-y-6'>
@@ -393,15 +414,8 @@ export function StudentsPage() {
                                     gender: values.gender,
                                     phone: values.phone || undefined,
                                     address: values.address || undefined,
-                                    ...(values.createAccount &&
-                                    values.email &&
-                                    values.password
-                                        ? {
-                                              account: {
-                                                  email: values.email,
-                                                  password: values.password,
-                                              },
-                                          }
+                                    ...(values.createAccount
+                                        ? { createLogin: true }
                                         : {}),
                                 }),
                             )}
@@ -425,6 +439,11 @@ export function StudentsPage() {
                                     type='date'
                                     {...register('dateOfBirth')}
                                 />
+                                {errors.dateOfBirth ? (
+                                    <p className='text-sm text-destructive'>
+                                        {errors.dateOfBirth.message}
+                                    </p>
+                                ) : null}
                             </div>
                             <div className='space-y-2'>
                                 <Label htmlFor='gender'>Giới tính</Label>
@@ -453,48 +472,24 @@ export function StudentsPage() {
                                 <Label htmlFor='address'>Địa chỉ</Label>
                                 <Input id='address' {...register('address')} />
                             </div>
-                            <div className='flex items-center gap-2 md:col-span-2'>
-                                <input
-                                    id='createAccount'
-                                    type='checkbox'
-                                    {...register('createAccount')}
-                                />
-                                <Label htmlFor='createAccount'>
-                                    Tạo tài khoản đăng nhập
-                                </Label>
+                            <div className='space-y-2 md:col-span-2'>
+                                <div className='flex items-center gap-2'>
+                                    <input
+                                        id='createAccount'
+                                        type='checkbox'
+                                        {...register('createAccount')}
+                                    />
+                                    <Label htmlFor='createAccount'>
+                                        Tạo tài khoản đăng nhập
+                                    </Label>
+                                </div>
+                                {createAccount ? (
+                                    <p className='text-sm text-muted-foreground'>
+                                        Đăng nhập bằng mã HS vừa cấp. Mật khẩu
+                                        mặc định: mã HS + ngày sinh (YYYYMMDD).
+                                    </p>
+                                ) : null}
                             </div>
-                            {createAccount ? (
-                                <>
-                                    <div className='space-y-2'>
-                                        <Label htmlFor='email'>Email</Label>
-                                        <Input
-                                            id='email'
-                                            type='email'
-                                            {...register('email')}
-                                        />
-                                        {errors.email ? (
-                                            <p className='text-sm text-destructive'>
-                                                {errors.email.message}
-                                            </p>
-                                        ) : null}
-                                    </div>
-                                    <div className='space-y-2'>
-                                        <Label htmlFor='password'>
-                                            Mật khẩu
-                                        </Label>
-                                        <Input
-                                            id='password'
-                                            type='password'
-                                            {...register('password')}
-                                        />
-                                        {errors.password ? (
-                                            <p className='text-sm text-destructive'>
-                                                {errors.password.message}
-                                            </p>
-                                        ) : null}
-                                    </div>
-                                </>
-                            ) : null}
                             <div className='md:col-span-2'>
                                 <Button type='submit' disabled={isSubmitting}>
                                     {isSubmitting
@@ -585,12 +580,12 @@ export function StudentsPage() {
                             <select
                                 id='stu-semester'
                                 className={selectClassName}
-                                value={semesterFilter ?? ''}
+                                value={yearFilter ? (semesterFilter ?? '') : ''}
                                 disabled={!yearFilter}
                                 onChange={(e) => {
-                                    setColumnFilters(
+                                    setColumnFilters((prev) =>
                                         setColumnFilterValue(
-                                            columnFilters,
+                                            prev,
                                             'semesterId',
                                             e.target.value || undefined,
                                         ),
@@ -598,7 +593,11 @@ export function StudentsPage() {
                                     setPage(1);
                                 }}
                             >
-                                <option value=''>Tất cả</option>
+                                <option value=''>
+                                    {yearFilter
+                                        ? 'Tất cả'
+                                        : 'Chọn năm học trước'}
+                                </option>
                                 {semesters.map((semester) => (
                                     <option key={semester.id} value={semester.id}>
                                         {semester.name}
@@ -611,12 +610,12 @@ export function StudentsPage() {
                             <select
                                 id='stu-class'
                                 className={selectClassName}
-                                value={classFilter ?? ''}
+                                value={yearFilter ? (classFilter ?? '') : ''}
                                 disabled={!yearFilter}
                                 onChange={(e) => {
-                                    setColumnFilters(
+                                    setColumnFilters((prev) =>
                                         setColumnFilterValue(
-                                            columnFilters,
+                                            prev,
                                             'homeroomClassId',
                                             e.target.value || undefined,
                                         ),
@@ -624,7 +623,11 @@ export function StudentsPage() {
                                     setPage(1);
                                 }}
                             >
-                                <option value=''>Tất cả</option>
+                                <option value=''>
+                                    {yearFilter
+                                        ? 'Tất cả'
+                                        : 'Chọn năm học trước'}
+                                </option>
                                 {classes.map((c) => (
                                     <option key={c.id} value={c.id}>
                                         {c.code}

@@ -139,8 +139,12 @@ export function TeachingAssignmentImportSheet({
     mutationFn: importTeachingAssignments,
     onSuccess: (result) => {
       setImportErrors([]);
+      const skipped =
+        result.skippedEmptyEmail && result.skippedEmptyEmail > 0
+          ? `, bỏ qua ${result.skippedEmptyEmail} dòng trống email`
+          : '';
       toast.success(
-        `Import thành công ${result.successCount} phân công (${result.created} mới, ${result.updated} cập nhật)`,
+        `Import thành công ${result.successCount} phân công (${result.created} mới, ${result.updated} cập nhật${skipped})`,
       );
       onSuccess();
       onOpenChange(false);
@@ -194,8 +198,9 @@ export function TeachingAssignmentImportSheet({
         <SheetHeader>
           <SheetTitle>Import phân công giảng dạy từ Excel</SheetTitle>
           <SheetDescription>
-            Tải file mẫu, điền dữ liệu rồi chọn file để import vào học kỳ đã
-            chọn.
+            Chọn học kỳ rồi tải mẫu: đủ lớp môn của học kỳ — khối 11/12 điền GV
+            từ HK2 năm trước; khối 10 để trống email (điền mới hoặc để trống —
+            dòng trống email sẽ bỏ qua khi import).
           </SheetDescription>
         </SheetHeader>
 
@@ -242,8 +247,14 @@ export function TeachingAssignmentImportSheet({
             <Button
               type='button'
               variant='outline'
-              disabled={templateMutation.isPending}
-              onClick={() => templateMutation.mutate()}
+              disabled={templateMutation.isPending || !semesterId}
+              onClick={() => {
+                if (!semesterId) {
+                  toast.error('Vui lòng chọn học kỳ trước khi tải mẫu');
+                  return;
+                }
+                templateMutation.mutate();
+              }}
             >
               <DownloadIcon className='size-4' />
               Tải file mẫu

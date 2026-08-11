@@ -24,6 +24,7 @@ export const TEACHER_IMPORT_INSTRUCTION_LINES = [
   'Quy tắc:',
   '- Nếu có email: tạo/cập nhật theo email (mat_khau tuỳ chọn; bỏ trống dùng mật khẩu mặc định hệ thống)',
   '- Không có email: luôn tạo hồ sơ giáo viên mới',
+  '- Mã GV (GV-{số}) được hệ thống tự cấp khi tạo mới',
 ];
 
 export const TEACHER_IMPORT_SAMPLE_ROWS: Record<string, string>[] = [

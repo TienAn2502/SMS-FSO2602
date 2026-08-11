@@ -5,7 +5,8 @@
   "testRegex": ".e2e-spec.ts$",
   "setupFiles": ["<rootDir>/setup-env.ts"],
   "moduleNameMapper": {
-    "^@/(.*)$": "<rootDir>/../src/$1"
+    "^@/(.*)$": "<rootDir>/../src/$1",
+    "^puppeteer$": "<rootDir>/__mocks__/puppeteer.ts"
   },
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"

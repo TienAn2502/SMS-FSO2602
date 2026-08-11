@@ -12,6 +12,7 @@ export interface ImportResult {
   errorCount: number;
   created: number;
   updated: number;
+  skippedEmptyEmail?: number;
   errors: ImportRowError[];
 }
 
@@ -203,16 +204,30 @@ export async function importTeachingAssignments(
   return data.data;
 }
 
-export type TimetableImportMode = 'replace' | 'merge';
-
 export interface ImportTimetableInput {
   file: File;
   semesterId: string;
-  mode?: TimetableImportMode;
 }
 
 export interface TimetableImportResult extends ImportResult {
   sheetsProcessed: number;
+  skippedNoAssignment?: number;
+}
+
+export async function downloadTimetableImportTemplate(
+  semesterId?: string,
+): Promise<void> {
+  const response = await api.get('/imports/templates/timetable', {
+    params: semesterId ? { semesterId } : undefined,
+    responseType: 'blob',
+  });
+
+  const url = URL.createObjectURL(response.data);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = 'mau-import-thoi-khoa-bieu.xlsx';
+  anchor.click();
+  URL.revokeObjectURL(url);
 }
 
 export async function importTimetable(
@@ -221,7 +236,6 @@ export async function importTimetable(
   const formData = new FormData();
   formData.append('file', input.file);
   formData.append('semesterId', input.semesterId);
-  formData.append('mode', input.mode ?? 'replace');
 
   const { data } = await api.post<ApiSuccessResponse<TimetableImportResult>>(
     '/imports/timetable',

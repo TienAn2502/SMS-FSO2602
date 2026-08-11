@@ -24,12 +24,12 @@ describe('student import utils', () => {
           field: 'ngay_sinh',
           message: 'Thiếu cột bắt buộc "ngay_sinh"',
         },
-        {
-          row: 1,
-          field: 'ma_lop_hc',
-          message: 'Thiếu cột bắt buộc "ma_lop_hc"',
-        },
       ]);
+    });
+
+    it('allows missing ma_lop_hc column', () => {
+      const errors = validateStudentImportHeaders(['ho_ten', 'ngay_sinh']);
+      expect(errors).toEqual([]);
     });
   });
 });

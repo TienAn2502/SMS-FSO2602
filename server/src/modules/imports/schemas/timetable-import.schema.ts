@@ -14,19 +14,24 @@ export interface TimetableImportResult {
   created: number;
   updated: number;
   sheetsProcessed: number;
+  /** Ô có môn nhưng chưa có phân công ACTIVE → bỏ qua, không coi là lỗi. */
+  skippedNoAssignment: number;
   errors: TimetableImportCellError[];
 }
 
-export const timetableImportModeSchema = z.enum(['replace', 'merge']);
-
-export type TimetableImportMode = z.infer<typeof timetableImportModeSchema>;
-
 export const importTimetableFormSchema = z.object({
   semesterId: z.uuid('Học kỳ không hợp lệ'),
-  mode: timetableImportModeSchema.default('replace'),
 });
 
 export type ImportTimetableFormInput = z.infer<typeof importTimetableFormSchema>;
+
+export const timetableImportTemplateQuerySchema = z.object({
+  semesterId: z.uuid().optional(),
+});
+
+export type TimetableImportTemplateQuery = z.infer<
+  typeof timetableImportTemplateQuerySchema
+>;
 
 export interface ResolvedTimetableImportEntry {
   sheetName: string;

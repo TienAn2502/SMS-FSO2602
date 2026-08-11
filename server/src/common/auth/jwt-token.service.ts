@@ -41,4 +41,14 @@ export class JwtTokenService {
       secret: this.configService.get('JWT_REFRESH_SECRET', { infer: true }),
     });
   }
+
+  decodeAccessToken(token: string): AccessTokenPayload | null {
+    const decoded = this.jwtService.decode(token);
+
+    if (!decoded || typeof decoded !== 'object' || !('sub' in decoded)) {
+      return null;
+    }
+
+    return decoded as AccessTokenPayload;
+  }
 }

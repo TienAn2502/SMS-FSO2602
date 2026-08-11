@@ -9,6 +9,7 @@ import type { UserRole } from '@prisma/client';
 import type { Request } from 'express';
 
 import { ROLES_KEY } from '@/common/auth/auth.constants';
+import { hasEffectiveRole } from '@/common/auth/impersonation.util';
 import { AppException } from '@/common/exceptions/app.exception';
 
 // Check role xem có hợp lệ không
@@ -37,7 +38,8 @@ export class RolesGuard implements CanActivate {
       );
     }
 
-    if (!requiredRoles.includes(user.role)) {
+    //  Check xem có phải system admin không
+    if (!requiredRoles.some((role) => hasEffectiveRole(user, role))) {
       throw new AppException(
         'FORBIDDEN',
         'Bạn không có quyền thực hiện thao tác này',

@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { UploadIcon } from 'lucide-react';
+import { DownloadIcon, UploadIcon } from 'lucide-react';
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { toast } from 'sonner';
 
@@ -20,9 +20,9 @@ import {
 } from '@/features/academic-years/api/academic-years-api';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import {
+  downloadTimetableImportTemplate,
   importTimetable,
   type ImportRowError,
-  type TimetableImportMode,
 } from '@/features/imports/api/imports-api';
 import { getApiError } from '@/lib/api';
 import { getErrorMessage } from '@/lib/error-messages';
@@ -66,7 +66,6 @@ export function TimetableImportSheet({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [academicYearId, setAcademicYearId] = useState('');
   const [semesterId, setSemesterId] = useState('');
-  const [mode, setMode] = useState<TimetableImportMode>('replace');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [importErrors, setImportErrors] = useState<ImportRowError[]>([]);
 
@@ -129,7 +128,6 @@ export function TimetableImportSheet({
     if (!open) {
       setSelectedFile(null);
       setImportErrors([]);
-      setMode('replace');
       setAcademicYearId('');
       setSemesterId('');
       if (fileInputRef.current) {
@@ -142,8 +140,12 @@ export function TimetableImportSheet({
     mutationFn: importTimetable,
     onSuccess: (result) => {
       setImportErrors([]);
+      const skipped =
+        result.skippedNoAssignment && result.skippedNoAssignment > 0
+          ? `, bỏ qua ${result.skippedNoAssignment} ô chưa phân công GV`
+          : '';
       toast.success(
-        `Import thành công ${result.successCount} tiết (${result.created} mới, ${result.updated} cập nhật, ${result.sheetsProcessed} lớp)`,
+        `Import thành công ${result.successCount} tiết (${result.created} mới, ${result.updated} cập nhật, ${result.sheetsProcessed} lớp${skipped})`,
       );
       onSuccess();
       onOpenChange(false);
@@ -159,6 +161,22 @@ export function TimetableImportSheet({
         getErrorMessage(
           apiError?.code,
           apiError?.message ?? 'Import TKB thất bại',
+        ),
+      );
+    },
+  });
+
+  const templateMutation = useMutation({
+    mutationFn: () => downloadTimetableImportTemplate(semesterId || undefined),
+    onSuccess: () => {
+      toast.success('Đã tải file mẫu TKB');
+    },
+    onError: (error) => {
+      const apiError = getApiError(error);
+      toast.error(
+        getErrorMessage(
+          apiError?.code,
+          apiError?.message ?? 'Không tải được file mẫu',
         ),
       );
     },
@@ -188,7 +206,6 @@ export function TimetableImportSheet({
     importMutation.mutate({
       file: selectedFile,
       semesterId,
-      mode,
     });
   };
 
@@ -198,9 +215,9 @@ export function TimetableImportSheet({
         <SheetHeader>
           <SheetTitle>Import TKB từ Excel</SheetTitle>
           <SheetDescription>
-            File gồm nhiều sheet — mỗi sheet là ma trận TKB của một lớp hành
-            chính. Mỗi ô gồm: mã lớp môn, email GV, phòng (tuỳ chọn). File mẫu:{' '}
-            <code className='text-xs'>docs/samples/timetable-import-sample.xlsx</code>
+            Chọn học kỳ rồi tải mẫu (theo phân công hiện có). Mỗi ô chỉ cần mã
+            môn / tên môn. GV lấy từ Phân công giảng dạy; ô chưa phân công sẽ
+            được bỏ qua khi import.
           </SheetDescription>
         </SheetHeader>
 
@@ -243,26 +260,23 @@ export function TimetableImportSheet({
             </select>
           </div>
 
-          <div className='space-y-2'>
-            <Label htmlFor='import-tkb-mode'>Chế độ import</Label>
-            <select
-              id='import-tkb-mode'
-              className={selectClassName}
-              value={mode}
-              onChange={(event) =>
-                setMode(event.target.value as TimetableImportMode)
-              }
-            >
-              <option value='replace'>
-                Replace — xóa TKB cũ của từng lớp trong file
-              </option>
-              <option value='merge'>
-                Merge — giữ tiết cũ, cập nhật tiết trong file
-              </option>
-            </select>
-          </div>
-
           <div className='flex flex-wrap gap-2'>
+            <Button
+              type='button'
+              variant='outline'
+              disabled={templateMutation.isPending || !semesterId}
+              onClick={() => {
+                if (!semesterId) {
+                  toast.error('Vui lòng chọn học kỳ trước khi tải mẫu');
+                  return;
+                }
+                templateMutation.mutate();
+              }}
+            >
+              <DownloadIcon className='size-4' />
+              Tải file mẫu
+            </Button>
+
             <Button type='button' variant='outline' onClick={handleChooseFile}>
               <UploadIcon className='size-4' />
               Chọn file

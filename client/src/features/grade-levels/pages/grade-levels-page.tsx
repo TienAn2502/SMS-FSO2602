@@ -103,7 +103,7 @@ export function GradeLevelsPage() {
         <div>
           <h1 className='text-2xl font-semibold'>Quản lý khối</h1>
           <p className='text-sm text-muted-foreground'>
-            Danh mục khối trong trường {session?.activeSchool.name}
+            Danh mục khối trong trường {session?.activeSchool?.name}
           </p>
         </div>
         <Button onClick={() => setShowForm((v) => !v)}>

@@ -7,6 +7,7 @@ import {
   EnrollmentStatus,
   PassFailResult,
   Prisma,
+  PromotionDecision,
   SubjectEvaluationMode,
   SummaryStatus,
   type AcademicResultLevel,
@@ -40,6 +41,7 @@ import type {
   ListSubjectResultsQuery,
   ListYearSummariesQuery,
   RecomputeYearSummariesInput,
+  UpdateYearSummaryNextHomeroomInput,
 } from '@/modules/grade-summaries/schemas/grade-summaries-list.schema';
 import type { RecomputeGradeSummariesInput } from '@/modules/grade-summaries/schemas/grade-summaries.schema';
 import {
@@ -380,6 +382,82 @@ export class GradeSummariesService {
       items: rows.map(toYearSummaryListItem),
       meta: buildPaginationMeta(query.page, query.limit, total),
     };
+  }
+
+  async updateYearSummaryNextHomeroom(
+    schoolId: string,
+    yearSummaryId: string,
+    input: UpdateYearSummaryNextHomeroomInput,
+  ) {
+    const summary = await this.prisma.studentYearSummary.findFirst({
+      where: { id: yearSummaryId, schoolId },
+    });
+
+    if (!summary) {
+      throw new AppException(
+        'YEAR_SUMMARY_NOT_FOUND',
+        'Không tìm thấy tổng kết năm',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    if (summary.promotionDecision === PromotionDecision.GRADUATED) {
+      throw new AppException(
+        'NEXT_HOMEROOM_NOT_ALLOWED_FOR_GRADUATED',
+        'Học sinh tốt nghiệp không gán lớp năm sau',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    if (summary.promotionDecision === PromotionDecision.RETAINED) {
+      throw new AppException(
+        'NEXT_HOMEROOM_NOT_ALLOWED_FOR_RETAINED',
+        'Học sinh ở lại lớp không gán lớp năm sau',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    if (summary.promotionDecision !== PromotionDecision.PROMOTED) {
+      throw new AppException(
+        'INVALID_NEXT_HOMEROOM_CLASS',
+        'Chỉ học sinh lên lớp mới được gán lớp năm sau',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    if (input.nextHomeroomClassId !== null) {
+      const nextClass = await this.prisma.homeroomClass.findFirst({
+        where: {
+          id: input.nextHomeroomClassId,
+          schoolId,
+          status: AcademicEntityStatus.ACTIVE,
+        },
+      });
+
+      if (!nextClass) {
+        throw new AppException(
+          'INVALID_NEXT_HOMEROOM_CLASS',
+          'Lớp năm sau không hợp lệ hoặc không còn hoạt động',
+          HttpStatus.UNPROCESSABLE_ENTITY,
+        );
+      }
+
+      if (nextClass.academicYearId === summary.academicYearId) {
+        throw new AppException(
+          'NEXT_HOMEROOM_SAME_YEAR',
+          'Lớp năm sau phải thuộc năm học khác với năm tổng kết',
+          HttpStatus.UNPROCESSABLE_ENTITY,
+        );
+      }
+    }
+
+    const updated = await this.prisma.studentYearSummary.update({
+      where: { id: yearSummaryId },
+      data: { nextHomeroomClassId: input.nextHomeroomClassId },
+      include: yearSummaryListInclude,
+    });
+
+    return toYearSummaryListItem(updated);
   }
 
   async finalizeSemester(

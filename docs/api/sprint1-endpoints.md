@@ -21,10 +21,18 @@ Danh sách endpoint dự kiến cho Sprint 1. Chi tiết request/response sẽ �
 
 ```json
 {
-  "email": "admin@demo.edu.vn",
-  "password": "Admin@123456"
+  "identifier": "HS-261",
+  "password": "Demo@123456"
 }
 ```
+
+Cũng chấp nhận `email` (tương thích ngược) thay cho `identifier`.
+
+| `identifier` | Ai dùng |
+|--------------|---------|
+| Email (`…@…`) | SCHOOL_ADMIN / SYSTEM_ADMIN (và tài khoản còn login email) |
+| Mã `HS-…` / `GV-…` / `PH-…` | Học sinh / giáo viên / phụ huynh (hồ sơ đã gắn user) |
+| SĐT | HS / GV / PH — khớp `phone` trên hồ sơ đã gắn user |
 
 **Response 200:**
 

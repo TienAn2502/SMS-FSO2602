@@ -1,4 +1,4 @@
-function parseGradeLevelOrder(code: string): number | null {
+export function parseGradeLevelOrder(code: string): number | null {
   const trimmed = code.trim();
   const numeric = Number(trimmed);
 

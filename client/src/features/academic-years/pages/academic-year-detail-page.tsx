@@ -1,10 +1,13 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { Link, useParams } from 'react-router';
 
 import { ROUTES } from '@/app/router/routes';
 import { ErrorState } from '@/components/feedback/error-state';
 import { LoadingState } from '@/components/feedback/loading-state';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AcademicYearEditForm } from '@/features/academic-years/components/academic-year-edit-form';
 import { AcademicYearSemestersSection } from '@/features/academic-years/components/academic-year-semesters-section';
 import { fetchAcademicYear } from '@/features/academic-years/api/academic-years-api';
 import { formatDateRangeVi } from '@/lib/date-format';
@@ -19,6 +22,8 @@ const STATUS_BADGE: Record<AcademicEntityStatus, string> = {
 
 export function AcademicYearDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
+  const [editing, setEditing] = useState(false);
 
   const yearQuery = useQuery({
     queryKey: ['academic-years', id],
@@ -57,31 +62,66 @@ export function AcademicYearDetailPage() {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className='flex flex-row items-start justify-between gap-4 space-y-0'>
           <CardTitle className='text-base'>Thông tin năm học</CardTitle>
-        </CardHeader>
-        <CardContent className='grid gap-4 text-sm md:grid-cols-3'>
-          <div>
-            <p className='text-muted-foreground'>Trạng thái</p>
-            <span
-              className={cn(
-                'mt-1 inline-flex rounded-md px-2 py-0.5 text-xs font-medium',
-                STATUS_BADGE[year.status],
-              )}
+          {!editing ? (
+            <Button
+              type='button'
+              variant='outline'
+              size='sm'
+              onClick={() => setEditing(true)}
             >
-              {ACADEMIC_STATUS_LABELS[year.status]}
-            </span>
-          </div>
-          <div>
-            <p className='text-muted-foreground'>Năm hiện hành</p>
-            <p className='mt-1 font-medium'>{year.isCurrent ? 'Có' : 'Không'}</p>
-          </div>
-          <div>
-            <p className='text-muted-foreground'>Thời gian</p>
-            <p className='mt-1 font-medium'>
-              {formatDateRangeVi(year.startDate, year.endDate)}
-            </p>
-          </div>
+              Chỉnh sửa
+            </Button>
+          ) : null}
+        </CardHeader>
+        <CardContent>
+          {editing ? (
+            <AcademicYearEditForm
+              year={year}
+              onCancel={() => setEditing(false)}
+              onSuccess={() => {
+                setEditing(false);
+                void queryClient.invalidateQueries({
+                  queryKey: ['academic-years'],
+                });
+              }}
+            />
+          ) : (
+            <div className='grid gap-4 text-sm md:grid-cols-3'>
+              <div>
+                <p className='text-muted-foreground'>Trạng thái</p>
+                <span
+                  className={cn(
+                    'mt-1 inline-flex rounded-md px-2 py-0.5 text-xs font-medium',
+                    STATUS_BADGE[year.status],
+                  )}
+                >
+                  {ACADEMIC_STATUS_LABELS[year.status]}
+                </span>
+              </div>
+              <div>
+                <p className='text-muted-foreground'>Năm hiện hành</p>
+                <p className='mt-1 font-medium'>
+                  {year.isCurrent ? 'Có' : 'Không'}
+                </p>
+              </div>
+              <div>
+                <p className='text-muted-foreground'>Thời gian</p>
+                <p className='mt-1 font-medium'>
+                  {formatDateRangeVi(year.startDate, year.endDate)}
+                </p>
+              </div>
+              <div>
+                <p className='text-muted-foreground'>Tên</p>
+                <p className='mt-1 font-medium'>{year.name}</p>
+              </div>
+              <div>
+                <p className='text-muted-foreground'>Mã</p>
+                <p className='mt-1 font-medium'>{year.code}</p>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
