@@ -16,8 +16,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PasswordInput } from '@/components/ui/password-input';
 import { getApiError } from '@/lib/api';
 import { getErrorMessage } from '@/lib/error-messages';
 
@@ -76,9 +76,8 @@ export function ChangePasswordPage() {
           >
             <div className='space-y-2'>
               <Label htmlFor='currentPassword'>Mật khẩu hiện tại</Label>
-              <Input
+              <PasswordInput
                 id='currentPassword'
-                type='password'
                 autoComplete='current-password'
                 aria-invalid={Boolean(errors.currentPassword)}
                 {...register('currentPassword')}
@@ -92,9 +91,8 @@ export function ChangePasswordPage() {
 
             <div className='space-y-2'>
               <Label htmlFor='newPassword'>Mật khẩu mới</Label>
-              <Input
+              <PasswordInput
                 id='newPassword'
-                type='password'
                 autoComplete='new-password'
                 aria-invalid={Boolean(errors.newPassword)}
                 {...register('newPassword')}
@@ -108,9 +106,8 @@ export function ChangePasswordPage() {
 
             <div className='space-y-2'>
               <Label htmlFor='confirmPassword'>Xác nhận mật khẩu mới</Label>
-              <Input
+              <PasswordInput
                 id='confirmPassword'
-                type='password'
                 autoComplete='new-password'
                 aria-invalid={Boolean(errors.confirmPassword)}
                 {...register('confirmPassword')}

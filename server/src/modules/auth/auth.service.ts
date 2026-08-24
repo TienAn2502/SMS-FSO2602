@@ -9,6 +9,12 @@ import type {
   AuthSessionData,
   AuthenticatedUser,
   RefreshTokenPayload,
+  UserSocketInfo,
+  StudentSocketInfo,
+  ParentSocketInfo,
+  TeacherSocketInfo,
+  SchoolAdminSocketInfo,
+  NotificationRoom,
 } from '@/common/auth/auth.types';
 import { isImpersonating } from '@/common/auth/impersonation.util';
 import { AppException } from '@/common/exceptions/app.exception';
@@ -26,6 +32,7 @@ import {
   looksLikePersonCode,
   looksLikePhone,
 } from '@/modules/auth/utils/login-identifier.util';
+import { RedisService } from '@/common/database/redis.service';
 
 @Injectable()
 export class AuthService {
@@ -34,6 +41,7 @@ export class AuthService {
     private readonly passwordService: PasswordService,
     private readonly jwtTokenService: JwtTokenService,
     private readonly cookieService: CookieService,
+    private readonly redisService: RedisService,
   ) {}
 
   async login(input: LoginInput, response: Response): Promise<AuthSessionData> {
@@ -70,8 +78,21 @@ export class AuthService {
       );
     }
 
+    const socketInfo = await this.buildSocketInfoByRole(
+      user.role,
+      user.id,
+      user.schoolId!,
+    );
+
+    // Lưu userId vào room trong redis
+    if (socketInfo && Object.keys(socketInfo).length > 0) {
+      for (const room of socketInfo.notificationRooms) {
+        await this.redisService.addUserToRoom(room.room, user.id);
+      }
+    }
+
     this.issueTokens(response, user.id, user.schoolId ?? undefined);
-    return toAuthSessionData(user, user.school, null);
+    return toAuthSessionData(user, user.school, null, socketInfo);
   }
 
   async refresh(
@@ -129,7 +150,7 @@ export class AuthService {
       Boolean(preservedAccessPayload.activeSchoolId);
 
     const activeSchoolId = preservingImpersonation
-      ? preservedAccessPayload!.activeSchoolId
+      ? preservedAccessPayload.activeSchoolId
       : (user.schoolId ?? undefined);
 
     this.issueTokens(
@@ -138,8 +159,8 @@ export class AuthService {
       activeSchoolId,
       preservingImpersonation
         ? {
-            impersonatedBy: preservedAccessPayload!.impersonatedBy,
-            impersonationMode: preservedAccessPayload!.impersonationMode,
+            impersonatedBy: preservedAccessPayload.impersonatedBy,
+            impersonationMode: preservedAccessPayload.impersonationMode,
           }
         : undefined,
     );
@@ -153,10 +174,10 @@ export class AuthService {
       schoolId: user.schoolId,
       activeSchoolId: activeSchoolId ?? '',
       impersonatedBy: preservingImpersonation
-        ? preservedAccessPayload!.impersonatedBy
+        ? preservedAccessPayload.impersonatedBy
         : undefined,
       impersonationMode: preservingImpersonation
-        ? preservedAccessPayload!.impersonationMode
+        ? preservedAccessPayload.impersonationMode
         : undefined,
     };
 
@@ -189,7 +210,13 @@ export class AuthService {
       );
     }
 
-    return buildAuthSessionForUser(this.prisma, user, sessionUser);
+    // Lấy ra các room socket info theo role
+    const socketInfo = await this.buildSocketInfoByRole(
+      user.role,
+      user.id,
+      user.schoolId!,
+    );
+    return buildAuthSessionForUser(this.prisma, user, sessionUser, socketInfo);
   }
 
   async changePassword(
@@ -259,10 +286,7 @@ export class AuthService {
     });
   }
 
-  issueAccessToken(
-    response: Response,
-    payload: AccessTokenPayload,
-  ): void {
+  issueAccessToken(response: Response, payload: AccessTokenPayload): void {
     const accessToken = this.jwtTokenService.signAccessToken(payload);
     this.cookieService.setAccessCookie(response, accessToken);
   }
@@ -353,7 +377,7 @@ export class AuthService {
       );
     }
 
-    const userId = [...userIds][0]!;
+    const userId = [...userIds][0];
     return this.prisma.user.findUnique({
       where: { id: userId },
       include: { school: true },
@@ -444,6 +468,420 @@ export class AuthService {
         'Trường đang bị tạm khóa. Vui lòng liên hệ quản trị nền tảng.',
         HttpStatus.FORBIDDEN,
       );
+    }
+  }
+
+  // ============================================================
+  // Socket Info Builders
+  // ============================================================
+
+  /**
+   * HS: school, student:{id}, grade:{gradeLevelId}, homeroom:{homeroomClassId}, course:{courseSectionId}
+   */
+  private async buildStudentSocketInfo(
+    userId: string,
+    schoolId: string,
+  ): Promise<StudentSocketInfo> {
+    // Lấy thông tin school để hiển thị
+    const school = await this.prisma.school.findUnique({
+      where: { id: schoolId },
+      select: { name: true, shortName: true },
+    });
+
+    const currentSemester = await this.prisma.semester.findFirst({
+      where: { schoolId, isCurrent: true },
+      select: { id: true },
+    });
+
+    const rooms: NotificationRoom[] = [
+      {
+        room: `school:${schoolId}`,
+        display: school?.shortName || school?.name || 'Trường',
+      },
+    ];
+
+    // Room student:{id}
+    const student = await this.prisma.student.findFirst({
+      where: { userId },
+      select: { id: true, fullName: true },
+    });
+    if (student) {
+      rooms.push({
+        room: `student:${student.id}`,
+        display: student.fullName || 'Học sinh',
+      });
+    }
+
+    if (!currentSemester) {
+      return { notificationRooms: rooms };
+    }
+
+    // Room grade:{gradeLevelId}, homeroom:{homeroomClassId}, course:{courseSectionId}
+    const enrollments = await this.prisma.studentEnrollment.findMany({
+      where: {
+        student: { userId },
+        semesterId: currentSemester.id,
+        status: 'ACTIVE',
+      },
+      select: {
+        homeroomClass: {
+          select: {
+            id: true,
+            name: true,
+            gradeLevelId: true,
+            gradeLevel: { select: { name: true, code: true } },
+          },
+        },
+      },
+    });
+
+    const seenGrades = new Set<string>();
+    const seenHomerooms = new Set<string>();
+
+    for (const enrollment of enrollments) {
+      const gradeKey = enrollment.homeroomClass.gradeLevelId;
+      if (!seenGrades.has(gradeKey)) {
+        seenGrades.add(gradeKey);
+        const gl = enrollment.homeroomClass.gradeLevel;
+        rooms.push({
+          room: `grade:${gradeKey}`,
+          display: `${gl.name} (${gl.code})`,
+        });
+      }
+
+      if (!seenHomerooms.has(enrollment.homeroomClass.id)) {
+        seenHomerooms.add(enrollment.homeroomClass.id);
+        rooms.push({
+          room: `homeroom:${enrollment.homeroomClass.id}`,
+          display: enrollment.homeroomClass.name,
+        });
+      }
+    }
+
+    // Lấy các courseSection của student (qua studentSubjectResults)
+    const courseSections = await this.prisma.studentSubjectResult.findMany({
+      where: {
+        student: { userId },
+        semesterId: currentSemester.id,
+      },
+      select: { courseSection: { select: { id: true, name: true } } },
+      distinct: ['courseSectionId'],
+    });
+
+    for (const cs of courseSections) {
+      rooms.push({
+        room: `course:${cs.courseSection.id}`,
+        display: cs.courseSection.name,
+      });
+    }
+
+    return { notificationRooms: rooms };
+  }
+
+  /**
+   * PH: school, parent:{id}, student:{studentId}, grade:{gradeLevelId}, homeroom:{homeroomClassId}, course:{courseSectionId}
+   */
+  private async buildParentSocketInfo(
+    userId: string,
+    schoolId: string,
+  ): Promise<ParentSocketInfo> {
+    // Lấy thông tin school để hiển thị
+    const school = await this.prisma.school.findUnique({
+      where: { id: schoolId },
+      select: { name: true, shortName: true },
+    });
+
+    const currentSemester = await this.prisma.semester.findFirst({
+      where: { schoolId, isCurrent: true },
+      select: { id: true },
+    });
+
+    const rooms: NotificationRoom[] = [
+      {
+        room: `school:${schoolId}`,
+        display: school?.shortName || school?.name || 'Trường',
+      },
+    ];
+
+    // Room parent:{id}
+    const parent = await this.prisma.parent.findFirst({
+      where: { userId },
+      select: { id: true, fullName: true },
+    });
+    if (parent) {
+      rooms.push({
+        room: `parent:${parent.id}`,
+        display: parent.fullName || 'Phụ huynh',
+      });
+    }
+
+    // Room student:{studentId} của các con
+    const studentParents = await this.prisma.studentParent.findMany({
+      where: { parent: { userId } },
+      select: { studentId: true, student: { select: { fullName: true } } },
+    });
+
+    const seenStudents = new Set<string>();
+    const seenGrades = new Set<string>();
+    const seenHomerooms = new Set<string>();
+
+    for (const sp of studentParents) {
+      if (!seenStudents.has(sp.studentId)) {
+        seenStudents.add(sp.studentId);
+        rooms.push({
+          room: `student:${sp.studentId}`,
+          display: sp.student.fullName || 'Học sinh',
+        });
+      }
+    }
+
+    if (!currentSemester) {
+      return { notificationRooms: rooms };
+    }
+
+    // Lấy gradeLevelId, homeroomClassId của các con trong học kỳ hiện tại
+    const enrollments = await this.prisma.studentEnrollment.findMany({
+      where: {
+        studentId: { in: studentParents.map((sp) => sp.studentId) },
+        semesterId: currentSemester.id,
+        status: 'ACTIVE',
+      },
+      select: {
+        homeroomClass: {
+          select: {
+            id: true,
+            name: true,
+            gradeLevelId: true,
+            gradeLevel: { select: { name: true, code: true } },
+          },
+        },
+      },
+      distinct: ['homeroomClassId'],
+    });
+
+    for (const enrollment of enrollments) {
+      const gradeKey = enrollment.homeroomClass.gradeLevelId;
+      if (!seenGrades.has(gradeKey)) {
+        seenGrades.add(gradeKey);
+        const gl = enrollment.homeroomClass.gradeLevel;
+        rooms.push({
+          room: `grade:${gradeKey}`,
+          display: `${gl.name} (${gl.code})`,
+        });
+      }
+
+      if (!seenHomerooms.has(enrollment.homeroomClass.id)) {
+        seenHomerooms.add(enrollment.homeroomClass.id);
+        rooms.push({
+          room: `homeroom:${enrollment.homeroomClass.id}`,
+          display: enrollment.homeroomClass.name,
+        });
+      }
+    }
+
+    // Lấy courseSection của các con
+    const courseSections = await this.prisma.studentSubjectResult.findMany({
+      where: {
+        studentId: { in: studentParents.map((sp) => sp.studentId) },
+        semesterId: currentSemester.id,
+      },
+      select: { courseSection: { select: { id: true, name: true } } },
+      distinct: ['courseSectionId'],
+    });
+
+    for (const cs of courseSections) {
+      rooms.push({
+        room: `course:${cs.courseSection.id}`,
+        display: cs.courseSection.name,
+      });
+    }
+
+    return { notificationRooms: rooms };
+  }
+
+  /**
+   * GV: school, teacher:{id}, homeroom:{homeroomClassId}, course:{courseSectionId}
+   */
+  private async buildTeacherSocketInfo(
+    userId: string,
+    schoolId: string,
+  ): Promise<TeacherSocketInfo> {
+    // Lấy thông tin school để hiển thị
+    const school = await this.prisma.school.findUnique({
+      where: { id: schoolId },
+      select: { name: true, shortName: true },
+    });
+
+    const currentSemester = await this.prisma.semester.findFirst({
+      where: { schoolId, isCurrent: true },
+      select: { id: true },
+    });
+
+    const rooms: NotificationRoom[] = [
+      {
+        room: `school:${schoolId}`,
+        display: school?.shortName || school?.name || 'Trường',
+      },
+    ];
+
+    // Room teacher:{id}
+    const teacher = await this.prisma.teacher.findFirst({
+      where: { userId },
+      select: { id: true, fullName: true },
+    });
+    if (teacher) {
+      rooms.push({
+        room: `teacher:${teacher.id}`,
+        display: teacher.fullName || 'Giáo viên',
+      });
+    }
+
+    if (!currentSemester) {
+      return { notificationRooms: rooms };
+    }
+
+    // Room homeroom:{homeroomClassId} - các lớp chủ nhiệm
+    const homeroomClasses = await this.prisma.homeroomClass.findMany({
+      where: {
+        schoolId,
+        academicYear: { isCurrent: true },
+        homeroomTeacherId: teacher?.id,
+        status: 'ACTIVE',
+      },
+      select: { id: true, name: true },
+    });
+
+    for (const hc of homeroomClasses) {
+      rooms.push({
+        room: `homeroom:${hc.id}`,
+        display: hc.name,
+      });
+    }
+
+    // Room course:{courseSectionId} - các lớp môn học được phân công
+    const assignments = await this.prisma.teachingAssignment.findMany({
+      where: {
+        teacherId: teacher?.id,
+        courseSection: {
+          semesterId: currentSemester.id,
+          status: 'ACTIVE',
+        },
+        status: 'ACTIVE',
+      },
+      select: { courseSection: { select: { id: true, name: true } } },
+    });
+
+    const seenCourses = new Set<string>();
+    for (const assignment of assignments) {
+      if (!seenCourses.has(assignment.courseSection.id)) {
+        seenCourses.add(assignment.courseSection.id);
+        rooms.push({
+          room: `course:${assignment.courseSection.id}`,
+          display: assignment.courseSection.name,
+        });
+      }
+    }
+
+    return { notificationRooms: rooms };
+  }
+
+  /**
+   * SCHOOL_ADMIN: school, teacher, grade:{gradeLevelId}, homeroom:{homeroomClassId}, course:{courseSectionId}
+   */
+  private async buildSchoolAdminSocketInfo(
+    schoolId: string,
+  ): Promise<SchoolAdminSocketInfo> {
+    // Lấy thông tin school để hiển thị
+    const school = await this.prisma.school.findUnique({
+      where: { id: schoolId },
+      select: { name: true, shortName: true },
+    });
+
+    const currentSemester = await this.prisma.semester.findFirst({
+      where: { schoolId, isCurrent: true },
+      select: { id: true },
+    });
+
+    const rooms: NotificationRoom[] = [
+      {
+        room: `school:${schoolId}`,
+        display: school?.shortName || school?.name || 'Trường',
+      },
+      { room: 'teacher', display: 'Tất cả giáo viên' },
+    ];
+
+    if (!currentSemester) {
+      return { notificationRooms: rooms };
+    }
+
+    // Room grade:{gradeLevelId}
+    const gradeLevels = await this.prisma.gradeLevel.findMany({
+      where: { schoolId },
+      select: { id: true, name: true, code: true },
+    });
+
+    for (const gl of gradeLevels) {
+      rooms.push({
+        room: `grade:${gl.id}`,
+        display: `${gl.name} (${gl.code})`,
+      });
+    }
+
+    // Room homeroom:{homeroomClassId}
+    const homeroomClasses = await this.prisma.homeroomClass.findMany({
+      where: {
+        schoolId,
+        academicYear: { isCurrent: true },
+        status: 'ACTIVE',
+      },
+      select: { id: true, name: true },
+    });
+
+    for (const hc of homeroomClasses) {
+      rooms.push({ room: `homeroom:${hc.id}`, display: hc.name });
+    }
+
+    // Room course:{courseSectionId}
+    const courseSections = await this.prisma.courseSection.findMany({
+      where: {
+        schoolId,
+        semesterId: currentSemester.id,
+        status: 'ACTIVE',
+      },
+      select: { id: true, name: true },
+    });
+
+    for (const cs of courseSections) {
+      rooms.push({ room: `course:${cs.id}`, display: cs.name });
+    }
+
+    return { notificationRooms: rooms };
+  }
+
+  // ============================================================
+  // Socket Info Router
+  // ============================================================
+
+  private async buildSocketInfoByRole(
+    role: UserRole,
+    userId: string,
+    schoolId: string,
+  ): Promise<UserSocketInfo | null> {
+    switch (role) {
+      case UserRole.STUDENT:
+        return this.buildStudentSocketInfo(userId, schoolId);
+
+      case UserRole.TEACHER:
+        return this.buildTeacherSocketInfo(userId, schoolId);
+
+      case UserRole.SCHOOL_ADMIN:
+        return this.buildSchoolAdminSocketInfo(schoolId);
+
+      case UserRole.PARENT:
+        return this.buildParentSocketInfo(userId, schoolId);
+
+      default:
+        return null;
     }
   }
 }

@@ -1,7 +1,10 @@
+@import './styles/_variables.scss';
+@import './styles/_keyframe-animations.scss';
+
 @import 'tailwindcss';
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import '@fontsource-variable/geist';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -118,13 +121,99 @@
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
+    * {
+        @apply border-border outline-ring/50;
     }
-  body {
-    @apply bg-background text-foreground;
+    body {
+        @apply bg-background text-foreground;
     }
-  html {
-    @apply font-sans;
+    html {
+        @apply font-sans;
     }
+}
+
+/* Smooth sidebar animations */
+[data-slot="sidebar-wrapper"],
+[data-slot="sidebar-container"],
+[data-slot="sidebar-gap"],
+[data-slot="sidebar-content"],
+[data-slot="sidebar-group-label"],
+[data-slot="sidebar-menu-button"],
+[data-slot="sidebar-header"] {
+    will-change: transform, width, opacity, margin;
+}
+
+[data-slot="sidebar-container"] {
+    backface-visibility: hidden;
+    transform: translateZ(0);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    contain: layout style paint;
+}
+
+/* GPU-accelerated sidebar collapse using transform */
+@media (min-width: 768px) {
+    [data-collapsible="icon"] [data-slot="sidebar-container"],
+    [data-collapsible="icon"] [data-slot="sidebar-gap"] {
+        transition: transform 350ms cubic-bezier(0.25, 0.1, 0.25, 1),
+                    width 350ms cubic-bezier(0.25, 0.1, 0.25, 1),
+                    opacity 250ms ease-out;
+    }
+}
+
+/* Smooth expand animation for sidebar trigger area */
+[data-slot="sidebar-gap"] {
+    transition: width 350ms cubic-bezier(0.25, 0.1, 0.25, 1) !important;
+}
+
+[data-slot="sidebar-container"] {
+    transition: width 350ms cubic-bezier(0.25, 0.1, 0.25, 1),
+                left 350ms cubic-bezier(0.25, 0.1, 0.25, 1) !important;
+}
+
+/* Ensure sidebar items are clickable when collapsed */
+[data-slot="sidebar-content"] [data-slot="sidebar-menu-button"] {
+    pointer-events: auto !important;
+}
+
+/* Fix z-index for collapsed sidebar content */
+@media (min-width: 768px) {
+    /* Hide SidebarRail when collapsed (icon mode) */
+    [data-collapsible="icon"][data-state="collapsed"] [data-slot="sidebar-rail"],
+    [data-state="collapsed"][data-collapsible="icon"] [data-slot="sidebar-rail"] {
+        display: none !important;
+    }
+    
+    [data-collapsible="icon"] [data-slot="sidebar-content"] {
+        position: relative;
+        z-index: 30;
+    }
+    
+    /* Gap should not block anything */
+    [data-slot="sidebar-gap"] {
+        pointer-events: none !important;
+        z-index: 1;
+    }
+    
+    /* Ensure sidebar container is above gap */
+    [data-slot="sidebar-container"] {
+        z-index: 25;
+        position: relative;
+    }
+    
+    /* Tooltip should not block clicks */
+    [data-slot="sidebar-menu-button"] [data-state="closed"][data-side="right"] {
+        pointer-events: none !important;
+    }
+}
+
+/* Ensure tooltip doesn't block button clicks */
+[data-slot="sidebar-menu-button"] [data-slot="tooltip-content"] {
+    pointer-events: none;
+}
+
+/* Sidebar menu button should always be clickable */
+.sidebar-menu-button,
+[data-slot="sidebar-menu-button"] {
+    pointer-events: auto !important;
 }

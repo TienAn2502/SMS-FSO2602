@@ -67,6 +67,10 @@ enum EnrollmentStatus {
 enum FilePurpose {
   SCHOOL_LOGO
   STUDENT_AVATAR
+  BLOG_IMAGE
+  BLOG_THUMBNAIL
+  NOTIFICATION_THUMBNAIL
+  NOTIFICATION_IMAGE
   OTHER
 }
 
@@ -125,6 +129,26 @@ enum SummaryStatus {
   CLOSED
 }
 
+enum BlogStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+}
+
+enum NotificationRoomType {
+  SCHOOL_WIDE
+  CLASS
+  GRADE
+  ROLE
+  INDIVIDUAL
+}
+
 model School {
   id         String       @id @default(uuid()) @db.Uuid
   code       String       @unique @db.VarChar(50)
@@ -164,6 +188,8 @@ model School {
   studentConductRecords    StudentConductRecord[]
   studentSemesterSummaries StudentSemesterSummary[]
   studentYearSummaries     StudentYearSummary[]
+  blogs                   Blog[]
+  notifications           Notification[]
 
   @@index([status])
   @@map("schools")
@@ -186,6 +212,8 @@ model User {
   students        Student[]
   teachers        Teacher[]
   parents         Parent[]
+  authoredBlogs   Blog[]            @relation("BlogAuthor")
+  createdNotifications Notification[] @relation("NotificationCreator")
 
   @@index([schoolId])
   @@index([status])
@@ -803,4 +831,83 @@ model StudentYearSummary {
   @@index([promotionDecision])
   @@index([status])
   @@map("student_year_summaries")
+}
+
+model Blog {
+  id                  String     @id @default(uuid()) @db.Uuid
+  schoolId            String     @map("school_id") @db.Uuid
+  authorId            String     @map("author_id") @db.Uuid
+  title               String     @db.VarChar(500)
+  slug                String     @db.VarChar(500)
+  content             Json       @db.Json
+  thumbnailStorageKey String?    @map("thumbnail_storage_key") @db.VarChar(500)
+  metaTitle           String?    @map("meta_title") @db.VarChar(255)
+  metaDescription     String?    @map("meta_description") @db.Text
+  status              BlogStatus @default(DRAFT)
+  publishedAt         DateTime?  @map("published_at") @db.Timestamptz(6)
+  createdAt           DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  author User   @relation("BlogAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, slug])
+  @@index([schoolId])
+  @@index([authorId])
+  @@index([status])
+  @@index([publishedAt])
+  @@map("blogs")
+}
+
+model Notification {
+  id                  String           @id @default(uuid()) @map("id") @db.Uuid
+  schoolId            String           @map("school_id") @db.Uuid
+  title               String           @db.VarChar(255)
+  slug                String           @db.VarChar(500)
+  content             Json             @db.Json
+  thumbnailStorageKey String?          @map("thumbnail_storage_key") @db.VarChar(500)
+  type                NotificationType
+  createdById         String?          @map("created_by_id") @db.Uuid
+  createdAt           DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  school    School             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  createdBy User?              @relation("NotificationCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  rooms     NotificationRoom[]
+
+  @@unique([schoolId, slug])
+  @@index([schoolId])
+  @@index([createdById])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+
+
+model NotificationRoom {
+  id             String  @id @default(uuid()) @map("id") @db.Uuid
+  notificationId String  @map("notification_id") @db.Uuid
+  roomType       String  @map("room_type") @db.VarChar(50)
+  targetId       String? @map("target_id") @db.Uuid
+
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@unique([notificationId, roomType, targetId])
+  @@index([notificationId])
+  @@map("notification_rooms")
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid()) @map("id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  endpoint  String   @unique @db.VarChar(500)
+  p256dh    String   @map("p256dh") @db.VarChar(255)
+  auth      String   @map("auth") @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscriptions")
 }

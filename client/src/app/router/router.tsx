@@ -46,7 +46,15 @@ import { PortalMyCourseSectionsPage } from '@/features/portal/pages/portal-my-co
 import { PortalMyClassTimetablePage } from '@/features/portal/pages/portal-my-class-timetable-page';
 import { PortalMyProfilePage } from '@/features/portal/pages/portal-my-profile-page';
 import { PortalMySchedulePage } from '@/features/portal/pages/portal-my-schedule-page';
+import { BlogCreatePage } from '@/features/blogs/pages/blog-create-page';
+import { BlogDetailPage } from '@/features/blogs/pages/blog-detail-page';
+import { BlogEditPage } from '@/features/blogs/pages/blog-edit-page';
+import { BlogsPage } from '@/features/blogs/pages/blogs-page';
 import { SchoolSettingsPage } from '@/features/schools/pages/school-settings-page';
+import { NotificationCreatePage } from '@/features/notifications/pages/notification-create-page';
+import { NotificationDetailPage } from '@/features/notifications/pages/notification-detail-page';
+import { NotificationEditPage } from '@/features/notifications/pages/notification-edit-page';
+import { NotificationsPage } from '@/features/notifications/pages/notifications-page';
 import { StudentDetailPage } from '@/features/students/pages/student-detail-page';
 import { StudentEnrollmentDetailPage } from '@/features/student-enrollments/pages/student-enrollment-detail-page';
 import { StudentsPage } from '@/features/students/pages/students-page';
@@ -127,6 +135,74 @@ export const router = createBrowserRouter([
                 element: (
                     <RoleGate roles={['SCHOOL_ADMIN']}>
                         <SchoolSettingsPage />
+                    </RoleGate>
+                ),
+            },
+            {
+                path: ROUTES.notifications.slice(1),
+                element: (
+                    <RoleGate roles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT']}>
+                        <NotificationsPage />
+                    </RoleGate>
+                ),
+            },
+            {
+                path: `${ROUTES.notifications.slice(1)}/new`,
+                element: (
+                    <RoleGate roles={['SCHOOL_ADMIN']}>
+                        <NotificationCreatePage />
+                    </RoleGate>
+                ),
+            },
+            {
+                path: `${ROUTES.notifications.slice(1)}/:slug/edit`,
+                element: (
+                    <RoleGate roles={['SCHOOL_ADMIN']}>
+                        <NotificationEditPage />
+                    </RoleGate>
+                ),
+            },
+            {
+                path: `${ROUTES.notifications.slice(1)}/:slug`,
+                element: (
+                    <RoleGate roles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT']}>
+                        <NotificationDetailPage />
+                    </RoleGate>
+                ),
+            },
+            {
+                path: ROUTES.blogs.slice(1),
+                element: (
+                    <RoleGate
+                      roles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT']}
+                    >
+                        <BlogsPage />
+                    </RoleGate>
+                ),
+            },
+            {
+                path: `${ROUTES.blogs.slice(1)}/new`,
+                element: (
+                    <RoleGate roles={['SCHOOL_ADMIN']}>
+                        <BlogCreatePage />
+                    </RoleGate>
+                ),
+            },
+            {
+                path: `${ROUTES.blogs.slice(1)}/:slug/edit`,
+                element: (
+                    <RoleGate roles={['SCHOOL_ADMIN']}>
+                        <BlogEditPage />
+                    </RoleGate>
+                ),
+            },
+            {
+                path: `${ROUTES.blogs.slice(1)}/:slug`,
+                element: (
+                    <RoleGate
+                      roles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT']}
+                    >
+                        <BlogDetailPage />
                     </RoleGate>
                 ),
             },

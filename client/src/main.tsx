@@ -6,10 +6,10 @@ import { ThemeProvider } from '@/context/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <ThemeProvider>
-      <App />
-      <Toaster richColors closeButton position='top-right' />
-    </ThemeProvider>
-  </StrictMode>,
+    <StrictMode>
+        <ThemeProvider>
+            <App />
+            <Toaster richColors closeButton position='top-right' />
+        </ThemeProvider>
+    </StrictMode>,
 );

@@ -8,7 +8,8 @@ export const TIMETABLE_IMPORT_TEMPLATE_FILENAME =
 type SampleTimetableEntry = {
   dayOfWeek: number;
   periodNumber: number;
-  subjectCode: string;
+  /** Nhãn hiển thị trong ô (tên môn). */
+  subjectLabel: string;
   room: string;
 };
 
@@ -23,22 +24,32 @@ type SampleTimetableClass = {
 const SAMPLE_YEAR = '2026-2027';
 const SAMPLE_SEMESTER = 'Học kỳ 1';
 
-/** Môn xoay vòng trong mẫu (đủ sáng + chiều). */
+/** Môn xoay vòng trong mẫu (đủ sáng + chiều) — hiển thị tên môn, không ghi GV. */
 const SAMPLE_SUBJECTS = [
-  'TOAN',
-  'VAN',
-  'ANH',
-  'LY',
-  'HOA',
-  'SINH',
-  'SU',
-  'DIA',
-  'TIN',
-  'TD',
-  'CN',
-  'GDQP',
-  'GKTPL',
+  { code: 'TOAN', name: 'Toán học' },
+  { code: 'VAN', name: 'Ngữ văn' },
+  { code: 'ANH', name: 'Tiếng Anh' },
+  { code: 'LY', name: 'Vật lý' },
+  { code: 'HOA', name: 'Hóa học' },
+  { code: 'SINH', name: 'Sinh học' },
+  { code: 'SU', name: 'Lịch sử' },
+  { code: 'DIA', name: 'Địa lý' },
+  { code: 'TIN', name: 'Tin học' },
+  { code: 'TD', name: 'Giáo dục thể chất' },
+  { code: 'CN', name: 'Công nghệ' },
+  { code: 'GDQP', name: 'Giáo dục quốc phòng và an ninh' },
+  { code: 'GKTPL', name: 'Giáo dục kinh tế và pháp luật' },
 ] as const;
+
+const SUBJECT_DISPLAY_NAME_BY_CODE = new Map<string, string>(
+  SAMPLE_SUBJECTS.map((row) => [row.code, row.name]),
+);
+
+export function getSubjectDisplayName(subjectCode: string): string {
+  return (
+    SUBJECT_DISPLAY_NAME_BY_CODE.get(subjectCode.toUpperCase()) ?? subjectCode
+  );
+}
 
 /** Tiết điền trong mẫu: cả sáng (1–5) và một phần chiều (6–8). */
 const SAMPLE_PERIODS = [1, 2, 3, 4, 5, 6, 7, 8] as const;
@@ -58,13 +69,14 @@ export function buildSampleTimetableEntriesForClass(
   for (let day = 1; day <= 5; day += 1) {
     for (const period of SAMPLE_PERIODS) {
       const subject =
-        SAMPLE_SUBJECTS[subjectCursor % SAMPLE_SUBJECTS.length] ?? 'TOAN';
+        SAMPLE_SUBJECTS[subjectCursor % SAMPLE_SUBJECTS.length] ??
+        SAMPLE_SUBJECTS[0]!;
       subjectCursor += 1;
 
       entries.push({
         dayOfWeek: day,
         periodNumber: period,
-        subjectCode: subject,
+        subjectLabel: subject.name,
         room,
       });
     }
@@ -111,16 +123,27 @@ export const TIMETABLE_IMPORT_SAMPLE_CLASSES: SampleTimetableClass[] = [
  */
 export function suggestTimetableEntriesFromSections(
   classCode: string,
-  sections: Array<{ subjectCode: string; teacherEmail: string }>,
+  sections: Array<{ subjectCode: string; subjectName?: string }>,
   classIndex = 0,
 ): Array<{
   dayOfWeek: number;
   periodNumber: number;
-  subjectCode: string;
+  subjectLabel: string;
   room: string | null;
 }> {
-  const withTeacher = sections.filter((row) => row.teacherEmail.trim());
-  if (withTeacher.length === 0) {
+  const uniqueSubjects = new Map<string, string>();
+  for (const section of sections) {
+    const code = section.subjectCode.trim().toUpperCase();
+    if (!code || uniqueSubjects.has(code)) {
+      continue;
+    }
+    uniqueSubjects.set(
+      code,
+      section.subjectName?.trim() || getSubjectDisplayName(code),
+    );
+  }
+
+  if (uniqueSubjects.size === 0) {
     return [];
   }
 
@@ -128,15 +151,16 @@ export function suggestTimetableEntriesFromSections(
   const entries: Array<{
     dayOfWeek: number;
     periodNumber: number;
-    subjectCode: string;
+    subjectLabel: string;
     room: string | null;
   }> = [];
 
   const usedSlots = new Set<string>();
+  const subjectList = [...uniqueSubjects.entries()];
 
-  for (let i = 0; i < withTeacher.length; i += 1) {
-    const section = withTeacher[i];
-    if (!section) {
+  for (let i = 0; i < subjectList.length; i += 1) {
+    const [, subjectLabel] = subjectList[i] ?? [];
+    if (!subjectLabel) {
       continue;
     }
 
@@ -153,7 +177,7 @@ export function suggestTimetableEntriesFromSections(
       entries.push({
         dayOfWeek,
         periodNumber,
-        subjectCode: section.subjectCode,
+        subjectLabel,
         room,
       });
       placed = true;
@@ -200,8 +224,9 @@ export function buildTimetableImportInstructionLines(meta: {
   upperFilledClassCount: number;
   upperEmptyClassCount: number;
   suggestedClassCount: number;
+  sampleFallbackClassCount?: number;
 }): string[] {
-  return [
+  const lines = [
     ...TIMETABLE_IMPORT_INSTRUCTION_LINES,
     '',
     `Năm học: ${meta.academicYearName}`,
@@ -213,4 +238,12 @@ export function buildTimetableImportInstructionLines(meta: {
     `Khối trên lấy từ năm trước: ${meta.upperFilledClassCount} lớp; còn thiếu: ${meta.upperEmptyClassCount} lớp.`,
     `Đã gợi ý lịch từ phân công hiện tại: ${meta.suggestedClassCount} lớp.`,
   ];
+
+  if (meta.sampleFallbackClassCount && meta.sampleFallbackClassCount > 0) {
+    lines.push(
+      `Điền mẫu tĩnh (chưa có lớp môn): ${meta.sampleFallbackClassCount} lớp.`,
+    );
+  }
+
+  return lines;
 }

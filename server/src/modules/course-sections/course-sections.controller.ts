@@ -65,7 +65,8 @@ export class CourseSectionsController {
   @Post('copy-from-semester')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Sao chép lớp môn ACTIVE từ học kỳ nguồn sang học kỳ đích (vd. HK1 → HK2)',
+    summary:
+      'Sao chép lớp môn ACTIVE từ học kỳ nguồn sang học kỳ đích (vd. HK1 → HK2)',
   })
   async copyFromSemester(
     @CurrentUser() user: AuthenticatedUser,

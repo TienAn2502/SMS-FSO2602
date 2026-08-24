@@ -5,6 +5,7 @@ import type {
   AuthSessionData,
   AuthenticatedUser,
   ImpersonationSessionData,
+  UserSocketInfo,
 } from '@/common/auth/auth.types';
 import { isImpersonating } from '@/common/auth/impersonation.util';
 import { AppException } from '@/common/exceptions/app.exception';
@@ -16,6 +17,7 @@ export function toAuthSessionData(
   user: UserWithSchool,
   activeSchool: School | null,
   impersonation: ImpersonationSessionData | null = null,
+  socketInfo: UserSocketInfo | null = null,
 ): AuthSessionData {
   return {
     user: {
@@ -35,6 +37,7 @@ export function toAuthSessionData(
         }
       : null,
     impersonation,
+    socketInfo,
   };
 }
 
@@ -57,6 +60,7 @@ export async function buildAuthSessionForUser(
   prisma: PrismaService,
   user: UserWithSchool,
   sessionUser: AuthenticatedUser,
+  socketInfo: UserSocketInfo | null = null,
 ): Promise<AuthSessionData> {
   if (!sessionUser.activeSchoolId) {
     return toAuthSessionData(user, null, null);
@@ -82,5 +86,5 @@ export async function buildAuthSessionForUser(
       )
     : null;
 
-  return toAuthSessionData(user, activeSchool, impersonation);
+  return toAuthSessionData(user, activeSchool, impersonation, socketInfo);
 }

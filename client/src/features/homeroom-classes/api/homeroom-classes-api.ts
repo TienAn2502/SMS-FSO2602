@@ -91,3 +91,9 @@ export async function updateHomeroomClassStatus(
   );
   return data.data;
 }
+
+export async function fetchAllHomeroomClasses(
+  params: ListHomeroomClassesParams = {},
+) {
+  return fetchHomeroomClasses({ limit: 100, page: 1, ...params });
+}

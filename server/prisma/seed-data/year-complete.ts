@@ -15,6 +15,11 @@ import {
 } from '../../src/common/utils/promotion.util';
 import { isGraduatingGradeLevel } from '../../src/common/utils/grade-level.util';
 import { STUDENT_YEAR_ENROLLMENT_STATUSES } from '../../src/common/utils/enrollment-status.util';
+import {
+  backfillSubjectYearAverages,
+  buildPassFailResultsByStudentId,
+  buildYearSubjectAveragesByStudentId,
+} from '../../src/common/utils/subject-year-average.util';
 
 export interface FinalizeSemesterSeedResult {
   assessmentsLocked: number;
@@ -104,6 +109,14 @@ export async function seedYearSummariesForAcademicYear(
     throw new Error('Academic year must have both HK1 and HK2');
   }
 
+  console.log('Backfill year_average trên student_subject_results...');
+  const backfilledGroups = await backfillSubjectYearAverages(
+    prisma,
+    schoolId,
+    academicYearId,
+  );
+  console.log(`  ${backfilledGroups} nhóm môn đã cập nhật year_average`);
+
   const gradeLevels = await prisma.gradeLevel.findMany({
     where: { schoolId },
     select: { code: true },
@@ -146,7 +159,7 @@ export async function seedYearSummariesForAcademicYear(
       allGradeCodes,
     );
 
-    const [semesterSummaries, conductRecords, absenceGroups] =
+    const [semesterSummaries, conductRecords, absenceGroups, subjectResults] =
       await Promise.all([
         prisma.studentSemesterSummary.findMany({
           where: {
@@ -188,7 +201,46 @@ export async function seedYearSummariesForAcademicYear(
           },
           _count: { _all: true },
         }),
+        prisma.studentSubjectResult.findMany({
+          where: {
+            schoolId,
+            studentId: { in: studentIds },
+            semesterId: { in: [hk1.id, hk2.id] },
+          },
+          select: {
+            studentId: true,
+            yearAverage: true,
+            semesterAverage: true,
+            evaluationMode: true,
+            passFailResult: true,
+            semester: { select: { code: true } },
+            courseSection: { select: { code: true } },
+          },
+        }),
       ]);
+
+    const yearAvgsByStudent = buildYearSubjectAveragesByStudentId(
+      subjectResults
+        .filter((row) => row.evaluationMode === 'NUMERIC')
+        .map((row) => ({
+          studentId: row.studentId,
+          courseSectionCode: row.courseSection.code,
+          semesterCode: row.semester.code,
+          semesterAverage: row.semesterAverage?.toNumber() ?? null,
+          yearAverage: row.yearAverage?.toNumber() ?? null,
+        })),
+    );
+
+    const passFailByStudent = buildPassFailResultsByStudentId(
+      subjectResults
+        .filter((row) => row.evaluationMode === 'PASS_FAIL')
+        .map((row) => ({
+          studentId: row.studentId,
+          courseSectionCode: row.courseSection.code,
+          semesterCode: row.semester.code,
+          passFailResult: row.passFailResult,
+        })),
+    );
 
     const absenceByStudentId = new Map(
       absenceGroups.map((row) => [row.studentId, row._count._all]),
@@ -223,7 +275,8 @@ export async function seedYearSummariesForAcademicYear(
         hk1: hk1Summary?.academicResultLevel ?? null,
         hk2: hk2Summary?.academicResultLevel ?? null,
         yearOverallAverage,
-        yearSubjectAverages: [],
+        yearSubjectAverages: yearAvgsByStudent.get(studentId) ?? [],
+        passFailResults: passFailByStudent.get(studentId) ?? [],
       });
 
       const trainingResultLevel = resolveYearTrainingResultLevel(

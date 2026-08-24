@@ -15,9 +15,10 @@ import { PasswordService } from '@/common/utils/password.service';
 import { PersonCodeService } from '@/common/utils/person-code.service';
 import { AuthController } from '@/modules/auth/auth.controller';
 import { AuthService } from '@/modules/auth/auth.service';
+import { RedisModule } from '@/common/database/redis.module';
 
 @Module({
-  imports: [PassportModule.register({}), JwtModule.register({})],
+  imports: [PassportModule.register({}), JwtModule.register({}), RedisModule],
   controllers: [AuthController],
   providers: [
     AuthService,
@@ -30,6 +31,7 @@ import { AuthService } from '@/modules/auth/auth.service';
     RolesGuard,
     PlatformGuard,
     ImpersonationReadOnlyGuard,
+
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard, // * Global guard, phải có token hợp lệ

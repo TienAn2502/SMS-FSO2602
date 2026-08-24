@@ -9,6 +9,6 @@ import { R2Service } from '@/modules/files/r2.service';
   imports: [AuthModule],
   controllers: [FilesController],
   providers: [FilesService, R2Service],
-  exports: [FilesService],
+  exports: [FilesService, R2Service],
 })
 export class FilesModule {}

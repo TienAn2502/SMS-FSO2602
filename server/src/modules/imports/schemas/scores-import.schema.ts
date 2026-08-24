@@ -16,7 +16,8 @@ export interface ScoreImportResult {
 
 export const importScoresFormSchema = z.object({
   courseSectionId: z.uuid('Lớp môn không hợp lệ'),
-  assessmentId: z.uuid('Đầu điểm không hợp lệ'),
+  /** Có = import 1 cột diem; bỏ trống = import bảng TX/GK/CK */
+  assessmentId: z.uuid('Đầu điểm không hợp lệ').optional(),
 });
 
 export type ImportScoresFormInput = z.infer<typeof importScoresFormSchema>;

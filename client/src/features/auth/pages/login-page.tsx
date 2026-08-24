@@ -7,121 +7,132 @@ import { ROUTES, getDefaultRouteForRole } from '@/app/router/routes';
 
 import { Button } from '@/components/ui/button';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PasswordInput } from '@/components/ui/password-input';
 import { LoadingState } from '@/components/feedback/loading-state';
 import { getApiError } from '@/lib/api';
 import { getErrorMessage } from '@/lib/error-messages';
 
 import { useAuth } from '../hooks/use-auth';
-import {
-  loginSchema,
-  type LoginFormValues,
-} from '../schemas/login.schema';
+import { loginSchema, type LoginFormValues } from '../schemas/login.schema';
 
 export function LoginPage() {
-  const navigate = useNavigate();
-  const { login, isAuthenticated, isLoading, session } = useAuth();
+    const navigate = useNavigate();
+    const { login, isAuthenticated, isLoading, session } = useAuth();
+    const {
+        register,
+        handleSubmit,
+        formState: { errors, isSubmitting },
+    } = useForm<LoginFormValues>({
+        resolver: zodResolver(loginSchema),
+        defaultValues: {
+            identifier: '',
+            password: '',
+        },
+    });
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      identifier: '',
-      password: '',
-    },
-  });
-
-  if (isLoading) {
-    return <LoadingState message='Đang kiểm tra phiên đăng nhập...' />;
-  }
-
-  if (isAuthenticated && session) {
-    return <Navigate to={getDefaultRouteForRole(session.user.role)} replace />;
-  }
-
-  const onSubmit = handleSubmit(async (values) => {
-    try {
-      const newSession = await login(values);
-      toast.success('Đăng nhập thành công');
-      navigate(getDefaultRouteForRole(newSession.user.role), { replace: true });
-    } catch (error) {
-      const apiError = getApiError(error);
-      toast.error(
-        getErrorMessage(apiError?.code, apiError?.message ?? 'Đăng nhập thất bại'),
-      );
+    if (isLoading) {
+        return <LoadingState message='Đang kiểm tra phiên đăng nhập...' />;
     }
-  });
 
-  return (
-    <Card className='w-full max-w-md'>
-      <CardHeader>
-        <CardTitle>Đăng nhập eSchool</CardTitle>
-        <CardDescription>
-          HS / GV / PH: mã hoặc SĐT · Quản trị: email
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form className='flex flex-col gap-4' onSubmit={onSubmit}>
-          <div className='flex flex-col gap-2'>
-            <Label htmlFor='identifier'>Mã / SĐT / Email</Label>
-            <Input
-              id='identifier'
-              type='text'
-              autoComplete='username'
-              placeholder='HS-261 · 0901234567 · school_admin@demo.edu.vn'
-              aria-invalid={Boolean(errors.identifier)}
-              {...register('identifier')}
-            />
-            {errors.identifier ? (
-              <p className='text-sm text-destructive'>
-                {errors.identifier.message}
-              </p>
-            ) : null}
-          </div>
+    if (isAuthenticated && session) {
+        return (
+            <Navigate to={getDefaultRouteForRole(session.user.role)} replace />
+        );
+    }
 
-          <div className='flex flex-col gap-2'>
-            <Label htmlFor='password'>Mật khẩu</Label>
-            <Input
-              id='password'
-              type='password'
-              autoComplete='current-password'
-              aria-invalid={Boolean(errors.password)}
-              {...register('password')}
-            />
-            {errors.password ? (
-              <p className='text-sm text-destructive'>
-                {errors.password.message}
-              </p>
-            ) : null}
-          </div>
+    const onSubmit = handleSubmit(async (values) => {
+        try {
+            const newSession = await login(values);
+            toast.success('Đăng nhập thành công');
 
-          <Button type='submit' disabled={isSubmitting} className='w-full'>
-            {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
-          </Button>
-        </form>
+            navigate(getDefaultRouteForRole(newSession.user.role), {
+                replace: true,
+            });
+        } catch (error) {
+            const apiError = getApiError(error);
+            toast.error(
+                getErrorMessage(
+                    apiError?.code,
+                    apiError?.message ?? 'Đăng nhập thất bại',
+                ),
+            );
+        }
+    });
 
-        <p className='mt-4 text-center text-xs text-muted-foreground'>
-          Admin trường: school_admin@demo.edu.vn / SchoolAdmin@123456
-        </p>
-        <p className='mt-1 text-center text-xs text-muted-foreground'>
-          System admin: system_admin@demo.edu.vn / SystemAdmin@123456
-        </p>
-        <p className='mt-1 text-center text-xs text-muted-foreground'>
-          <Link to={ROUTES.home} className='underline hover:text-foreground'>
-            Về trang chủ
-          </Link>
-        </p>
-      </CardContent>
-    </Card>
-  );
+    return (
+        <Card className='w-full max-w-md'>
+            <CardHeader>
+                <CardTitle>Đăng nhập eSchool</CardTitle>
+                <CardDescription>
+                    HS / GV / PH: mã hoặc SĐT · Quản trị: email
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <form className='flex flex-col gap-4' onSubmit={onSubmit}>
+                    <div className='flex flex-col gap-2'>
+                        <Label htmlFor='identifier'>Mã / SĐT / Email</Label>
+                        <Input
+                            id='identifier'
+                            type='text'
+                            autoComplete='username'
+                            placeholder='HS-261 · 0901234567 · school_admin@demo.edu.vn'
+                            aria-invalid={Boolean(errors.identifier)}
+                            {...register('identifier')}
+                        />
+                        {errors.identifier ? (
+                            <p className='text-sm text-destructive'>
+                                {errors.identifier.message}
+                            </p>
+                        ) : null}
+                    </div>
+
+                    <div className='flex flex-col gap-2'>
+                        <Label htmlFor='password'>Mật khẩu</Label>
+                        <PasswordInput
+                            id='password'
+                            autoComplete='current-password'
+                            aria-invalid={Boolean(errors.password)}
+                            {...register('password')}
+                        />
+                        {errors.password ? (
+                            <p className='text-sm text-destructive'>
+                                {errors.password.message}
+                            </p>
+                        ) : null}
+                    </div>
+
+                    <Button
+                        type='submit'
+                        disabled={isSubmitting}
+                        className='w-full'
+                    >
+                        {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
+                    </Button>
+                </form>
+
+                <p className='mt-4 text-center text-xs text-muted-foreground'>
+                    Admin trường: school_admin@demo.edu.vn / SchoolAdmin@123456
+                </p>
+                <p className='mt-1 text-center text-xs text-muted-foreground'>
+                    System admin: system_admin@demo.edu.vn / SystemAdmin@123456
+                </p>
+                <p className='mt-1 text-center text-xs text-muted-foreground'>
+                    <Link
+                        to={ROUTES.home}
+                        className='underline hover:text-foreground'
+                    >
+                        Về trang chủ
+                    </Link>
+                </p>
+            </CardContent>
+        </Card>
+    );
 }

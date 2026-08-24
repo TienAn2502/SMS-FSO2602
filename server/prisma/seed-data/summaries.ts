@@ -63,7 +63,7 @@ async function loadSubjectScoreInputs(
   });
 }
 
-async function seedHomeroomClassSummaries(
+export async function seedHomeroomClassSummaries(
   prisma: PrismaClient,
   params: {
     schoolId: string;
@@ -166,12 +166,42 @@ async function seedHomeroomClassSummaries(
           subjectAverages.push(computed.semesterAverage);
         }
 
-        await prisma.studentSubjectResult.create({
-          data: {
+        await prisma.studentSubjectResult.upsert({
+          where: {
+            studentId_courseSectionId_semesterId: {
+              studentId: enrollment.studentId,
+              courseSectionId: courseSection.id,
+              semesterId: params.semesterId,
+            },
+          },
+          create: {
             schoolId: params.schoolId,
             studentId: enrollment.studentId,
             courseSectionId: courseSection.id,
             semesterId: params.semesterId,
+            evaluationMode: SubjectEvaluationMode.NUMERIC,
+            regularAverage:
+              computed.regularAverage != null
+                ? new Prisma.Decimal(computed.regularAverage)
+                : null,
+            midtermScore:
+              computed.midtermScore != null
+                ? new Prisma.Decimal(computed.midtermScore)
+                : null,
+            finalScore:
+              computed.finalScore != null
+                ? new Prisma.Decimal(computed.finalScore)
+                : null,
+            semesterAverage:
+              computed.semesterAverage != null
+                ? new Prisma.Decimal(computed.semesterAverage)
+                : null,
+            yearAverage: null,
+            passFailResult: null,
+            computedAt,
+            status: params.status,
+          },
+          update: {
             evaluationMode: SubjectEvaluationMode.NUMERIC,
             regularAverage:
               computed.regularAverage != null
@@ -199,12 +229,30 @@ async function seedHomeroomClassSummaries(
         const passFailResult = computePassFailResult(inputs);
         passFailResults.push(passFailResult);
 
-        await prisma.studentSubjectResult.create({
-          data: {
+        await prisma.studentSubjectResult.upsert({
+          where: {
+            studentId_courseSectionId_semesterId: {
+              studentId: enrollment.studentId,
+              courseSectionId: courseSection.id,
+              semesterId: params.semesterId,
+            },
+          },
+          create: {
             schoolId: params.schoolId,
             studentId: enrollment.studentId,
             courseSectionId: courseSection.id,
             semesterId: params.semesterId,
+            evaluationMode: SubjectEvaluationMode.PASS_FAIL,
+            regularAverage: null,
+            midtermScore: null,
+            finalScore: null,
+            semesterAverage: null,
+            yearAverage: null,
+            passFailResult,
+            computedAt,
+            status: params.status,
+          },
+          update: {
             evaluationMode: SubjectEvaluationMode.PASS_FAIL,
             regularAverage: null,
             midtermScore: null,
@@ -228,11 +276,27 @@ async function seedHomeroomClassSummaries(
         passFailResults,
       });
 
-    await prisma.studentSemesterSummary.create({
-      data: {
+    await prisma.studentSemesterSummary.upsert({
+      where: {
+        studentId_semesterId: {
+          studentId: enrollment.studentId,
+          semesterId: params.semesterId,
+        },
+      },
+      create: {
         schoolId: params.schoolId,
         studentId: enrollment.studentId,
         semesterId: params.semesterId,
+        homeroomClassId: params.homeroomClass.id,
+        overallAverage:
+          overallAverage != null ? new Prisma.Decimal(overallAverage) : null,
+        academicResultLevel,
+        trainingResultLevel,
+        subjectCount: subjectAverages.length,
+        status: params.status,
+        finalizedAt,
+      },
+      update: {
         homeroomClassId: params.homeroomClass.id,
         overallAverage:
           overallAverage != null ? new Prisma.Decimal(overallAverage) : null,
@@ -303,9 +367,15 @@ export async function seedSummaries(
     });
   }
 
+  const semester = await prisma.semester.findFirstOrThrow({
+    where: { id: semesterId, schoolId },
+    select: { academicYearId: true },
+  });
+
   const homeroomClasses = await prisma.homeroomClass.findMany({
     where: {
       schoolId,
+      academicYearId: semester.academicYearId,
       courseSections: { some: { semesterId } },
     },
     select: {

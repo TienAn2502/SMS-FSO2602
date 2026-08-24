@@ -8,7 +8,6 @@ import { ConductRecordsModule } from '@/modules/conduct-records/conduct-records.
 import { ExportsModule } from '@/modules/exports/exports.module';
 import { GradeSummariesModule } from '@/modules/grade-summaries/grade-summaries.module';
 import { GradebookGridModule } from '@/modules/gradebook-grid/gradebook-grid.module';
-import { ImportsModule } from '@/modules/imports/imports.module';
 import { ParentsModule } from '@/modules/parents/parents.module';
 import { SemestersModule } from '@/modules/semesters/semesters.module';
 import { ScoresModule } from '@/modules/scores/scores.module';
@@ -18,6 +17,7 @@ import { PortalGradebookService } from '@/modules/portal/portal-gradebook.servic
 import { PortalController } from '@/modules/portal/portal.controller';
 import { PortalSummariesService } from '@/modules/portal/portal-summaries.service';
 import { PortalService } from '@/modules/portal/portal.service';
+import { NotificationsModule } from '@/modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -31,8 +31,8 @@ import { PortalService } from '@/modules/portal/portal.service';
     GradeSummariesModule,
     ConductRecordsModule,
     GradebookGridModule,
-    ImportsModule,
     ExportsModule,
+    NotificationsModule,
   ],
   controllers: [PortalController],
   providers: [

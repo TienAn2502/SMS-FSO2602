@@ -9,7 +9,7 @@ import { CourseSectionListFilters } from '@/features/course-sections/components/
 import { useCourseSectionListFilters } from '@/features/course-sections/hooks/use-course-section-list-filters';
 import { fetchMyClassTimetable } from '@/features/portal/api/portal-api';
 import { PortalTimetableExportActions } from '@/features/portal/components/portal-timetable-export-actions';
-import { TimetableEntryList } from '@/features/timetable/components/timetable-entry-list';
+import { ClassTimetableGrid } from '@/features/timetable/components/class-timetable-grid';
 
 export function PortalMyClassTimetablePage() {
   const {
@@ -132,7 +132,11 @@ export function PortalMyClassTimetablePage() {
               học / học kỳ khác hoặc liên hệ giáo vụ.
             </p>
           ) : (
-            <TimetableEntryList entries={timetable.entries} />
+            <ClassTimetableGrid
+              mode='student'
+              entries={timetable.entries}
+              emptyMessage='Lớp chưa có thời khóa biểu trong bộ lọc đã chọn.'
+            />
           )}
         </CardContent>
       </Card>

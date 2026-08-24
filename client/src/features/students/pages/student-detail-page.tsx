@@ -9,6 +9,7 @@ import { z } from 'zod';
 
 import { ROUTES } from '@/app/router/routes';
 import { DataTableGrid } from '@/components/common/data-table-grid';
+import { EmptyState } from '@/components/feedback/empty-state';
 import { ErrorState } from '@/components/feedback/error-state';
 import { LoadingState } from '@/components/feedback/loading-state';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,7 @@ import {
   fetchStudentEnrollments,
   type StudentEnrollment,
 } from '@/features/student-enrollments/api/student-enrollments-api';
+import { fetchBlogs, type BlogPost } from '@/features/blogs/api/blogs-api';
 import { formatDateVi } from '@/lib/date-format';
 import { getApiError } from '@/lib/api';
 import { getErrorMessage } from '@/lib/error-messages';
@@ -44,6 +46,8 @@ import {
   PARENT_RELATIONSHIP_LABELS,
 } from '@/lib/labels';
 import { cn } from '@/lib/utils';
+import { format, parseISO } from 'date-fns';
+import { vi } from 'date-fns/locale';
 
 const profileSchema = z.object({
   fullName: z.string().trim().min(1, 'Họ tên là bắt buộc'),
@@ -74,6 +78,12 @@ export function StudentDetailPage() {
     queryKey: ['student-enrollments', id],
     queryFn: () => fetchStudentEnrollments(id, { limit: 50, sortOrder: 'desc' }),
     enabled: Boolean(id),
+    placeholderData: keepPreviousData,
+  });
+
+  const blogsQuery = useQuery({
+    queryKey: ['blogs', 'student-view'],
+    queryFn: () => fetchBlogs({ status: 'PUBLISHED', limit: 10, sortBy: 'publishedAt', sortOrder: 'desc' }),
     placeholderData: keepPreviousData,
   });
 
@@ -331,6 +341,48 @@ export function StudentDetailPage() {
                 `${ROUTES.studentEnrollments}/${enrollment.id}`
               }
             />
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Bài viết</CardTitle>
+          <CardDescription>Các bài viết đã đăng gần đây</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {blogsQuery.isLoading ? (
+            <LoadingState message='Đang tải bài viết...' />
+          ) : blogsQuery.data?.items.length === 0 ? (
+            <p className='text-sm text-muted-foreground'>Chưa có bài viết nào</p>
+          ) : (
+            <div className='space-y-3'>
+              {blogsQuery.data?.items.map((blog) => (
+                <Link
+                  key={blog.id}
+                  to={`${ROUTES.blogs}/${blog.slug}`}
+                  className='block rounded-md border p-3 transition-colors hover:bg-muted/50'
+                >
+                  <h3 className='font-medium text-sm line-clamp-1'>{blog.title}</h3>
+                  <p className='mt-1 text-xs text-muted-foreground line-clamp-2'>
+                    {blog.contentExcerpt}
+                  </p>
+                  <div className='mt-2 flex items-center gap-2 text-xs text-muted-foreground'>
+                    <span>{blog.authorName}</span>
+                    {blog.publishedAt && (
+                      <>
+                        <span>·</span>
+                        <span>
+                          {format(parseISO(blog.publishedAt), 'dd/MM/yyyy HH:mm', {
+                            locale: vi,
+                          })}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>

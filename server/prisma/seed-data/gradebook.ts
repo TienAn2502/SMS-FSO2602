@@ -243,6 +243,10 @@ export async function seedGradebook(
   options?: {
     /** Chỉ seed các lớp HC này (mã lớp). */
     homeroomClassCodes?: string[];
+    /** Bỏ qua các mã lớp môn (vd. TOAN-10A1). */
+    excludeCourseSectionCodes?: string[];
+    /** Chỉ seed các mã lớp môn này (vd. TOAN-10A1). */
+    includeCourseSectionCodes?: string[];
     /**
      * true (mặc định): xóa toàn bộ assessment/score của học kỳ rồi seed lại.
      * false: chỉ bổ sung lớp/môn chưa có sổ điểm (không đụng dữ liệu đã có).
@@ -253,6 +257,16 @@ export async function seedGradebook(
   const replaceExisting = options?.replaceExisting ?? true;
   const filterCodes = options?.homeroomClassCodes?.map((code) =>
     code.trim().toUpperCase(),
+  );
+  const excludeSectionCodes = new Set(
+    (options?.excludeCourseSectionCodes ?? []).map((code) =>
+      code.trim().toUpperCase(),
+    ),
+  );
+  const includeSectionCodes = new Set(
+    (options?.includeCourseSectionCodes ?? []).map((code) =>
+      code.trim().toUpperCase(),
+    ),
   );
 
   const semester = await prisma.semester.findFirstOrThrow({
@@ -331,6 +345,17 @@ export async function seedGradebook(
     });
 
     for (const courseSection of courseSections) {
+      const sectionCode = courseSection.code.trim().toUpperCase();
+      if (excludeSectionCodes.has(sectionCode)) {
+        continue;
+      }
+      if (
+        includeSectionCodes.size > 0 &&
+        !includeSectionCodes.has(sectionCode)
+      ) {
+        continue;
+      }
+
       if (!replaceExisting && courseSection._count.assessments > 0) {
         continue;
       }

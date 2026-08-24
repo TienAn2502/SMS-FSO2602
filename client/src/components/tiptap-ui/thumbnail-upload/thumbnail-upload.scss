@@ -1,0 +1,235 @@
+:root {
+  --thumbnail-upload-active: var(--tt-brand-color-500);
+  --thumbnail-upload-progress-bg: var(--tt-brand-color-50);
+  --thumbnail-upload-icon-bg: var(--tt-brand-color-500);
+  --thumbnail-upload-text-color: var(--tt-gray-light-a-700);
+  --thumbnail-upload-subtext-color: var(--tt-gray-light-a-400);
+  --thumbnail-upload-border: var(--tt-gray-light-a-300);
+  --thumbnail-upload-border-hover: var(--tt-gray-light-a-400);
+  --thumbnail-upload-border-active: var(--tt-brand-color-500);
+  --thumbnail-upload-placeholder-bg: var(--tt-gray-light-a-100);
+  --thumbnail-upload-placeholder-border: var(--tt-gray-light-a-200);
+  --thumbnail-upload-icon-color: var(--white);
+  --thumbnail-upload-overlay-bg: rgba(0, 0, 0, 0.5);
+  --thumbnail-upload-uploading-bg: rgba(255, 255, 255, 0.9);
+}
+
+.dark {
+  --thumbnail-upload-progress-bg: var(--tt-brand-color-900);
+  --thumbnail-upload-icon-bg: var(--tt-brand-color-400);
+  --thumbnail-upload-text-color: var(--tt-gray-dark-a-700);
+  --thumbnail-upload-subtext-color: var(--tt-gray-dark-a-400);
+  --thumbnail-upload-border: var(--tt-gray-dark-a-300);
+  --thumbnail-upload-border-hover: var(--tt-gray-dark-a-400);
+  --thumbnail-upload-border-active: var(--tt-brand-color-400);
+  --thumbnail-upload-placeholder-bg: var(--tt-gray-dark-a-100);
+  --thumbnail-upload-placeholder-border: var(--tt-gray-dark-a-200);
+  --thumbnail-upload-icon-color: var(--black);
+  --thumbnail-upload-overlay-bg: rgba(0, 0, 0, 0.7);
+  --thumbnail-upload-uploading-bg: rgba(30, 30, 30, 0.9);
+}
+
+.thumbnail-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  &.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  .thumbnail-upload-input {
+    display: none;
+  }
+
+  .thumbnail-upload-area {
+    position: relative;
+    border-radius: var(--tt-radius-lg, 0.75rem);
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:focus-visible {
+      outline: 2px solid var(--thumbnail-upload-border-active);
+      outline-offset: 2px;
+    }
+  }
+
+  // === Upload Zone (no thumbnail) ===
+  .thumbnail-upload-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 2rem 1.5rem;
+    background-color: var(--thumbnail-upload-placeholder-bg);
+    border: 2px dashed var(--thumbnail-upload-border);
+    border-radius: var(--tt-radius-lg, 0.75rem);
+    transition: all 0.2s ease;
+
+    .thumbnail-upload.has-thumbnail & {
+      display: none;
+    }
+
+    .thumbnail-upload.drag-active & {
+      border-color: var(--thumbnail-upload-border-active);
+      background-color: rgba(
+        var(--tt-brand-color-50, 239, 246, 255),
+        0.5
+      );
+    }
+
+    &:hover {
+      border-color: var(--thumbnail-upload-border-hover);
+    }
+  }
+
+  .thumbnail-upload-placeholder {
+    position: relative;
+    width: 4rem;
+    height: 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .thumbnail-upload-placeholder-icon {
+      width: 3rem;
+      height: 3rem;
+      color: var(--thumbnail-upload-placeholder-border);
+      opacity: 0.8;
+    }
+
+    .thumbnail-upload-icon {
+      position: absolute;
+      bottom: -0.25rem;
+      right: -0.25rem;
+      width: 1.5rem;
+      height: 1.5rem;
+      padding: 0.25rem;
+      background-color: var(--thumbnail-upload-icon-bg);
+      border-radius: var(--tt-radius-md, 0.375rem);
+      color: var(--thumbnail-upload-icon-color);
+    }
+  }
+
+  .thumbnail-upload-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    text-align: center;
+
+    .thumbnail-upload-title {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--thumbnail-upload-text-color);
+
+      em {
+        font-style: normal;
+        text-decoration: underline;
+        color: var(--thumbnail-upload-border-active);
+      }
+    }
+
+    .thumbnail-upload-subtitle {
+      font-size: 0.75rem;
+      color: var(--thumbnail-upload-subtext-color);
+    }
+  }
+
+  // === Thumbnail Preview ===
+  .thumbnail-upload-preview {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background-color: var(--thumbnail-upload-placeholder-bg);
+    overflow: hidden;
+
+    .thumbnail-upload-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .thumbnail-upload-progress {
+      position: absolute;
+      inset: 0;
+      background-color: var(--thumbnail-upload-progress-bg);
+      opacity: 0.8;
+      transition: width 0.3s ease-out;
+    }
+  }
+
+  // === Upload Progress Overlay ===
+  .thumbnail-upload-uploading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background-color: var(--thumbnail-upload-uploading-bg);
+    color: var(--thumbnail-upload-text-color);
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .thumbnail-upload-uploading-spinner {
+    width: 2rem;
+    height: 2rem;
+    border: 3px solid var(--thumbnail-upload-border);
+    border-top-color: var(--thumbnail-upload-border-active);
+    border-radius: 50%;
+    animation: thumbnail-upload-spin 0.8s linear infinite;
+  }
+
+  @keyframes thumbnail-upload-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  // === Action Buttons ===
+  .thumbnail-upload-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.25rem;
+
+    .thumbnail-upload-remove-icon {
+      width: 1rem;
+      height: 1rem;
+    }
+  }
+}
+
+// === Responsive ===
+@media (max-width: 640px) {
+  .thumbnail-upload {
+    .thumbnail-upload-zone {
+      padding: 1.5rem 1rem;
+    }
+
+    .thumbnail-upload-placeholder {
+      width: 3rem;
+      height: 3rem;
+
+      .thumbnail-upload-placeholder-icon {
+        width: 2.25rem;
+        height: 2.25rem;
+      }
+
+      .thumbnail-upload-icon {
+        width: 1.25rem;
+        height: 1.25rem;
+      }
+    }
+
+    .thumbnail-upload-actions {
+      justify-content: space-between;
+    }
+  }
+}

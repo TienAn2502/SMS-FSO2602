@@ -5,6 +5,13 @@ export const ROUTES = {
     home: '/',
     users: '/users',
     schoolSettings: '/school-settings',
+    blogs: '/blogs',
+    blogsNew: '/blogs/new',
+    blogsEdit: '/blogs/:id/edit',
+    notifications: '/notifications',
+    notificationsNew: '/notifications/new',
+    notificationsEdit: '/notifications/:slug/edit',
+    schoolNotifications: '/notifications',
     changePassword: '/account/change-password',
     academicYears: '/academic-years',
     gradeLevels: '/grade-levels',
@@ -39,6 +46,8 @@ export const ROUTES = {
     portalMySummaries: '/portal/my-summaries',
     portalHomeroomConduct: '/portal/my-homeroom/conduct-records',
     portalHomeroomSummaries: '/portal/my-homeroom/summaries',
+    portalNotifications: '/portal/notifications',
+    portalNotificationDetail: '/portal/notifications/:slug',
 } as const;
 
 export function getPlatformSchoolDetailPath(id: string): string {

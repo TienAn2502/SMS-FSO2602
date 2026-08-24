@@ -1,14 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
+  CopyObjectCommand,
   DeleteObjectCommand,
   GetObjectCommand,
+  HeadObjectCommand,
+  ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl as presignGetObjectUrl } from '@aws-sdk/s3-request-presigner';
 
 import type { EnvConfig } from '@/common/config/env.schema';
+
+export type R2ObjectMetadata = {
+  contentType?: string;
+  contentLength?: number;
+};
 
 @Injectable()
 export class R2Service {
@@ -76,5 +84,76 @@ export class R2Service {
         Key: storageKey,
       }),
     );
+  }
+
+  async listObjectsByPrefix(prefix: string): Promise<string[]> {
+    const command = new ListObjectsV2Command({
+      Bucket: this.bucket,
+      Prefix: prefix,
+    });
+
+    try {
+      const response = await this.client.send(command);
+
+      if (!response.Contents) {
+        return [];
+      }
+
+      return response.Contents.map((object) => object.Key).filter(
+        (key): key is string => Boolean(key),
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Không thể quét danh sách file trên R2: ${message}`);
+    }
+  }
+
+  async copyObject(sourceKey: string, destinationKey: string): Promise<void> {
+    try {
+      await this.client.send(
+        new CopyObjectCommand({
+          Bucket: this.bucket,
+          CopySource: `${this.bucket}/${sourceKey}`,
+          Key: destinationKey,
+        }),
+      );
+    } catch (error) {
+      console.error('[R2] CopyObject error:', error);
+      throw error;
+    }
+
+    await this.deleteObject(sourceKey);
+  }
+
+  async getObjectMetadata(storageKey: string): Promise<R2ObjectMetadata> {
+    const response = await this.client.send(
+      new HeadObjectCommand({
+        // kiểm tra file tồn tại + lấy metadata
+        Bucket: this.bucket,
+        Key: storageKey,
+      }),
+    );
+
+    return {
+      contentType: response.ContentType,
+      contentLength: response.ContentLength,
+    };
+  }
+
+  async getObjectBuffer(storageKey: string): Promise<Buffer> {
+    const response = await this.client.send(
+      new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: storageKey,
+      }),
+    );
+
+    const body = response.Body;
+    if (!body) {
+      throw new Error(`R2 object empty: ${storageKey}`);
+    }
+
+    const bytes = await body.transformToByteArray();
+    return Buffer.from(bytes);
   }
 }

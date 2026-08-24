@@ -54,7 +54,7 @@ const ERROR_MESSAGES: Record<string, string> = {
     ENROLLMENT_ALREADY_ACTIVE: 'Học sinh đã có lớp đang học trong học kỳ này',
     ENROLLMENT_NOT_ACTIVE: 'Ghi danh không ở trạng thái đang học',
     NO_SOURCE_ENROLLMENTS:
-        'Không có ghi danh đang học (ACTIVE) ở học kỳ nguồn',
+        'Không có ghi danh (ACTIVE / đã hoàn thành HK) ở học kỳ nguồn',
     ENROLLMENT_COPY_SAME_SEMESTER:
         'Học kỳ nguồn và học kỳ đích phải khác nhau',
     YEAR_PROMOTION_SAME_YEAR:
@@ -125,6 +125,9 @@ const ERROR_MESSAGES: Record<string, string> = {
     GRADEBOOK_LOCKED: 'Sổ điểm đã khóa — không thể sửa điểm',
     GRADEBOOK_SEMESTER_NOT_CURRENT:
         'Chỉ được sửa sổ điểm ở học kỳ hiện hành',
+    NO_OPEN_ASSESSMENTS: 'Không có đầu điểm đang mở để điền điểm mẫu',
+    NO_ENROLLMENTS: 'Lớp chưa có học sinh để điền điểm',
+    COURSE_SECTION_NO_HOMEROOM: 'Lớp môn chưa gắn lớp hành chính',
     GRADE_LEVEL_SUBJECT_PERIODS_NOT_CONFIGURED:
         'Chưa cấu hình số tiết/năm cho môn theo khối — liên hệ quản trị viên',
     FORBIDDEN_SCOPE: 'Bạn không có quyền thao tác dữ liệu này',

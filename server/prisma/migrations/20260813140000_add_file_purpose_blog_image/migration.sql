@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "FilePurpose" ADD VALUE IF NOT EXISTS 'BLOG_IMAGE';

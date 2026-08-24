@@ -30,14 +30,13 @@ import { PortalGradebookProvisionService } from '@/modules/portal/portal-gradebo
 import { GradebookGridService } from '@/modules/gradebook-grid/gradebook-grid.service';
 import type {
   PortalGradebookExportQuery,
-  PortalImportScoresFormInput,
-  PortalImportScoresTemplateQuery,
   PortalMyGradebookClassesQuery,
   PortalMyScoresGridQuery,
   PortalMyScoresQuery,
   PortalPatchGradebookScoresInput,
 } from '@/modules/portal/schemas/portal-gradebook.schema';
 import { GradeSummariesService } from '@/modules/grade-summaries/grade-summaries.service';
+import { NotificationsService } from '@/modules/notifications/notifications.service';
 import { ParentsService } from '@/modules/parents/parents.service';
 import { ScoresService } from '@/modules/scores/scores.service';
 import { SemestersService } from '@/modules/semesters/semesters.service';
@@ -49,9 +48,18 @@ import {
   ExportsPdfService,
   type PdfExportFile,
 } from '@/modules/exports/exports-pdf.service';
-import { ScoresImportService } from '@/modules/imports/scores-import.service';
-import { ScoresImportTemplateService } from '@/modules/imports/scores-import-template.service';
-import type { ScoreImportResult } from '@/modules/imports/schemas/scores-import.schema';
+import { CourseSectionsService } from '@/modules/course-sections/course-sections.service';
+
+function clampFakeScore(value: number): number {
+  const clamped = Math.max(4, Math.min(9.5, value));
+  return Math.round(clamped * 4) / 4;
+}
+
+function pickFakeScore(studentIndex: number, slotIndex: number): number {
+  const tier = [5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9][studentIndex % 10] ?? 7;
+  const noise = (((studentIndex * 3 + slotIndex * 5) % 7) - 3) * 0.25;
+  return clampFakeScore(tier + noise);
+}
 
 @Injectable()
 export class PortalGradebookService {
@@ -63,10 +71,10 @@ export class PortalGradebookService {
     private readonly scoresService: ScoresService,
     private readonly gradeSummariesService: GradeSummariesService,
     private readonly gradebookGridService: GradebookGridService,
-    private readonly scoresImportService: ScoresImportService,
-    private readonly scoresImportTemplateService: ScoresImportTemplateService,
     private readonly gradebookExportService: GradebookExportService,
     private readonly exportsPdfService: ExportsPdfService,
+    private readonly notificationsService: NotificationsService,
+    private readonly courseSectionsService: CourseSectionsService,
   ) {}
 
   async getMyGradebookClasses(
@@ -195,11 +203,60 @@ export class PortalGradebookService {
       courseSectionId,
     );
 
+    const [courseSection, assessmentNames] = await Promise.all([
+      this.prisma.courseSection.findUniqueOrThrow({
+        where: { id: courseSectionId },
+        select: { name: true },
+      }),
+      this.getChangedAssessmentNames(
+        user.activeSchoolId,
+        courseSectionId,
+        input.changes,
+      ),
+    ]);
+
     await this.scoresService.patchGradebookChanges(
       user.activeSchoolId,
       courseSectionId,
       input.changes,
     );
+
+    // Gửi thông báo cho phụ huynh về việc cập nhật điểm
+    if (assessmentNames.length > 0) {
+      const uniqueAssessmentNames = [...new Set(assessmentNames)];
+
+      await this.notificationsService.scoreNotification(
+        user.activeSchoolId,
+        user.id,
+        courseSectionId,
+        courseSection.name,
+        'UPDATED',
+        uniqueAssessmentNames,
+      );
+    }
+  }
+
+  private async getChangedAssessmentNames(
+    schoolId: string,
+    courseSectionId: string,
+    changes: Array<{
+      assessmentId: string;
+      studentId: string;
+      score: number | null;
+      note?: string | null;
+    }>,
+  ): Promise<string[]> {
+    if (changes.length === 0) return [];
+
+    const assessmentIds = [...new Set(changes.map((c) => c.assessmentId))];
+    const assessments = await this.prisma.assessment.findMany({
+      where: { schoolId, id: { in: assessmentIds }, courseSectionId },
+      select: { id: true, name: true },
+    });
+
+    return assessmentIds
+      .map((id) => assessments.find((a) => a.id === id)?.name)
+      .filter((name): name is string => name !== undefined);
   }
 
   async lockMyGradebook(
@@ -227,6 +284,11 @@ export class PortalGradebookService {
       courseSectionId,
     );
 
+    const courseSectionName = await this.courseSectionsService.findById(
+      user.activeSchoolId,
+      courseSectionId,
+    );
+
     const result = await this.prisma.assessment.updateMany({
       where: {
         schoolId: user.activeSchoolId,
@@ -243,53 +305,23 @@ export class PortalGradebookService {
         user.activeSchoolId,
         courseSectionId,
       );
+
+      await this.notificationsService.scoreNotification(
+        user.activeSchoolId,
+        user.id,
+        courseSectionId,
+        courseSectionName.name,
+        'LOCKED',
+      );
     }
 
     return { lockedAssessmentCount: result.count };
   }
 
-  async downloadMyGradebookImportTemplate(
+  async fillFakeMyGradebookScores(
     user: AuthenticatedUser,
     courseSectionId: string,
-    query: PortalImportScoresTemplateQuery,
-  ): Promise<{ buffer: Buffer; filename: string }> {
-    const teacher = await this.findTeacherProfileByUserId(
-      user.activeSchoolId,
-      user.id,
-    );
-
-    await this.assertTeacherAssignedToCourseSection(
-      user.activeSchoolId,
-      teacher.id,
-      courseSectionId,
-    );
-
-    await this.gradebookProvisionService.ensureGradebookProvisioned(
-      user.activeSchoolId,
-      courseSectionId,
-      teacher.id,
-    );
-
-    const buffer = await this.scoresImportTemplateService.buildTemplateBuffer(
-      user.activeSchoolId,
-      {
-        courseSectionId,
-        assessmentId: query.assessmentId,
-      },
-    );
-
-    return {
-      buffer,
-      filename: 'mau-import-diem.xlsx',
-    };
-  }
-
-  async importMyGradebookScores(
-    user: AuthenticatedUser,
-    courseSectionId: string,
-    form: PortalImportScoresFormInput,
-    file: Express.Multer.File | undefined,
-  ): Promise<ScoreImportResult> {
+  ): Promise<{ filledCount: number }> {
     const teacher = await this.findTeacherProfileByUserId(
       user.activeSchoolId,
       user.id,
@@ -312,14 +344,84 @@ export class PortalGradebookService {
       teacher.id,
     );
 
-    return this.scoresImportService.importScores(
-      user.activeSchoolId,
-      file,
-      {
-        courseSectionId,
-        assessmentId: form.assessmentId,
+    const courseSection = await this.prisma.courseSection.findFirst({
+      where: { id: courseSectionId, schoolId: user.activeSchoolId },
+      select: {
+        semesterId: true,
+        homeroomClassId: true,
       },
+    });
+
+    if (!courseSection?.homeroomClassId) {
+      throw new AppException(
+        'COURSE_SECTION_NO_HOMEROOM',
+        'Lớp môn chưa gắn lớp hành chính',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    const assessments = await this.prisma.assessment.findMany({
+      where: {
+        schoolId: user.activeSchoolId,
+        courseSectionId,
+        status: AssessmentStatus.OPEN,
+      },
+      select: { id: true, type: true, assessmentDate: true, name: true },
+      orderBy: [{ assessmentDate: 'asc' }, { name: 'asc' }],
+    });
+
+    if (assessments.length === 0) {
+      throw new AppException(
+        'NO_OPEN_ASSESSMENTS',
+        'Không có đầu điểm đang mở để điền điểm mẫu',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    const enrollments = await this.prisma.studentEnrollment.findMany({
+      where: {
+        schoolId: user.activeSchoolId,
+        semesterId: courseSection.semesterId,
+        homeroomClassId: courseSection.homeroomClassId,
+        status: { in: [...GRADEBOOK_ENROLLMENT_STATUSES] },
+      },
+      orderBy: { student: { fullName: 'asc' } },
+      select: { studentId: true },
+    });
+
+    if (enrollments.length === 0) {
+      throw new AppException(
+        'NO_ENROLLMENTS',
+        'Lớp chưa có học sinh để điền điểm',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    const changes: Array<{
+      assessmentId: string;
+      studentId: string;
+      score: number;
+      note: null;
+    }> = [];
+
+    enrollments.forEach((enrollment, studentIndex) => {
+      assessments.forEach((assessment, slotIndex) => {
+        changes.push({
+          assessmentId: assessment.id,
+          studentId: enrollment.studentId,
+          score: pickFakeScore(studentIndex, slotIndex),
+          note: null,
+        });
+      });
+    });
+
+    await this.scoresService.patchGradebookChanges(
+      user.activeSchoolId,
+      courseSectionId,
+      changes,
     );
+
+    return { filledCount: changes.length };
   }
 
   async exportMyGradebook(
@@ -765,7 +867,7 @@ export class PortalGradebookService {
         courseSectionId,
         status: AcademicEntityStatus.ACTIVE,
       },
-      select: { id: true },
+      select: { id: true, courseSection: { select: { name: true } } },
     });
 
     if (!assignment) {

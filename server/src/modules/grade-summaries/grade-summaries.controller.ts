@@ -240,6 +240,7 @@ export class GradeSummariesController {
     const data = await this.gradeSummariesService.finalizeSemesterAll(
       user.activeSchoolId,
       semesterId,
+      user.id,
     );
 
     return {
@@ -301,6 +302,7 @@ export class GradeSummariesController {
     const data = await this.gradeSummariesService.finalizePromotionAll(
       user.activeSchoolId,
       academicYearId,
+      user.id,
     );
 
     return {

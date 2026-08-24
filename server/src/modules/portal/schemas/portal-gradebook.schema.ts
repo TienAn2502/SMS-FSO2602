@@ -65,22 +65,6 @@ export const portalMyScoresQuerySchema = paginationSchema.extend({
 
 export type PortalMyScoresQuery = z.infer<typeof portalMyScoresQuerySchema>;
 
-export const portalImportScoresFormSchema = z.object({
-  assessmentId: z.uuid('Đầu điểm không hợp lệ'),
-});
-
-export type PortalImportScoresFormInput = z.infer<
-  typeof portalImportScoresFormSchema
->;
-
-export const portalImportScoresTemplateQuerySchema = z.object({
-  assessmentId: z.uuid('Đầu điểm không hợp lệ').optional(),
-});
-
-export type PortalImportScoresTemplateQuery = z.infer<
-  typeof portalImportScoresTemplateQuerySchema
->;
-
 export const portalGradebookExportQuerySchema = z.object({
   format: z.enum(['xlsx', 'csv']),
 });

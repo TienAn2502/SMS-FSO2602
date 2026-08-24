@@ -206,8 +206,25 @@ export class TimetableImportService {
     const entries: ResolvedTimetableImportEntry[] = [];
     let skippedNoAssignment = 0;
 
+    const semester = await this.prisma.semester.findFirst({
+      where: { id: semesterId, schoolId },
+      select: { id: true, name: true, academicYearId: true },
+    });
+
+    if (!semester) {
+      throw new AppException(
+        'SEMESTER_NOT_FOUND',
+        'Không tìm thấy học kỳ',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
     const homeroomClasses = await this.prisma.homeroomClass.findMany({
-      where: { schoolId, status: AcademicEntityStatus.ACTIVE },
+      where: {
+        schoolId,
+        status: AcademicEntityStatus.ACTIVE,
+        academicYearId: semester.academicYearId,
+      },
       select: { id: true, code: true, name: true },
     });
     const homeroomClassByCode = new Map(
@@ -416,7 +433,7 @@ export class TimetableImportService {
           dayOfWeek: cell.dayOfWeek,
           periodNumber: cell.periodNumber,
           field: 'mon',
-          message: `Không tìm thấy lớp môn / môn "${key}" (đã phân công) cho lớp ${homeroomClass.code}`,
+          message: `Không tìm thấy lớp môn / môn "${key}" cho lớp ${homeroomClass.code} trong học kỳ đã chọn`,
         });
       }
     }

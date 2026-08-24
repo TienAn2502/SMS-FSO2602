@@ -10,22 +10,18 @@ import {
   PromotionDecision,
   SubjectEvaluationMode,
   SummaryStatus,
-  type AcademicResultLevel,
 } from '@prisma/client';
 
 import { PrismaService } from '@/common/database/prisma.service';
 import { AppException } from '@/common/exceptions/app.exception';
 import {
-  computeOverallAverage,
   computePassFailResult,
   computeSubjectSemesterAverage,
-  computeSubjectYearAverage,
-  resolveAcademicResultLevel,
   type SubjectScoreInput,
 } from '@/common/utils/gradebook-average.util';
+import { backfillSubjectYearAverages } from '@/common/utils/subject-year-average.util';
 import { buildPaginationMeta, getSkip } from '@/common/utils/pagination.util';
 import { isGraduatingGradeLevel } from '@/common/utils/grade-level.util';
-import { assessmentDetailInclude } from '@/modules/assessments/mappers/assessment.mapper';
 import {
   semesterSummaryListInclude,
   subjectResultListInclude,
@@ -63,16 +59,56 @@ import type {
   YearPromotionReadiness,
   YearRecomputeAllResult,
 } from '@/modules/grade-summaries/year-promotion-finalization.types';
+import { computeSemesterSummaryFields } from '@/modules/grade-summaries/semester-summary-recompute.util';
 import {
   buildYearRecomputeIndexes,
   computeDraftYearSummaryForStudent,
   type YearRecomputeContext,
   type YearRecomputeIndexes,
 } from '@/modules/grade-summaries/year-summary-recompute.util';
+import { NotificationsService } from '@/modules/notifications/notifications.service';
 
-type ClosedAssessment = Prisma.AssessmentGetPayload<{
-  include: typeof assessmentDetailInclude;
-}>;
+const SUBJECT_RESULT_UPSERT_BATCH_SIZE = 100;
+
+type ClosedAssessment = {
+  type: AssessmentType;
+  assessmentDate: Date;
+  name: string;
+  scores: Array<{
+    studentId: string;
+    score: Prisma.Decimal | null;
+    note: string | null;
+  }>;
+};
+
+const recomputeAssessmentSelect = {
+  courseSectionId: true,
+  type: true,
+  assessmentDate: true,
+  name: true,
+  scores: {
+    select: {
+      studentId: true,
+      score: true,
+      note: true,
+    },
+  },
+} as const;
+
+type ComparableSubjectResultRow = {
+  evaluationMode: SubjectEvaluationMode;
+  regularAverage: Prisma.Decimal | null;
+  midtermScore: Prisma.Decimal | null;
+  finalScore: Prisma.Decimal | null;
+  semesterAverage: Prisma.Decimal | null;
+  passFailResult: PassFailResult | null;
+};
+
+type ExistingSubjectResultRow = ComparableSubjectResultRow & {
+  studentId: string;
+  courseSectionId: string;
+  status: SummaryStatus;
+};
 
 type CourseSectionScope = {
   id: string;
@@ -103,7 +139,10 @@ export interface RecomputeGradeSummariesResult {
 
 @Injectable()
 export class GradeSummariesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   /** Gọi khi GV khóa sổ môn — chỉ tính kết quả từng môn học kỳ. */
   async onGradebookLocked(
@@ -137,11 +176,21 @@ export class GradeSummariesService {
       );
     }
 
-    return this.recomputeSubjectResultsForCourseSection(
+    const result = await this.recomputeSubjectResultsForCourseSection(
       schoolId,
       courseSection,
-      semester.academicYearId,
     );
+
+    const yearAveragesUpdated =
+      result.subjectResultsUpserted > 0
+        ? await backfillSubjectYearAverages(
+            this.prisma,
+            schoolId,
+            semester.academicYearId,
+          )
+        : 0;
+
+    return { ...result, yearAveragesUpdated };
   }
 
   /** Tính lại TB môn học kỳ (student_subject_results). */
@@ -154,37 +203,7 @@ export class GradeSummariesService {
       input,
     );
 
-    const aggregate: RecomputeSubjectResultsResult = {
-      subjectResultsUpserted: 0,
-      yearAveragesUpdated: 0,
-      skippedClosed: 0,
-      studentIds: [],
-    };
-
-    const studentIdSet = new Set<string>();
-
-    for (const courseSection of courseSections) {
-      if (!courseSection.homeroomClassId) {
-        continue;
-      }
-
-      const sectionResult = await this.recomputeSubjectResultsForCourseSection(
-        schoolId,
-        courseSection,
-        semester.academicYearId,
-      );
-
-      aggregate.subjectResultsUpserted += sectionResult.subjectResultsUpserted;
-      aggregate.skippedClosed += sectionResult.skippedClosed;
-      aggregate.yearAveragesUpdated += sectionResult.yearAveragesUpdated;
-
-      for (const studentId of sectionResult.studentIds) {
-        studentIdSet.add(studentId);
-      }
-    }
-
-    aggregate.studentIds = [...studentIdSet];
-    return aggregate;
+    return this.recomputeSubjectResultsBulk(schoolId, semester, courseSections);
   }
 
   /** Tính lại tổng kết học kỳ (student_semester_summaries). */
@@ -198,40 +217,16 @@ export class GradeSummariesService {
     const targetStudentIds =
       studentIds ?? (await this.collectStudentIdsForScope(schoolId, input));
 
-    const result: RecomputeSemesterSummariesResult = {
-      semesterSummariesUpserted: 0,
-      skippedClosed: 0,
-    };
-
-    for (const studentId of targetStudentIds) {
-      // id lớp học của học sinh
-      const homeroomClassId = await this.resolveHomeroomClassIdForStudent(
-        schoolId,
-        studentId,
-        input.semesterId,
-        input.homeroomClassId,
-      );
-
-      if (!homeroomClassId) {
-        continue;
-      }
-
-      // Tính toán lại tổng kết học kỳ
-      const summaryResult = await this.upsertSemesterSummary(
-        schoolId,
-        studentId,
-        input.semesterId,
-        homeroomClassId,
-      );
-
-      if (summaryResult === 'upserted') {
-        result.semesterSummariesUpserted += 1;
-      } else if (summaryResult === 'skipped-closed') {
-        result.skippedClosed += 1;
-      }
+    if (targetStudentIds.length === 0) {
+      return { semesterSummariesUpserted: 0, skippedClosed: 0 };
     }
 
-    return result;
+    return this.recomputeSemesterSummariesBulk(
+      schoolId,
+      input.semesterId,
+      targetStudentIds,
+      input.homeroomClassId,
+    );
   }
 
   /**
@@ -471,10 +466,18 @@ export class GradeSummariesService {
       input.homeroomClassId,
     );
 
-    await this.recomputeSemesterSummaries(schoolId, {
-      semesterId,
-      homeroomClassId: input.homeroomClassId,
+    const semester = await this.prisma.semester.findFirst({
+      where: { id: semesterId, schoolId },
+      select: { academicYearId: true },
     });
+
+    if (semester) {
+      await backfillSubjectYearAverages(
+        this.prisma,
+        schoolId,
+        semester.academicYearId,
+      );
+    }
 
     const now = new Date();
 
@@ -669,6 +672,7 @@ export class GradeSummariesService {
   async finalizeSemesterAll(
     schoolId: string,
     semesterId: string,
+    userId: string,
   ): Promise<SemesterFinalizeAllResult> {
     // Kiểm tra xem đủ điều kiện khóa học kỳ chưa
     const readiness = await this.getSemesterFinalizeReadiness(
@@ -692,12 +696,29 @@ export class GradeSummariesService {
       );
     }
 
-    // Tính toán lại tổng kết học kỳ
-    await this.recomputeSemesterSummaries(schoolId, { semesterId });
+    const semester = await this.prisma.semester.findFirst({
+      where: { id: semesterId, schoolId },
+      select: {
+        academicYearId: true,
+        academicYear: {
+          select: {
+            name: true,
+          },
+        },
+        name: true,
+      },
+    });
+
+    if (semester) {
+      await backfillSubjectYearAverages(
+        this.prisma,
+        schoolId,
+        semester.academicYearId,
+      );
+    }
 
     const now = new Date();
 
-    // Khóa tổng kết học kỳ
     const [subjectClosed, summaryClosed, conductClosed] =
       await this.prisma.$transaction([
         this.prisma.studentSubjectResult.updateMany({
@@ -728,6 +749,14 @@ export class GradeSummariesService {
           data: { status: SummaryStatus.CLOSED },
         }),
       ]);
+
+    await this.notificationsService.lockSemesterOrAcademicYearSchoolNotification(
+      semester!.academicYear.name,
+      schoolId,
+      userId,
+      'SEMESTER',
+      semester!.name,
+    );
 
     return {
       subjectResultsClosed: subjectClosed.count,
@@ -880,6 +909,7 @@ export class GradeSummariesService {
   async finalizePromotionAll(
     schoolId: string,
     academicYearId: string,
+    userId: string,
   ): Promise<YearPromotionFinalizeAllResult> {
     const readiness = await this.getYearPromotionFinalizeReadiness(
       schoolId,
@@ -925,6 +955,13 @@ export class GradeSummariesService {
     const closeResult = await this.closeDraftYearSummaries(
       schoolId,
       academicYearId,
+    );
+
+    await this.notificationsService.lockSemesterOrAcademicYearSchoolNotification(
+      readiness.academicYearName,
+      schoolId,
+      userId,
+      'ACADEMIC_YEAR',
     );
 
     return {
@@ -1246,9 +1283,14 @@ export class GradeSummariesService {
           studentId: { in: context.studentIds },
           semesterId: { in: context.semesterIds },
           evaluationMode: SubjectEvaluationMode.NUMERIC,
-          yearAverage: { not: null },
         },
-        select: { studentId: true, yearAverage: true },
+        select: {
+          studentId: true,
+          yearAverage: true,
+          semesterAverage: true,
+          semester: { select: { code: true } },
+          courseSection: { select: { code: true } },
+        },
       }),
       this.prisma.studentSubjectResult.findMany({
         where: {
@@ -1258,7 +1300,12 @@ export class GradeSummariesService {
           evaluationMode: SubjectEvaluationMode.PASS_FAIL,
           passFailResult: { not: null },
         },
-        select: { studentId: true, passFailResult: true },
+        select: {
+          studentId: true,
+          passFailResult: true,
+          semester: { select: { code: true } },
+          courseSection: { select: { code: true } },
+        },
       }),
       this.prisma.studentYearSummary.findMany({
         where: {
@@ -1275,8 +1322,19 @@ export class GradeSummariesService {
       semesterSummaries,
       conductRecords,
       absenceGroups,
-      numericSubjectResults,
-      passFailSubjectResults,
+      numericSubjectResults: numericSubjectResults.map((row) => ({
+        studentId: row.studentId,
+        courseSectionCode: row.courseSection.code,
+        semesterCode: row.semester.code,
+        semesterAverage: row.semesterAverage?.toNumber() ?? null,
+        yearAverage: row.yearAverage?.toNumber() ?? null,
+      })),
+      passFailSubjectResults: passFailSubjectResults.map((row) => ({
+        studentId: row.studentId,
+        courseSectionCode: row.courseSection.code,
+        semesterCode: row.semester.code,
+        passFailResult: row.passFailResult,
+      })),
       existingYearSummaries,
     });
   }
@@ -1724,10 +1782,375 @@ export class GradeSummariesService {
     return enrollments.map((row) => row.studentId);
   }
 
+  private async runPrismaBatch(
+    operations: Prisma.PrismaPromise<unknown>[],
+    batchSize = SUBJECT_RESULT_UPSERT_BATCH_SIZE,
+  ): Promise<void> {
+    if (operations.length === 0) {
+      return;
+    }
+
+    for (let index = 0; index < operations.length; index += batchSize) {
+      await this.prisma.$transaction(
+        operations.slice(index, index + batchSize),
+      );
+    }
+  }
+
+  private async recomputeSubjectResultsBulk(
+    schoolId: string,
+    semester: { id: string; academicYearId: string },
+    courseSections: CourseSectionScope[],
+  ): Promise<RecomputeSubjectResultsResult> {
+    const scopedSections = courseSections.filter(
+      (row): row is CourseSectionScope & { homeroomClassId: string } =>
+        row.homeroomClassId != null,
+    );
+
+    if (scopedSections.length === 0) {
+      return {
+        subjectResultsUpserted: 0,
+        yearAveragesUpdated: 0,
+        skippedClosed: 0,
+        studentIds: [],
+      };
+    }
+
+    const sectionIds = scopedSections.map((row) => row.id);
+    const homeroomIds = [
+      ...new Set(scopedSections.map((row) => row.homeroomClassId)),
+    ];
+
+    const [assessments, enrollments, existingResults] = await Promise.all([
+      this.prisma.assessment.findMany({
+        where: {
+          schoolId,
+          courseSectionId: { in: sectionIds },
+          status: AssessmentStatus.CLOSED,
+        },
+        select: recomputeAssessmentSelect,
+      }),
+      this.prisma.studentEnrollment.findMany({
+        where: {
+          schoolId,
+          semesterId: semester.id,
+          homeroomClassId: { in: homeroomIds },
+          status: EnrollmentStatus.ACTIVE,
+        },
+        select: {
+          studentId: true,
+          homeroomClassId: true,
+        },
+      }),
+      this.prisma.studentSubjectResult.findMany({
+        where: {
+          schoolId,
+          semesterId: semester.id,
+          courseSectionId: { in: sectionIds },
+        },
+        select: {
+          studentId: true,
+          courseSectionId: true,
+          status: true,
+          evaluationMode: true,
+          regularAverage: true,
+          midtermScore: true,
+          finalScore: true,
+          semesterAverage: true,
+          passFailResult: true,
+        },
+      }),
+    ]);
+
+    const assessmentsBySectionId = new Map<string, ClosedAssessment[]>();
+    for (const assessment of assessments) {
+      const list = assessmentsBySectionId.get(assessment.courseSectionId) ?? [];
+      list.push(assessment);
+      assessmentsBySectionId.set(assessment.courseSectionId, list);
+    }
+
+    const studentIdsByHomeroomId = new Map<string, string[]>();
+    const studentIdSet = new Set<string>();
+    for (const enrollment of enrollments) {
+      studentIdSet.add(enrollment.studentId);
+      const list = studentIdsByHomeroomId.get(enrollment.homeroomClassId) ?? [];
+      list.push(enrollment.studentId);
+      studentIdsByHomeroomId.set(enrollment.homeroomClassId, list);
+    }
+
+    const existingByKey = new Map<string, ExistingSubjectResultRow>();
+    for (const row of existingResults) {
+      existingByKey.set(`${row.studentId}::${row.courseSectionId}`, row);
+    }
+
+    const upsertOperations: Prisma.PrismaPromise<unknown>[] = [];
+    let subjectResultsUpserted = 0;
+    let skippedClosed = 0;
+    const computedAt = new Date();
+
+    for (const section of scopedSections) {
+      const sectionAssessments = assessmentsBySectionId.get(section.id) ?? [];
+      const studentIds =
+        studentIdsByHomeroomId.get(section.homeroomClassId) ?? [];
+      const scoreInputsByStudent = this.buildScoreInputsByStudent(
+        sectionAssessments,
+        studentIds,
+      );
+
+      for (const studentId of studentIds) {
+        const existing = existingByKey.get(`${studentId}::${section.id}`);
+
+        if (existing?.status === SummaryStatus.CLOSED) {
+          skippedClosed += 1;
+          continue;
+        }
+
+        const computed = this.computeSubjectResult(
+          section.evaluationMode,
+          scoreInputsByStudent.get(studentId) ?? [],
+        );
+
+        if (
+          existing &&
+          this.computedSubjectResultMatchesExisting(
+            existing,
+            computed,
+            section.evaluationMode,
+          )
+        ) {
+          continue;
+        }
+
+        upsertOperations.push(
+          this.prisma.studentSubjectResult.upsert({
+            where: {
+              studentId_courseSectionId_semesterId: {
+                studentId,
+                courseSectionId: section.id,
+                semesterId: section.semesterId,
+              },
+            },
+            create: {
+              schoolId,
+              studentId,
+              courseSectionId: section.id,
+              semesterId: section.semesterId,
+              evaluationMode: section.evaluationMode,
+              regularAverage: computed.regularAverage,
+              midtermScore: computed.midtermScore,
+              finalScore: computed.finalScore,
+              semesterAverage: computed.semesterAverage,
+              yearAverage: null,
+              passFailResult: computed.passFailResult,
+              computedAt,
+              status: SummaryStatus.DRAFT,
+            },
+            update: {
+              evaluationMode: section.evaluationMode,
+              regularAverage: computed.regularAverage,
+              midtermScore: computed.midtermScore,
+              finalScore: computed.finalScore,
+              semesterAverage: computed.semesterAverage,
+              passFailResult: computed.passFailResult,
+              computedAt,
+            },
+          }),
+        );
+        subjectResultsUpserted += 1;
+      }
+    }
+
+    await this.runPrismaBatch(upsertOperations);
+
+    const yearAveragesUpdated =
+      subjectResultsUpserted > 0
+        ? await backfillSubjectYearAverages(
+            this.prisma,
+            schoolId,
+            semester.academicYearId,
+          )
+        : 0;
+
+    return {
+      subjectResultsUpserted,
+      yearAveragesUpdated,
+      skippedClosed,
+      studentIds: [...studentIdSet],
+    };
+  }
+
+  private async recomputeSemesterSummariesBulk(
+    schoolId: string,
+    semesterId: string,
+    studentIds: string[],
+    homeroomClassFilter?: string,
+  ): Promise<RecomputeSemesterSummariesResult> {
+    const [enrollments, subjectResults, conductRecords, existingSummaries] =
+      await Promise.all([
+        this.prisma.studentEnrollment.findMany({
+          where: {
+            schoolId,
+            semesterId,
+            studentId: { in: studentIds },
+            status: EnrollmentStatus.ACTIVE,
+            ...(homeroomClassFilter
+              ? { homeroomClassId: homeroomClassFilter }
+              : {}),
+          },
+          select: {
+            studentId: true,
+            homeroomClassId: true,
+          },
+        }),
+        this.prisma.studentSubjectResult.findMany({
+          where: {
+            schoolId,
+            semesterId,
+            studentId: { in: studentIds },
+          },
+          select: {
+            studentId: true,
+            evaluationMode: true,
+            semesterAverage: true,
+            passFailResult: true,
+          },
+        }),
+        this.prisma.studentConductRecord.findMany({
+          where: {
+            schoolId,
+            semesterId,
+            studentId: { in: studentIds },
+          },
+          select: {
+            studentId: true,
+            trainingResultLevel: true,
+          },
+        }),
+        this.prisma.studentSemesterSummary.findMany({
+          where: {
+            schoolId,
+            semesterId,
+            studentId: { in: studentIds },
+          },
+          select: {
+            studentId: true,
+            status: true,
+            homeroomClassId: true,
+            overallAverage: true,
+            academicResultLevel: true,
+            trainingResultLevel: true,
+            subjectCount: true,
+          },
+        }),
+      ]);
+
+    const homeroomByStudentId = new Map<string, string>();
+    for (const row of enrollments) {
+      homeroomByStudentId.set(row.studentId, row.homeroomClassId);
+    }
+
+    const subjectResultsByStudentId = new Map<
+      string,
+      Array<{
+        evaluationMode: SubjectEvaluationMode;
+        semesterAverage: Prisma.Decimal | null;
+        passFailResult: PassFailResult | null;
+      }>
+    >();
+    for (const row of subjectResults) {
+      const list = subjectResultsByStudentId.get(row.studentId) ?? [];
+      list.push(row);
+      subjectResultsByStudentId.set(row.studentId, list);
+    }
+
+    const conductByStudentId = new Map(
+      conductRecords.map((row) => [row.studentId, row.trainingResultLevel]),
+    );
+
+    const closedStudentIds = new Set(
+      existingSummaries
+        .filter((row) => row.status === SummaryStatus.CLOSED)
+        .map((row) => row.studentId),
+    );
+
+    const existingSummaryByStudentId = new Map(
+      existingSummaries.map((row) => [row.studentId, row]),
+    );
+
+    const upsertOperations: Prisma.PrismaPromise<unknown>[] = [];
+    let semesterSummariesUpserted = 0;
+    let skippedClosed = 0;
+
+    for (const studentId of studentIds) {
+      if (closedStudentIds.has(studentId)) {
+        skippedClosed += 1;
+        continue;
+      }
+
+      const homeroomClassId = homeroomByStudentId.get(studentId);
+      if (!homeroomClassId) {
+        continue;
+      }
+
+      const fields = computeSemesterSummaryFields(
+        subjectResultsByStudentId.get(studentId) ?? [],
+        conductByStudentId.get(studentId),
+      );
+
+      const existing = existingSummaryByStudentId.get(studentId);
+      if (
+        existing &&
+        existing.homeroomClassId === homeroomClassId &&
+        this.decimalsEqual(
+          existing.overallAverage,
+          this.toDecimal(fields.overallAverage),
+        ) &&
+        existing.academicResultLevel === fields.academicResultLevel &&
+        existing.trainingResultLevel === fields.trainingResultLevel &&
+        existing.subjectCount === fields.subjectCount
+      ) {
+        continue;
+      }
+
+      upsertOperations.push(
+        this.prisma.studentSemesterSummary.upsert({
+          where: {
+            studentId_semesterId: {
+              studentId,
+              semesterId,
+            },
+          },
+          create: {
+            schoolId,
+            studentId,
+            semesterId,
+            homeroomClassId,
+            overallAverage: this.toDecimal(fields.overallAverage),
+            academicResultLevel: fields.academicResultLevel,
+            trainingResultLevel: fields.trainingResultLevel,
+            subjectCount: fields.subjectCount,
+            status: SummaryStatus.DRAFT,
+          },
+          update: {
+            homeroomClassId,
+            overallAverage: this.toDecimal(fields.overallAverage),
+            academicResultLevel: fields.academicResultLevel,
+            trainingResultLevel: fields.trainingResultLevel,
+            subjectCount: fields.subjectCount,
+          },
+        }),
+      );
+      semesterSummariesUpserted += 1;
+    }
+
+    await this.runPrismaBatch(upsertOperations);
+
+    return { semesterSummariesUpserted, skippedClosed };
+  }
+
   private async recomputeSubjectResultsForCourseSection(
     schoolId: string,
     courseSection: CourseSectionScope,
-    academicYearId: string,
   ): Promise<RecomputeSubjectResultsResult> {
     if (!courseSection.homeroomClassId) {
       return {
@@ -1744,7 +2167,7 @@ export class GradeSummariesService {
         courseSectionId: courseSection.id,
         status: AssessmentStatus.CLOSED,
       },
-      include: assessmentDetailInclude,
+      select: recomputeAssessmentSelect,
     });
 
     const enrollments = await this.prisma.studentEnrollment.findMany({
@@ -1765,86 +2188,101 @@ export class GradeSummariesService {
       enrollments.map((row) => row.studentId),
     );
 
+    const existingResults = await this.prisma.studentSubjectResult.findMany({
+      where: {
+        schoolId,
+        semesterId: courseSection.semesterId,
+        courseSectionId: courseSection.id,
+      },
+      select: {
+        studentId: true,
+        status: true,
+        evaluationMode: true,
+        regularAverage: true,
+        midtermScore: true,
+        finalScore: true,
+        semesterAverage: true,
+        passFailResult: true,
+      },
+    });
+
+    const existingByStudentId = new Map(
+      existingResults.map((row) => [row.studentId, row]),
+    );
+
+    const upsertOperations: Prisma.PrismaPromise<unknown>[] = [];
     let subjectResultsUpserted = 0;
     let skippedClosed = 0;
-    let yearAveragesUpdated = 0;
     const computedAt = new Date();
 
     for (const enrollment of enrollments) {
-      const inputs = scoreInputsByStudent.get(enrollment.studentId) ?? [];
-      const computed = this.computeSubjectResult(
-        courseSection.evaluationMode,
-        inputs,
-      );
-
-      const existing = await this.prisma.studentSubjectResult.findUnique({
-        where: {
-          studentId_courseSectionId_semesterId: {
-            studentId: enrollment.studentId,
-            courseSectionId: courseSection.id,
-            semesterId: courseSection.semesterId,
-          },
-        },
-        select: { status: true },
-      });
+      const existing = existingByStudentId.get(enrollment.studentId);
 
       if (existing?.status === SummaryStatus.CLOSED) {
         skippedClosed += 1;
         continue;
       }
 
-      await this.prisma.studentSubjectResult.upsert({
-        where: {
-          studentId_courseSectionId_semesterId: {
+      const inputs = scoreInputsByStudent.get(enrollment.studentId) ?? [];
+      const computed = this.computeSubjectResult(
+        courseSection.evaluationMode,
+        inputs,
+      );
+
+      if (
+        existing &&
+        this.computedSubjectResultMatchesExisting(
+          existing,
+          computed,
+          courseSection.evaluationMode,
+        )
+      ) {
+        continue;
+      }
+
+      upsertOperations.push(
+        this.prisma.studentSubjectResult.upsert({
+          where: {
+            studentId_courseSectionId_semesterId: {
+              studentId: enrollment.studentId,
+              courseSectionId: courseSection.id,
+              semesterId: courseSection.semesterId,
+            },
+          },
+          create: {
+            schoolId,
             studentId: enrollment.studentId,
             courseSectionId: courseSection.id,
             semesterId: courseSection.semesterId,
+            evaluationMode: courseSection.evaluationMode,
+            regularAverage: computed.regularAverage,
+            midtermScore: computed.midtermScore,
+            finalScore: computed.finalScore,
+            semesterAverage: computed.semesterAverage,
+            yearAverage: null,
+            passFailResult: computed.passFailResult,
+            computedAt,
+            status: SummaryStatus.DRAFT,
           },
-        },
-        create: {
-          schoolId,
-          studentId: enrollment.studentId,
-          courseSectionId: courseSection.id,
-          semesterId: courseSection.semesterId,
-          evaluationMode: courseSection.evaluationMode,
-          regularAverage: computed.regularAverage,
-          midtermScore: computed.midtermScore,
-          finalScore: computed.finalScore,
-          semesterAverage: computed.semesterAverage,
-          yearAverage: null,
-          passFailResult: computed.passFailResult,
-          computedAt,
-          status: SummaryStatus.DRAFT,
-        },
-        update: {
-          evaluationMode: courseSection.evaluationMode,
-          regularAverage: computed.regularAverage,
-          midtermScore: computed.midtermScore,
-          finalScore: computed.finalScore,
-          semesterAverage: computed.semesterAverage,
-          passFailResult: computed.passFailResult,
-          computedAt,
-        },
-      });
-
-      subjectResultsUpserted += 1;
-
-      const yearUpdated = await this.refreshSubjectYearAverage(
-        schoolId,
-        enrollment.studentId,
-        courseSection.code,
-        courseSection.homeroomClassId,
-        academicYearId,
+          update: {
+            evaluationMode: courseSection.evaluationMode,
+            regularAverage: computed.regularAverage,
+            midtermScore: computed.midtermScore,
+            finalScore: computed.finalScore,
+            semesterAverage: computed.semesterAverage,
+            passFailResult: computed.passFailResult,
+            computedAt,
+          },
+        }),
       );
-
-      if (yearUpdated) {
-        yearAveragesUpdated += 1;
-      }
+      subjectResultsUpserted += 1;
     }
+
+    await this.runPrismaBatch(upsertOperations);
 
     return {
       subjectResultsUpserted,
-      yearAveragesUpdated,
+      yearAveragesUpdated: 0,
       skippedClosed,
       studentIds: enrollments.map((row) => row.studentId),
     };
@@ -1879,185 +2317,6 @@ export class GradeSummariesService {
       semesterAverage: this.toDecimal(averages.semesterAverage),
       passFailResult: null,
     };
-  }
-
-  private async upsertSemesterSummary(
-    schoolId: string,
-    studentId: string,
-    semesterId: string,
-    homeroomClassId: string,
-  ): Promise<'upserted' | 'skipped-closed' | 'skipped'> {
-    // Kiểm tra xem tổng kết học kỳ đã khóa chưa
-    const existing = await this.prisma.studentSemesterSummary.findUnique({
-      where: {
-        studentId_semesterId: {
-          studentId,
-          semesterId,
-        },
-      },
-      select: { status: true },
-    });
-
-    if (existing?.status === SummaryStatus.CLOSED) {
-      return 'skipped-closed';
-    }
-
-    // Lấy ra kết quả môn học của học sinh
-    const subjectResults = await this.prisma.studentSubjectResult.findMany({
-      where: {
-        schoolId,
-        studentId,
-        semesterId,
-      },
-      select: {
-        evaluationMode: true,
-        semesterAverage: true,
-        passFailResult: true,
-      },
-    });
-
-    const subjectAverages = subjectResults
-      .filter(
-        (row) =>
-          row.evaluationMode === SubjectEvaluationMode.NUMERIC &&
-          row.semesterAverage != null,
-      )
-      .map((row) => row.semesterAverage!.toNumber());
-
-    const passFailResults = subjectResults
-      .filter((row) => row.evaluationMode === SubjectEvaluationMode.PASS_FAIL)
-      .map((row) => row.passFailResult)
-      .filter((result): result is PassFailResult => result != null);
-
-    const overallAverage = computeOverallAverage(subjectAverages);
-    const academicResultLevel: AcademicResultLevel | null =
-      resolveAcademicResultLevel({
-        numericSubjectAverages: subjectAverages,
-        passFailResults,
-      });
-
-    const conductRecord = await this.prisma.studentConductRecord.findUnique({
-      where: {
-        studentId_semesterId: {
-          studentId,
-          semesterId,
-        },
-      },
-      select: {
-        trainingResultLevel: true,
-      },
-    });
-
-    await this.prisma.studentSemesterSummary.upsert({
-      where: {
-        studentId_semesterId: {
-          studentId,
-          semesterId,
-        },
-      },
-      create: {
-        schoolId,
-        studentId,
-        semesterId,
-        homeroomClassId,
-        overallAverage: this.toDecimal(overallAverage),
-        academicResultLevel,
-        trainingResultLevel: conductRecord?.trainingResultLevel ?? null,
-        subjectCount: subjectAverages.length,
-        status: SummaryStatus.DRAFT,
-      },
-      update: {
-        homeroomClassId,
-        overallAverage: this.toDecimal(overallAverage),
-        academicResultLevel,
-        trainingResultLevel: conductRecord?.trainingResultLevel ?? null,
-        subjectCount: subjectAverages.length,
-      },
-    });
-
-    return 'upserted';
-  }
-
-  private async refreshSubjectYearAverage(
-    schoolId: string,
-    studentId: string,
-    courseSectionCode: string,
-    homeroomClassId: string,
-    academicYearId: string,
-  ): Promise<boolean> {
-    const courseSections = await this.prisma.courseSection.findMany({
-      where: {
-        schoolId,
-        code: courseSectionCode,
-        homeroomClassId,
-        semester: {
-          academicYearId,
-        },
-      },
-      select: {
-        id: true,
-        semesterId: true,
-        semester: {
-          select: { code: true },
-        },
-      },
-    });
-
-    if (courseSections.length === 0) {
-      return false;
-    }
-
-    const subjectResults = await this.prisma.studentSubjectResult.findMany({
-      where: {
-        schoolId,
-        studentId,
-        courseSectionId: {
-          in: courseSections.map((row) => row.id),
-        },
-        evaluationMode: SubjectEvaluationMode.NUMERIC,
-      },
-      select: {
-        id: true,
-        courseSectionId: true,
-        semesterAverage: true,
-        status: true,
-        semester: {
-          select: { code: true },
-        },
-      },
-    });
-
-    const hk1Average =
-      subjectResults
-        .find((row) => row.semester.code === 'HK1')
-        ?.semesterAverage?.toNumber() ?? null;
-    const hk2Average =
-      subjectResults
-        .find((row) => row.semester.code === 'HK2')
-        ?.semesterAverage?.toNumber() ?? null;
-    const yearAverage = computeSubjectYearAverage(hk1Average, hk2Average);
-
-    if (yearAverage == null) {
-      return false;
-    }
-
-    let updated = false;
-
-    for (const row of subjectResults) {
-      if (row.status === SummaryStatus.CLOSED) {
-        continue;
-      }
-
-      await this.prisma.studentSubjectResult.update({
-        where: { id: row.id },
-        data: {
-          yearAverage: new Prisma.Decimal(yearAverage),
-        },
-      });
-      updated = true;
-    }
-
-    return updated;
   }
 
   private buildScoreInputsByStudent(
@@ -2110,28 +2369,46 @@ export class GradeSummariesService {
     ];
   }
 
-  private async resolveHomeroomClassIdForStudent(
-    schoolId: string,
-    studentId: string,
-    semesterId: string,
-    homeroomClassFilter?: string,
-  ): Promise<string | null> {
-    const enrollment = await this.prisma.studentEnrollment.findFirst({
-      where: {
-        schoolId,
-        studentId,
-        semesterId,
-        status: EnrollmentStatus.ACTIVE,
-        ...(homeroomClassFilter
-          ? { homeroomClassId: homeroomClassFilter }
-          : {}),
-      },
-      select: {
-        homeroomClassId: true,
-      },
-    });
+  private computedSubjectResultMatchesExisting(
+    existing: ComparableSubjectResultRow,
+    computed: {
+      regularAverage: Prisma.Decimal | null;
+      midtermScore: Prisma.Decimal | null;
+      finalScore: Prisma.Decimal | null;
+      semesterAverage: Prisma.Decimal | null;
+      passFailResult: PassFailResult | null;
+    },
+    evaluationMode: SubjectEvaluationMode,
+  ): boolean {
+    if (existing.evaluationMode !== evaluationMode) {
+      return false;
+    }
 
-    return enrollment?.homeroomClassId ?? null;
+    if (evaluationMode === SubjectEvaluationMode.PASS_FAIL) {
+      return existing.passFailResult === computed.passFailResult;
+    }
+
+    return (
+      this.decimalsEqual(existing.regularAverage, computed.regularAverage) &&
+      this.decimalsEqual(existing.midtermScore, computed.midtermScore) &&
+      this.decimalsEqual(existing.finalScore, computed.finalScore) &&
+      this.decimalsEqual(existing.semesterAverage, computed.semesterAverage)
+    );
+  }
+
+  private decimalsEqual(
+    left: Prisma.Decimal | null,
+    right: Prisma.Decimal | null,
+  ): boolean {
+    if (left == null && right == null) {
+      return true;
+    }
+
+    if (left == null || right == null) {
+      return false;
+    }
+
+    return Math.abs(left.toNumber() - right.toNumber()) < 1e-6;
   }
 
   private toDecimal(value: number | null): Prisma.Decimal | null {

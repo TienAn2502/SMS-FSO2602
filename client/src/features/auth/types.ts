@@ -15,11 +15,43 @@ export interface AuthSchool {
   shortName: string | null;
 }
 
+// ============================================================
+// Socket Info Types
+// ============================================================
+
+export interface NotificationRoom {
+  room: string;
+  display: string;
+}
+
+export interface StudentSocketInfo {
+  notificationRooms: NotificationRoom[];
+}
+
+export interface ParentSocketInfo {
+  notificationRooms: NotificationRoom[];
+}
+
+export interface TeacherSocketInfo {
+  notificationRooms: NotificationRoom[];
+}
+
+export interface SchoolAdminSocketInfo {
+  notificationRooms: NotificationRoom[];
+}
+
+export type UserSocketInfo =
+  | StudentSocketInfo
+  | ParentSocketInfo
+  | TeacherSocketInfo
+  | SchoolAdminSocketInfo;
+
 export interface AuthSession {
   user: AuthUser;
   activeSchoolId: string | null;
   activeSchool: AuthSchool | null;
   impersonation: ImpersonationSession | null;
+  socketInfo: UserSocketInfo | null;
 }
 
 export type ImpersonationMode = 'read_only' | 'full';

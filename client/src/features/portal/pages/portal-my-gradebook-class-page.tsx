@@ -239,8 +239,8 @@ export function PortalMyGradebookClassPage() {
                         <GradebookPortalImportExportActions
                             courseSectionId={courseSectionId!}
                             assessments={grid.columns}
-                            canImport={canModify}
-                            onImportSuccess={async () => {
+                            canFillFake={canModify}
+                            onFillFakeSuccess={async () => {
                                 await queryClient.invalidateQueries({
                                     queryKey: [
                                         'portal',
@@ -309,8 +309,8 @@ export function PortalMyGradebookClassPage() {
                     <GradebookPortalImportExportActions
                         courseSectionId={courseSectionId!}
                         assessments={grid.columns}
-                        canImport={false}
-                        onImportSuccess={async () => {
+                        canFillFake={false}
+                        onFillFakeSuccess={async () => {
                             await queryClient.invalidateQueries({
                                 queryKey: [
                                     'portal',

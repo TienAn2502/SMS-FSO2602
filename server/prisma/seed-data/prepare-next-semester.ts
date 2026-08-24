@@ -109,19 +109,31 @@ export async function prepareNextSemesterFromSource(
     courseSectionsCreated = result.count;
   }
 
-  const sourceEnrollments = await prisma.studentEnrollment.findMany({
+  const sourceEnrollmentsRaw = await prisma.studentEnrollment.findMany({
     where: {
       schoolId,
       semesterId: sourceSemesterId,
-      status: EnrollmentStatus.ACTIVE,
+      status: {
+        in: [EnrollmentStatus.ACTIVE, EnrollmentStatus.SEMESTER_COMPLETED],
+      },
     },
     select: {
       studentId: true,
       homeroomClassId: true,
       note: true,
+      status: true,
       homeroomClass: { select: { code: true } },
     },
-    orderBy: { enrolledAt: 'asc' },
+    orderBy: [{ status: 'asc' }, { enrolledAt: 'asc' }],
+  });
+
+  const seenStudentIds = new Set<string>();
+  const sourceEnrollments = sourceEnrollmentsRaw.filter((row) => {
+    if (seenStudentIds.has(row.studentId)) {
+      return false;
+    }
+    seenStudentIds.add(row.studentId);
+    return true;
   });
 
   const existingTargetStudentIds = new Set(

@@ -396,29 +396,43 @@ export class StudentEnrollmentsService {
       );
     }
 
-    const sourceEnrollments = await this.prisma.studentEnrollment.findMany({
+    // Cho phép ACTIVE hoặc đã đóng HK (SEMESTER_COMPLETED) — chuẩn bị HK2 sau khi đóng ghi danh HK1
+    const sourceEnrollmentsRaw = await this.prisma.studentEnrollment.findMany({
       where: {
         schoolId,
         semesterId: input.sourceSemesterId,
-        status: EnrollmentStatus.ACTIVE,
+        status: {
+          in: [EnrollmentStatus.ACTIVE, EnrollmentStatus.SEMESTER_COMPLETED],
+        },
       },
       select: {
         studentId: true,
         homeroomClassId: true,
         note: true,
+        status: true,
         homeroomClass: {
           select: {
             code: true,
           },
         },
       },
-      orderBy: { enrolledAt: 'asc' },
+      // ACTIVE trước SEMESTER_COMPLETED để ưu tiên bản ghi đang học nếu còn
+      orderBy: [{ status: 'asc' }, { enrolledAt: 'asc' }],
+    });
+
+    const seenStudentIds = new Set<string>();
+    const sourceEnrollments = sourceEnrollmentsRaw.filter((row) => {
+      if (seenStudentIds.has(row.studentId)) {
+        return false;
+      }
+      seenStudentIds.add(row.studentId);
+      return true;
     });
 
     if (sourceEnrollments.length === 0) {
       throw new AppException(
         'NO_SOURCE_ENROLLMENTS',
-        'Không có ghi danh đang học (ACTIVE) ở học kỳ nguồn',
+        'Không có ghi danh (ACTIVE / đã hoàn thành HK) ở học kỳ nguồn',
         HttpStatus.UNPROCESSABLE_ENTITY,
       );
     }
@@ -472,12 +486,25 @@ export class StudentEnrollmentsService {
 
     let sourceClosedCount = 0;
 
-    if (input.closeSourceSemester || !sourceSemester.isCurrent) {
-      const closeResult = await this.closeSemesterEnrollments(schoolId, {
-        semesterId: input.sourceSemesterId,
-        leftAt: toIsoDateString(sourceSemester.endDate),
+    const shouldCloseSource =
+      input.closeSourceSemester || !sourceSemester.isCurrent;
+    if (shouldCloseSource) {
+      const activeSourceCount = await this.prisma.studentEnrollment.count({
+        where: {
+          schoolId,
+          semesterId: input.sourceSemesterId,
+          status: EnrollmentStatus.ACTIVE,
+        },
       });
-      sourceClosedCount = closeResult.closedCount;
+
+      // Đã đóng hết từ lần trước → bỏ qua (idempotent)
+      if (activeSourceCount > 0) {
+        const closeResult = await this.closeSemesterEnrollments(schoolId, {
+          semesterId: input.sourceSemesterId,
+          leftAt: toIsoDateString(sourceSemester.endDate),
+        });
+        sourceClosedCount = closeResult.closedCount;
+      }
     }
 
     return {

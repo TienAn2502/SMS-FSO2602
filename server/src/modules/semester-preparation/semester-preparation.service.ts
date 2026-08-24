@@ -52,10 +52,10 @@ export class SemesterPreparationService {
     );
 
     const [source, target] = await Promise.all([
-      this.countPreparationEntities(schoolId, sourceSemesterId, {
-        enrollmentsActiveOnly: true,
+      this.countPreparationEntities(schoolId, sourceSemesterId),
+      this.countPreparationEntities(schoolId, targetSemesterId, {
+        activeEnrollmentsOnly: true,
       }),
-      this.countPreparationEntities(schoolId, targetSemesterId),
     ]);
 
     const enrollmentsReady =
@@ -181,7 +181,7 @@ export class SemesterPreparationService {
   private async countPreparationEntities(
     schoolId: string,
     semesterId: string,
-    options?: { enrollmentsActiveOnly?: boolean },
+    options?: { activeEnrollmentsOnly?: boolean },
   ): Promise<SemesterPreparationCounts> {
     const [enrollments, courseSections, teachingAssignments] =
       await Promise.all([
@@ -189,7 +189,7 @@ export class SemesterPreparationService {
           where: {
             schoolId,
             semesterId,
-            status: options?.enrollmentsActiveOnly
+            status: options?.activeEnrollmentsOnly
               ? EnrollmentStatus.ACTIVE
               : {
                   in: [

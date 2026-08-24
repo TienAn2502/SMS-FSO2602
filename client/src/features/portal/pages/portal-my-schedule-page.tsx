@@ -9,7 +9,7 @@ import { CourseSectionListFilters } from '@/features/course-sections/components/
 import { useCourseSectionListFilters } from '@/features/course-sections/hooks/use-course-section-list-filters';
 import { fetchMyTimetable } from '@/features/portal/api/portal-api';
 import { PortalTimetableExportActions } from '@/features/portal/components/portal-timetable-export-actions';
-import { TimetableEntryList } from '@/features/timetable/components/timetable-entry-list';
+import { ClassTimetableGrid } from '@/features/timetable/components/class-timetable-grid';
 
 export function PortalMySchedulePage() {
   const {
@@ -73,7 +73,7 @@ export function PortalMySchedulePage() {
 
       <Card>
         <CardHeader className='flex flex-row flex-wrap items-start justify-between gap-4'>
-          <CardTitle>Các tiết dạy</CardTitle>
+          <CardTitle>Thời khóa biểu tuần</CardTitle>
           <PortalTimetableExportActions
             mode='teacher'
             disabled={!filtersReady || entries.length === 0}
@@ -115,7 +115,11 @@ export function PortalMySchedulePage() {
           {timetableQuery.isLoading || !filtersReady ? (
             <LoadingState message='Đang tải thời khóa biểu...' />
           ) : (
-            <TimetableEntryList entries={entries} />
+            <ClassTimetableGrid
+              mode='teacher'
+              entries={entries}
+              emptyMessage='Chưa có tiết dạy trong bộ lọc đã chọn.'
+            />
           )}
         </CardContent>
       </Card>

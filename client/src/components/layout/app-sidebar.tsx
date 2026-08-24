@@ -1,6 +1,7 @@
-import { NavLink, useMatch, useNavigate } from 'react-router';
+import { NavLink, useMatch } from 'react-router';
 import {
     BookOpen,
+    Bell,
     Building2,
     Calendar,
     CalendarDays,
@@ -10,7 +11,7 @@ import {
     KeyRound,
     Layers,
     LayoutDashboard,
-    LogOut,
+    Newspaper,
     NotebookPen,
     School,
     UserRound,
@@ -19,12 +20,9 @@ import {
 } from 'lucide-react';
 
 import { ROUTES } from '@/app/router/routes';
-import { ModeToggle } from '@/components/common/mode-toggle';
-import { Button } from '@/components/ui/button';
 import {
     Sidebar,
     SidebarContent,
-    SidebarFooter,
     SidebarGroup,
     SidebarGroupContent,
     SidebarGroupLabel,
@@ -33,11 +31,9 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
     SidebarRail,
-    SidebarSeparator,
     SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { useAuth } from '@/features/auth/hooks/use-auth';
-import { ROLE_LABELS } from '@/lib/labels';
 import type { UserRole } from '@/types/api.types';
 
 interface NavItem {
@@ -73,11 +69,27 @@ const NAV_ITEMS: NavItem[] = [
         roles: ['SCHOOL_ADMIN'],
     },
     {
+        to: ROUTES.blogs,
+        label: 'Tin tức',
+        icon: Newspaper,
+        group: 'main',
+        roles: ['SCHOOL_ADMIN'],
+        activePrefix: true,
+    },
+    {
         to: ROUTES.portal,
         label: 'Portal',
         icon: LayoutDashboard,
         group: 'portal',
         roles: ['TEACHER', 'STUDENT', 'PARENT'],
+    },
+    {
+        to: ROUTES.blogs,
+        label: 'Tin tức',
+        icon: Newspaper,
+        group: 'portal',
+        roles: ['TEACHER', 'STUDENT', 'PARENT'],
+        activePrefix: true,
     },
     {
         to: ROUTES.portalMyClass,
@@ -188,6 +200,13 @@ const NAV_ITEMS: NavItem[] = [
         to: ROUTES.schoolSettings,
         label: 'Cài đặt trường',
         icon: Building2,
+        roles: ['SCHOOL_ADMIN'],
+        group: 'main',
+    },
+    {
+        to: ROUTES.schoolNotifications,
+        label: 'Thông báo',
+        icon: Bell,
         roles: ['SCHOOL_ADMIN'],
         group: 'main',
     },
@@ -312,6 +331,10 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 function SidebarNavItem({ item }: { item: NavItem }) {
+    if (!item.to) {
+        return null;
+    }
+
     const exactMatch = useMatch({
         path: item.to,
         end: item.to === ROUTES.home || item.to === ROUTES.portal,
@@ -371,14 +394,8 @@ function SidebarNavGroup({
 }
 
 export function AppSidebar() {
-    const { session, logout } = useAuth();
-    const navigate = useNavigate();
+    const { session } = useAuth();
     const isImpersonating = Boolean(session?.impersonation);
-
-    const handleLogout = async () => {
-        await logout();
-        navigate(ROUTES.login, { replace: true });
-    };
 
     const visibleItems = NAV_ITEMS.filter((item) => {
         if (!item.roles || !session) {
@@ -445,37 +462,6 @@ export function AppSidebar() {
                 <SidebarNavGroup label='Tổng kết' items={sprint7Items} />
             </SidebarContent>
 
-            <SidebarFooter className='border-t border-sidebar-border'>
-                {session ? (
-                    <div className='space-y-1 px-2 py-1 text-xs group-data-[collapsible=icon]:hidden'>
-                        <p className='truncate font-medium'>
-                            {session.user.fullName}
-                        </p>
-                        <p className='truncate text-muted-foreground'>
-                            {session.user.email}
-                        </p>
-                        <p className='text-muted-foreground'>
-                            {ROLE_LABELS[session.user.role]}
-                        </p>
-                    </div>
-                ) : null}
-                <SidebarSeparator className='group-data-[collapsible=icon]:hidden' />
-                <div className='flex items-center gap-2 px-2 py-1'>
-                    <ModeToggle />
-                    <Button
-                        variant='outline'
-                        size='sm'
-                        className='flex-1 group-data-[collapsible=icon]:flex-none group-data-[collapsible=icon]:px-2'
-                        onClick={() => void handleLogout()}
-                        title='Đăng xuất'
-                    >
-                        <LogOut className='size-4' />
-                        <span className='group-data-[collapsible=icon]:hidden'>
-                            Đăng xuất
-                        </span>
-                    </Button>
-                </div>
-            </SidebarFooter>
             <SidebarRail />
         </Sidebar>
     );

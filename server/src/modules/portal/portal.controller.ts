@@ -11,12 +11,9 @@ import {
   Put,
   Query,
   StreamableFile,
-  UploadedFile,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBody, ApiConsumes, ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 
 import type { AuthenticatedUser } from '@/common/auth/auth.types';
@@ -49,15 +46,11 @@ import {
   portalMyScoresGridQuerySchema,
   portalMyScoresQuerySchema,
   portalPatchGradebookScoresSchema,
-  portalImportScoresFormSchema,
-  portalImportScoresTemplateQuerySchema,
   portalGradebookExportQuerySchema,
   type PortalMyGradebookClassesQuery,
   type PortalMyScoresGridQuery,
   type PortalMyScoresQuery,
   type PortalPatchGradebookScoresInput,
-  type PortalImportScoresFormInput,
-  type PortalImportScoresTemplateQuery,
   type PortalGradebookExportQuery,
 } from '@/modules/portal/schemas/portal-gradebook.schema';
 import {
@@ -66,7 +59,10 @@ import {
   type PortalHomeroomSummariesQuery,
   type PortalSummariesQuery,
 } from '@/modules/grade-summaries/schemas/grade-summaries-list.schema';
-import { bulkUpsertConductRecordsSchema, type BulkUpsertConductRecordsInput } from '@/modules/conduct-records/schemas/conduct-record.schema';
+import {
+  bulkUpsertConductRecordsSchema,
+  type BulkUpsertConductRecordsInput,
+} from '@/modules/conduct-records/schemas/conduct-record.schema';
 import { ConductRecordsService } from '@/modules/conduct-records/conduct-records.service';
 import { PortalAttendanceService } from '@/modules/portal/portal-attendance.service';
 import { PortalGradebookService } from '@/modules/portal/portal-gradebook.service';
@@ -513,76 +509,34 @@ export class PortalController {
     };
   }
 
-  @Get('my-gradebook-classes/:courseSectionId/scores/import-template')
-  @Roles(UserRole.TEACHER)
-  @ApiOperation({
-    summary: 'Tải file mẫu import điểm (ghi rõ lớp môn, năm học, môn, đầu điểm)',
-  })
-  @Header(
-    'Content-Type',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  )
-  async downloadMyGradebookImportTemplate(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('courseSectionId', new ZodValidationPipe(uuidParamSchema))
-    courseSectionId: string,
-    @Query(new ZodValidationPipe(portalImportScoresTemplateQuerySchema))
-    query: PortalImportScoresTemplateQuery,
-  ): Promise<StreamableFile> {
-    const file =
-      await this.portalGradebookService.downloadMyGradebookImportTemplate(
-        user,
-        courseSectionId,
-        query,
-      );
-
-    return new StreamableFile(file.buffer, {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      disposition: `attachment; filename="${file.filename}"`,
-    });
-  }
-
-  @Post('my-gradebook-classes/:courseSectionId/scores/import')
+  @Post('my-gradebook-classes/:courseSectionId/scores/fake-fill')
   @Roles(UserRole.TEACHER)
   @HttpCode(HttpStatus.OK)
-  @UseInterceptors(FileInterceptor('file'))
-  @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Import điểm từ Excel/CSV vào đầu điểm đang mở' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      required: ['file', 'assessmentId'],
-      properties: {
-        file: { type: 'string', format: 'binary' },
-        assessmentId: { type: 'string', format: 'uuid' },
-      },
-    },
+  @ApiOperation({
+    summary: 'Điền điểm mẫu (fake) cho toàn bộ đầu điểm đang mở của lớp môn',
   })
-  async importMyGradebookScores(
+  async fillFakeMyGradebookScores(
     @CurrentUser() user: AuthenticatedUser,
     @Param('courseSectionId', new ZodValidationPipe(uuidParamSchema))
     courseSectionId: string,
-    @UploadedFile() file: Express.Multer.File,
-    @Body(new ZodValidationPipe(portalImportScoresFormSchema))
-    body: PortalImportScoresFormInput,
   ) {
-    const data = await this.portalGradebookService.importMyGradebookScores(
+    const data = await this.portalGradebookService.fillFakeMyGradebookScores(
       user,
       courseSectionId,
-      body,
-      file,
     );
 
     return {
       success: true,
       data,
-      message: `Import thành công ${data.successCount} dòng điểm`,
+      message: `Đã điền ${data.filledCount} ô điểm mẫu`,
     };
   }
 
   @Get('my-gradebook-classes/:courseSectionId/export')
   @Roles(UserRole.TEACHER)
-  @ApiOperation({ summary: 'Export sổ điểm lớp môn được phân công (XLSX hoặc CSV)' })
+  @ApiOperation({
+    summary: 'Export sổ điểm lớp môn được phân công (XLSX hoặc CSV)',
+  })
   async exportMyGradebook(
     @CurrentUser() user: AuthenticatedUser,
     @Param('courseSectionId', new ZodValidationPipe(uuidParamSchema))

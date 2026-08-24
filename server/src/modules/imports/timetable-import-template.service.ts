@@ -14,7 +14,9 @@ import {
   TIMETABLE_IMPORT_INSTRUCTION_LINES,
   TIMETABLE_IMPORT_INSTRUCTION_SHEET_NAME,
   TIMETABLE_IMPORT_SAMPLE_CLASSES,
+  buildSampleTimetableEntriesForClass,
   buildTimetableImportInstructionLines,
+  getSubjectDisplayName,
   suggestTimetableEntriesFromSections,
 } from '@/modules/imports/constants/timetable-import.constants';
 import type { TimetableImportTemplateQuery } from '@/modules/imports/schemas/timetable-import.schema';
@@ -27,11 +29,12 @@ interface TemplateClassSheet {
   entries: Array<{
     dayOfWeek: number;
     periodNumber: number;
-    subjectCode: string;
+    subjectLabel: string;
     room: string | null;
   }>;
   isEntryGrade: boolean;
   filledFromPreviousYear: boolean;
+  usedSampleFallback: boolean;
 }
 
 @Injectable()
@@ -62,11 +65,12 @@ export class TimetableImportTemplateService {
         entries: sampleClass.entries.map((entry) => ({
           dayOfWeek: entry.dayOfWeek,
           periodNumber: entry.periodNumber,
-          subjectCode: entry.subjectCode,
+          subjectLabel: entry.subjectLabel,
           room: entry.room,
         })),
         isEntryGrade: sampleClass.code.startsWith('10'),
         filledFromPreviousYear: !sampleClass.code.startsWith('10'),
+        usedSampleFallback: false,
       })),
       TIMETABLE_IMPORT_INSTRUCTION_LINES,
     );
@@ -137,7 +141,7 @@ export class TimetableImportTemplateService {
 
     const sectionsByClassCode = new Map<
       string,
-      Array<{ subjectCode: string; teacherEmail: string }>
+      Array<{ subjectCode: string; subjectName: string }>
     >();
     for (const [key, value] of targetSectionByClassSubject) {
       const classCode = key.split(':')[0];
@@ -147,7 +151,7 @@ export class TimetableImportTemplateService {
       const list = sectionsByClassCode.get(classCode) ?? [];
       list.push({
         subjectCode: value.subjectCode,
-        teacherEmail: value.teacherEmail,
+        subjectName: value.subjectName,
       });
       sectionsByClassCode.set(classCode, list);
     }
@@ -162,6 +166,7 @@ export class TimetableImportTemplateService {
     let upperFilledClassCount = 0;
     let upperEmptyClassCount = 0;
     let suggestedClassCount = 0;
+    let sampleFallbackClassCount = 0;
 
     const sheets: TemplateClassSheet[] = classes.map((homeroom, classIndex) => {
       const isEntry = entryGradeIds.has(homeroom.gradeLevelId);
@@ -172,23 +177,12 @@ export class TimetableImportTemplateService {
         entryClassCount += 1;
       } else {
         const previous = previousEntriesByClassCode.get(homeroom.code) ?? [];
-        entries = previous
-          .map((slot) => {
-            const mapped = targetSectionByClassSubject.get(
-              `${homeroom.code}:${slot.subjectCode}`.toUpperCase(),
-            );
-            if (!mapped?.teacherEmail) {
-              return null;
-            }
-
-            return {
-              dayOfWeek: slot.dayOfWeek,
-              periodNumber: slot.periodNumber,
-              subjectCode: mapped.subjectCode,
-              room: slot.room,
-            };
-          })
-          .filter((row): row is NonNullable<typeof row> => Boolean(row));
+        entries = previous.map((slot) => ({
+          dayOfWeek: slot.dayOfWeek,
+          periodNumber: slot.periodNumber,
+          subjectLabel: getSubjectDisplayName(slot.subjectCode),
+          room: slot.room,
+        }));
 
         filledFromPreviousYear = entries.length > 0;
         if (filledFromPreviousYear) {
@@ -212,6 +206,23 @@ export class TimetableImportTemplateService {
         }
       }
 
+      let usedSampleFallback = false;
+      if (entries.length === 0) {
+        entries = buildSampleTimetableEntriesForClass(
+          homeroom.code,
+          classIndex,
+        ).map((entry) => ({
+          dayOfWeek: entry.dayOfWeek,
+          periodNumber: entry.periodNumber,
+          subjectLabel: entry.subjectLabel,
+          room: entry.room,
+        }));
+        usedSampleFallback = entries.length > 0;
+        if (usedSampleFallback) {
+          sampleFallbackClassCount += 1;
+        }
+      }
+
       return {
         code: homeroom.code,
         name: homeroom.name,
@@ -220,6 +231,7 @@ export class TimetableImportTemplateService {
         entries,
         isEntryGrade: isEntry,
         filledFromPreviousYear,
+        usedSampleFallback,
       };
     });
 
@@ -234,6 +246,7 @@ export class TimetableImportTemplateService {
         upperFilledClassCount,
         upperEmptyClassCount,
         suggestedClassCount,
+        sampleFallbackClassCount,
       }),
     );
   }
@@ -242,7 +255,7 @@ export class TimetableImportTemplateService {
     schoolId: string,
     semesterId: string,
   ): Promise<
-    Map<string, { subjectCode: string; teacherEmail: string }>
+    Map<string, { subjectCode: string; subjectName: string; teacherEmail: string }>
   > {
     const sections = await this.prisma.courseSection.findMany({
       where: {
@@ -256,7 +269,7 @@ export class TimetableImportTemplateService {
         code: true,
         homeroomClass: { select: { code: true } },
         gradeLevelSubject: {
-          select: { subject: { select: { code: true } } },
+          select: { subject: { select: { code: true, name: true } } },
         },
         teachingAssignments: {
           where: { status: AcademicEntityStatus.ACTIVE },
@@ -270,18 +283,20 @@ export class TimetableImportTemplateService {
 
     const map = new Map<
       string,
-      { subjectCode: string; teacherEmail: string }
+      { subjectCode: string; subjectName: string; teacherEmail: string }
     >();
 
     for (const section of sections) {
       const classCode = section.homeroomClass?.code;
       const subjectCode = section.gradeLevelSubject.subject.code;
+      const subjectName = section.gradeLevelSubject.subject.name;
       if (!classCode || !subjectCode) {
         continue;
       }
 
       map.set(`${classCode}:${subjectCode}`.toUpperCase(), {
         subjectCode,
+        subjectName,
         teacherEmail:
           section.teachingAssignments[0]?.teacher.user?.email ?? '',
       });
@@ -399,8 +414,8 @@ export class TimetableImportTemplateService {
         (entry) => ({
           dayOfWeek: entry.dayOfWeek,
           periodNumber: entry.periodNumber,
-          courseSectionCode: entry.subjectCode,
-          courseSectionName: entry.subjectCode,
+          courseSectionCode: entry.subjectLabel,
+          courseSectionName: entry.subjectLabel,
           teacherFullName: '',
           room: entry.room,
         }),

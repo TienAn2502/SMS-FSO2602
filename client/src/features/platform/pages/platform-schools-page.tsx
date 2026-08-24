@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PasswordInput } from '@/components/ui/password-input';
 import {
   createPlatformSchool,
   fetchPlatformSchools,
@@ -284,9 +285,8 @@ export function PlatformSchoolsPage() {
               </div>
               <div className='space-y-2'>
                 <Label htmlFor='adminPassword'>Mật khẩu admin</Label>
-                <Input
+                <PasswordInput
                   id='adminPassword'
-                  type='password'
                   {...register('adminPassword')}
                   placeholder='Tối thiểu 8 ký tự'
                 />

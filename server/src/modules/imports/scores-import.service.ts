@@ -21,6 +21,11 @@ import {
   type ScoreImportRowError,
 } from '@/modules/imports/schemas/scores-import.schema';
 import { validateScoreImportHeaders } from '@/modules/imports/utils/validate-score-import-headers.util';
+import {
+  buildAssessmentSlotMappings,
+  isScoreImportMatrixHeaders,
+  type ScoreImportSlotKey,
+} from '@/modules/imports/utils/score-import-slots.util';
 import { ScoresService } from '@/modules/scores/scores.service';
 
 interface ParsedScoreImportRow {
@@ -61,10 +66,249 @@ export class ScoresImportService {
       );
     }
 
-    const assessment = await this.assertAssessmentContext(
+    const useMatrix =
+      !form.assessmentId || isScoreImportMatrixHeaders(parsed.headers);
+
+    if (useMatrix && !form.assessmentId) {
+      return this.importMatrixScores(schoolId, form.courseSectionId, parsed);
+    }
+
+    if (!form.assessmentId) {
+      throw new AppException(
+        'VALIDATION_ERROR',
+        'Thiếu đầu điểm hoặc cột TX/GK/CK trên file',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    return this.importSingleAssessmentScores(
       schoolId,
       form.courseSectionId,
       form.assessmentId,
+      parsed,
+    );
+  }
+
+  private async importMatrixScores(
+    schoolId: string,
+    courseSectionId: string,
+    parsed: {
+      headers: string[];
+      rows: ParsedSpreadsheetRow[];
+    },
+  ): Promise<ScoreImportResult> {
+    const courseSection = await this.prisma.courseSection.findFirst({
+      where: { id: courseSectionId, schoolId },
+      select: {
+        semesterId: true,
+        homeroomClassId: true,
+      },
+    });
+
+    if (!courseSection) {
+      throw new AppException(
+        'COURSE_SECTION_NOT_FOUND',
+        'Không tìm thấy lớp môn học',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    if (!courseSection.homeroomClassId) {
+      throw new AppException(
+        'COURSE_SECTION_NO_HOMEROOM',
+        'Lớp môn chưa gắn lớp hành chính',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    const assessments = await this.prisma.assessment.findMany({
+      where: { schoolId, courseSectionId },
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        assessmentDate: true,
+        maxScore: true,
+        status: true,
+      },
+      orderBy: { assessmentDate: 'asc' },
+    });
+
+    const slots = buildAssessmentSlotMappings(assessments);
+    if (slots.length === 0) {
+      throw new AppException(
+        'NO_ASSESSMENTS',
+        'Lớp môn chưa có đầu điểm để import',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    const headerSet = new Set(
+      parsed.headers.map((header) => header.trim().toUpperCase()),
+    );
+    const activeSlots = slots.filter((slot) => headerSet.has(slot.slotKey));
+    if (activeSlots.length === 0) {
+      throw new AppException(
+        'IMPORT_VALIDATION_FAILED',
+        'File không có cột TX/GK/CK khớp sổ điểm lớp môn',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    const lockedSlots = activeSlots.filter(
+      (slot) => slot.status === AssessmentStatus.CLOSED,
+    );
+    if (lockedSlots.length > 0) {
+      throw new AppException(
+        'GRADEBOOK_LOCKED',
+        `Đầu điểm đã khóa: ${lockedSlots.map((slot) => slot.slotKey).join(', ')}`,
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    const errors: ScoreImportRowError[] = [];
+    const studentCodes: string[] = [];
+    const parsedMatrixRows: Array<{
+      rowNumber: number;
+      maHs: string;
+      scores: Partial<Record<ScoreImportSlotKey, string>>;
+    }> = [];
+
+    for (const spreadsheetRow of parsed.rows) {
+      const data = this.normalizeRowData(spreadsheetRow.data);
+      const maHs = data.ma_hs?.trim() ?? '';
+      if (!maHs) {
+        errors.push({
+          row: spreadsheetRow.rowNumber,
+          field: 'ma_hs',
+          message: 'Mã HS là bắt buộc',
+        });
+        continue;
+      }
+
+      studentCodes.push(maHs);
+      const scores: Partial<Record<ScoreImportSlotKey, string>> = {};
+      for (const slot of activeSlots) {
+        const raw = data[slot.slotKey] ?? data[slot.slotKey.toLowerCase()];
+        if (raw != null && String(raw).trim() !== '') {
+          scores[slot.slotKey] = String(raw).trim();
+        }
+      }
+
+      parsedMatrixRows.push({
+        rowNumber: spreadsheetRow.rowNumber,
+        maHs,
+        scores,
+      });
+    }
+
+    if (errors.length > 0) {
+      throw this.buildValidationException(errors);
+    }
+
+    errors.push(
+      ...this.validateDuplicateCodes(
+        parsedMatrixRows.map((row) => ({
+          rowNumber: row.rowNumber,
+          code: row.maHs,
+        })),
+      ),
+    );
+    if (errors.length > 0) {
+      throw this.buildValidationException(errors);
+    }
+
+    const studentByCode = await this.loadStudentsByExternalCode(
+      schoolId,
+      courseSection.semesterId,
+      courseSection.homeroomClassId,
+      studentCodes,
+    );
+
+    const changes: Array<{
+      assessmentId: string;
+      studentId: string;
+      score: number | null;
+      note?: string | null;
+    }> = [];
+
+    for (const item of parsedMatrixRows) {
+      const studentId = studentByCode.get(item.maHs.toLowerCase());
+      if (!studentId) {
+        errors.push({
+          row: item.rowNumber,
+          field: 'ma_hs',
+          message: `Không tìm thấy học sinh ${item.maHs} trong lớp môn`,
+        });
+        continue;
+      }
+
+      for (const slot of activeSlots) {
+        const raw = item.scores[slot.slotKey];
+        if (raw === undefined) {
+          continue;
+        }
+
+        const parsedScore = this.parseScoreValue(
+          item.rowNumber,
+          raw,
+          slot.maxScore,
+          slot.slotKey,
+        );
+        if (parsedScore.error) {
+          errors.push(parsedScore.error);
+          continue;
+        }
+
+        changes.push({
+          assessmentId: slot.assessmentId,
+          studentId,
+          score: parsedScore.value,
+          note: null,
+        });
+      }
+    }
+
+    if (errors.length > 0) {
+      throw this.buildValidationException(errors);
+    }
+
+    if (changes.length === 0) {
+      throw new AppException(
+        'IMPORT_EMPTY',
+        'File không có ô điểm nào để import',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    await this.scoresService.patchGradebookChanges(
+      schoolId,
+      courseSectionId,
+      changes,
+    );
+
+    return {
+      successCount: changes.length,
+      errorCount: 0,
+      created: 0,
+      updated: changes.length,
+      errors: [],
+    };
+  }
+
+  private async importSingleAssessmentScores(
+    schoolId: string,
+    courseSectionId: string,
+    assessmentId: string,
+    parsed: {
+      headers: string[];
+      rows: ParsedSpreadsheetRow[];
+    },
+  ): Promise<ScoreImportResult> {
+    const assessment = await this.assertAssessmentContext(
+      schoolId,
+      courseSectionId,
+      assessmentId,
     );
 
     const { rows, errors } = this.parseRows(parsed.rows);
@@ -72,18 +316,23 @@ export class ScoresImportService {
       throw this.buildValidationException(errors);
     }
 
-    errors.push(...this.validateDuplicateStudentCodes(rows));
+    errors.push(
+      ...this.validateDuplicateCodes(
+        rows.map((item) => ({
+          rowNumber: item.rowNumber,
+          code: item.row.ma_hs,
+        })),
+      ),
+    );
     if (errors.length > 0) {
       throw this.buildValidationException(errors);
     }
 
-    const homeroomClassId = assessment.courseSection.homeroomClassId;
-
     const studentByCode = await this.loadStudentsByExternalCode(
       schoolId,
       assessment.semesterId,
-      homeroomClassId,
-      rows,
+      assessment.courseSection.homeroomClassId,
+      rows.map((item) => item.row.ma_hs),
     );
 
     const maxScore = assessment.maxScore.toNumber();
@@ -110,13 +359,14 @@ export class ScoresImportService {
         item.rowNumber,
         item.row.diem,
         maxScore,
+        'diem',
       );
       if (parsedScore.error) {
         throw this.buildValidationException([parsedScore.error]);
       }
 
       changes.push({
-        assessmentId: form.assessmentId,
+        assessmentId,
         studentId,
         score: parsedScore.value,
         note: item.row.ghi_chu ?? null,
@@ -125,7 +375,7 @@ export class ScoresImportService {
 
     await this.scoresService.patchGradebookChanges(
       schoolId,
-      form.courseSectionId,
+      courseSectionId,
       changes,
     );
 
@@ -173,7 +423,13 @@ export class ScoresImportService {
     const normalized: Record<string, string> = {};
 
     for (const [key, value] of Object.entries(data)) {
-      normalized[key] = value.trim();
+      const trimmedKey = key.trim();
+      const upper = trimmedKey.toUpperCase();
+      if (/^TX\d+$/.test(upper) || upper === 'GK' || upper === 'CK') {
+        normalized[upper] = value.trim();
+      } else {
+        normalized[trimmedKey] = value.trim();
+      }
     }
 
     for (const key of ['ho_ten', 'diem', 'ghi_chu']) {
@@ -185,14 +441,14 @@ export class ScoresImportService {
     return normalized;
   }
 
-  private validateDuplicateStudentCodes(
-    rows: ParsedScoreImportRow[],
+  private validateDuplicateCodes(
+    rows: Array<{ rowNumber: number; code: string }>,
   ): ScoreImportRowError[] {
     const errors: ScoreImportRowError[] = [];
     const codes = new Map<string, number>();
 
     for (const item of rows) {
-      const codeKey = item.row.ma_hs.toLowerCase();
+      const codeKey = item.code.toLowerCase();
       const existingRow = codes.get(codeKey);
       if (existingRow !== undefined) {
         errors.push({
@@ -254,14 +510,6 @@ export class ScoresImportService {
       );
     }
 
-    if (!assessment.courseSection.homeroomClassId) {
-      throw new AppException(
-        'COURSE_SECTION_NO_HOMEROOM',
-        'Lớp môn chưa gắn lớp hành chính',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
-    }
-
     return {
       ...assessment,
       courseSection: {
@@ -274,12 +522,8 @@ export class ScoresImportService {
     schoolId: string,
     semesterId: string,
     homeroomClassId: string,
-    rows: ParsedScoreImportRow[],
+    codesInput: string[],
   ): Promise<Map<string, string>> {
-    const codes = [
-      ...new Set(rows.map((item) => item.row.ma_hs.toLowerCase())),
-    ];
-
     const enrollments = await this.prisma.studentEnrollment.findMany({
       where: {
         schoolId,
@@ -304,12 +548,7 @@ export class ScoresImportService {
       }
     }
 
-    for (const code of codes) {
-      if (!studentMap.has(code)) {
-        // defer row error to upsert loop
-      }
-    }
-
+    void codesInput;
     return studentMap;
   }
 
@@ -317,6 +556,7 @@ export class ScoresImportService {
     rowNumber: number,
     rawValue: string | undefined,
     maxScore: number,
+    field: string,
   ): {
     value: number | null;
     error?: ScoreImportRowError;
@@ -333,7 +573,7 @@ export class ScoresImportService {
         value: null,
         error: {
           row: rowNumber,
-          field: 'diem',
+          field,
           message: 'Điểm không hợp lệ',
         },
       };
@@ -344,7 +584,7 @@ export class ScoresImportService {
         value: null,
         error: {
           row: rowNumber,
-          field: 'diem',
+          field,
           message: `Điểm phải nằm trong [0, ${maxScore}]`,
         },
       };
@@ -355,7 +595,7 @@ export class ScoresImportService {
         value: null,
         error: {
           row: rowNumber,
-          field: 'diem',
+          field,
           message: 'Điểm chỉ được là số nguyên hoặc .25, .5, .75',
         },
       };

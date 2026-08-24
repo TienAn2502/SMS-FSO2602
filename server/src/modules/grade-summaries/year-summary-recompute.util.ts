@@ -13,6 +13,12 @@ import {
   resolveYearAcademicResultLevel,
   resolveYearTrainingResultLevel,
 } from '@/common/utils/promotion.util';
+import {
+  buildPassFailResultsByStudentId,
+  buildYearSubjectAveragesByStudentId,
+  type SubjectPassFailRow,
+  type SubjectYearAverageRow,
+} from '@/common/utils/subject-year-average.util';
 
 type SemesterCode = 'HK1' | 'HK2';
 
@@ -68,14 +74,8 @@ export function buildYearRecomputeIndexes(input: {
   semesterSummaries: YearRecomputeSemesterSummaryRow[];
   conductRecords: YearRecomputeConductRow[];
   absenceGroups: Array<{ studentId: string; _count: { _all: number } }>;
-  numericSubjectResults: Array<{
-    studentId: string;
-    yearAverage: { toNumber(): number } | null;
-  }>;
-  passFailSubjectResults: Array<{
-    studentId: string;
-    passFailResult: PassFailResult | null;
-  }>;
+  numericSubjectResults: SubjectYearAverageRow[];
+  passFailSubjectResults: SubjectPassFailRow[];
   existingYearSummaries: Array<{ studentId: string; status: SummaryStatus }>;
 }): YearRecomputeIndexes {
   const absenceByStudentId = new Map(
@@ -97,28 +97,13 @@ export function buildYearRecomputeIndexes(input: {
     conductByStudentSemesterId.set(`${row.studentId}:${row.semesterId}`, row);
   }
 
-  const yearSubjectAveragesByStudentId = new Map<string, number[]>();
-  for (const row of input.numericSubjectResults) {
-    const average = row.yearAverage?.toNumber();
-    if (average == null) {
-      continue;
-    }
+  const yearSubjectAveragesByStudentId = buildYearSubjectAveragesByStudentId(
+    input.numericSubjectResults,
+  );
 
-    const list = yearSubjectAveragesByStudentId.get(row.studentId) ?? [];
-    list.push(average);
-    yearSubjectAveragesByStudentId.set(row.studentId, list);
-  }
-
-  const passFailResultsByStudentId = new Map<string, PassFailResult[]>();
-  for (const row of input.passFailSubjectResults) {
-    if (row.passFailResult == null) {
-      continue;
-    }
-
-    const list = passFailResultsByStudentId.get(row.studentId) ?? [];
-    list.push(row.passFailResult);
-    passFailResultsByStudentId.set(row.studentId, list);
-  }
+  const passFailResultsByStudentId = buildPassFailResultsByStudentId(
+    input.passFailSubjectResults,
+  );
 
   const closedStudentIds = new Set(
     input.existingYearSummaries

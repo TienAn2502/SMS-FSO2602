@@ -487,58 +487,12 @@ export async function lockGradebook(courseSectionId: string) {
     return data.data;
 }
 
-export interface PortalScoreImportResult {
-    successCount: number;
-    errorCount: number;
-    created: number;
-    updated: number;
-    errors: Array<{
-        row: number;
-        field: string;
-        message: string;
-    }>;
-}
-
-export async function downloadPortalGradebookImportTemplate(
+export async function fillPortalGradebookFakeScores(
     courseSectionId: string,
-    assessmentId?: string,
-): Promise<void> {
-    const response = await api.get(
-        `/portal/my-gradebook-classes/${courseSectionId}/scores/import-template`,
-        {
-            params: assessmentId ? { assessmentId } : undefined,
-            responseType: 'blob',
-        },
-    );
-
-    const url = URL.createObjectURL(response.data);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = 'mau-import-diem.xlsx';
-    anchor.click();
-    URL.revokeObjectURL(url);
-}
-
-export async function importPortalGradebookScores(input: {
-    courseSectionId: string;
-    assessmentId: string;
-    file: File;
-}): Promise<PortalScoreImportResult> {
-    const formData = new FormData();
-    formData.append('file', input.file);
-    formData.append('assessmentId', input.assessmentId);
-
+): Promise<{ filledCount: number }> {
     const { data } = await api.post<
-        ApiSuccessResponse<PortalScoreImportResult>
-    >(
-        `/portal/my-gradebook-classes/${input.courseSectionId}/scores/import`,
-        formData,
-        {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        },
-    );
+        ApiSuccessResponse<{ filledCount: number }>
+    >(`/portal/my-gradebook-classes/${courseSectionId}/scores/fake-fill`);
 
     return data.data;
 }

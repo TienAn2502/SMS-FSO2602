@@ -1,0 +1,2 @@
+-- Add BLOG_THUMBNAIL to FilePurpose enum
+ALTER TYPE "FilePurpose" ADD VALUE IF NOT EXISTS 'BLOG_THUMBNAIL';

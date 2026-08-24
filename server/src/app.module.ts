@@ -33,6 +33,10 @@ import { UsersModule } from '@/modules/users/users.module';
 import { ImportsModule } from '@/modules/imports/imports.module';
 import { ExportsModule } from '@/modules/exports/exports.module';
 import { PlatformModule } from '@/modules/platform/platform.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { BlogsModule } from './modules/blogs/blogs.module';
+import { PushSubscriptionsModule } from './modules/push-subscriptions/push-subscriptions.module';
+import { CommonModule } from '@/common/auth/common.module';
 
 @Module({
   imports: [
@@ -72,6 +76,10 @@ import { PlatformModule } from '@/modules/platform/platform.module';
     ImportsModule,
     ExportsModule,
     PlatformModule,
+    NotificationsModule,
+    BlogsModule,
+    PushSubscriptionsModule,
+    CommonModule,
   ],
 })
 export class AppModule {}
