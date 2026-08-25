@@ -601,6 +601,7 @@ export class AuthService {
         room: `school:${schoolId}`,
         display: school?.shortName || school?.name || 'Trường',
       },
+      // { room: `school:${schoolId}:parent`, display: 'Tất cả phụ huynh' },
     ];
 
     // Room parent:{id}
@@ -722,6 +723,7 @@ export class AuthService {
         room: `school:${schoolId}`,
         display: school?.shortName || school?.name || 'Trường',
       },
+      // { room: `school:${schoolId}teacher`, display: 'Tất cả giáo viên' },
     ];
 
     // Room teacher:{id}
@@ -807,7 +809,8 @@ export class AuthService {
         room: `school:${schoolId}`,
         display: school?.shortName || school?.name || 'Trường',
       },
-      { room: 'teacher', display: 'Tất cả giáo viên' },
+      // { room: `school:${schoolId}:teacher`, display: 'Tất cả giáo viên' },
+      // { room: `school:${schoolId}:parent`, display: 'Tất cả phụ huynh' },
     ];
 
     if (!currentSemester) {

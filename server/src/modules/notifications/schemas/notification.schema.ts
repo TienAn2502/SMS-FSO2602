@@ -1,6 +1,9 @@
 import { z } from 'zod';
 
-import { uuidParamSchema } from '@/common/schemas/shared.schema';
+import {
+  paginationSchema,
+  uuidParamSchema,
+} from '@/common/schemas/shared.schema';
 
 export const notificationTypeEnumSchema = z.enum([
   'INFO',
@@ -88,9 +91,7 @@ export const updateNotificationSchema = z.object({
 
 export type UpdateNotificationInput = z.infer<typeof updateNotificationSchema>;
 
-export const listNotificationsQuerySchema = z.object({
-  page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().positive().max(100).default(10),
+export const listNotificationsQuerySchema = paginationSchema.extend({
   sortBy: z.enum(['createdAt', 'title']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
   rooms: z

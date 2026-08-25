@@ -20,6 +20,7 @@ import type {
   UpdateNotificationInput,
 } from '@/modules/notifications/schemas/notification.schema';
 import { tiptapJsonToHtml } from '@/modules/blogs/utils/tiptap-json-to-html';
+import { type PaginationQuery } from '@/common/schemas/shared.schema';
 
 export interface NotificationRoomInfo {
   id: string;
@@ -349,44 +350,39 @@ export class NotificationsService {
   async listByRoom(
     schoolId: string,
     rooms: { roomType: string; targetId: string }[],
-  ): Promise<NotificationResponse[]> {
-    // Filter by exact roomType + targetId pairs using OR
+    query: PaginationQuery,
+  ): Promise<{ items: NotificationResponse[]; meta: PaginationMeta }> {
+    // 1. Chuẩn hóa điều kiện lọc theo cặp roomType và targetId
     const roomConditions = rooms.map((room) => ({
       roomType: room.roomType.toUpperCase(),
       targetId: room.targetId || null,
     }));
 
-    const data = await this.prisma.notificationRoom.findMany({
-      where: {
-        notification: {
-          schoolId,
-        },
-        OR: roomConditions,
-      },
-      include: {
-        notification: {
-          include: notificationInclude,
+    // 2. Xây dựng câu lệnh điều kiện `where` cho Prisma
+    const where: Prisma.NotificationWhereInput = {
+      schoolId,
+      rooms: {
+        some: {
+          OR: roomConditions,
         },
       },
-    });
+    };
 
-    // Deduplicate notifications and transform to response format
-    const seenIds = new Set<string>();
-    const notifications: (Notification & {
-      createdBy?: { fullName: string | null } | null;
-      rooms: Array<{ roomType: string; targetId: string | null }>;
-    })[] = [];
+    // 3. Thực thi transaction để lấy tổng số lượng và danh sách phân trang song song
+    const [total, data] = await this.prisma.$transaction([
+      this.prisma.notification.count({ where }),
+      this.prisma.notification.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: getSkip(query.page, query.limit),
+        take: query.limit,
+        include: notificationInclude,
+      }),
+    ]);
 
-    for (const item of data) {
-      if (item.notification && !seenIds.has(item.notification.id)) {
-        seenIds.add(item.notification.id);
-        notifications.push(item.notification);
-      }
-    }
-
-    // Transform all notifications to response format
-    return Promise.all(
-      notifications.map(async (notification) => {
+    // 4. Xử lý async để gán thumbnailUrl và chuyển đổi sang dạng Response DTO
+    const items = await Promise.all(
+      data.map(async (notification) => {
         const thumbnailUrl = await this.getThumbnailUrl(notification);
         return this.toNotificationResponseWithContent(
           notification,
@@ -394,6 +390,12 @@ export class NotificationsService {
         );
       }),
     );
+
+    // 5. Trả về kết quả kèm metadata phân trang
+    return {
+      items,
+      meta: buildPaginationMeta(query.page, query.limit, total),
+    };
   }
 
   async getAvailableRooms(schoolId: string): Promise<NotificationRoomInfo[]> {

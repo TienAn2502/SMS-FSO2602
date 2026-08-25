@@ -1,17 +1,39 @@
 import { format, parseISO } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { useQuery } from '@tanstack/react-query';
-import { Link, useParams } from 'react-router';
+import {
+    useMutation,
+    useQuery,
+    useQueryClient,
+} from '@tanstack/react-query';
+import { Trash2 } from 'lucide-react';
+import { Link, useNavigate, useParams } from 'react-router';
+import { toast } from 'sonner';
 
 import { ROUTES } from '@/app/router/routes';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { EmptyState } from '@/components/feedback/empty-state';
 import { LoadingState } from '@/components/feedback/loading-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/features/auth/hooks/use-auth';
-import { fetchNotificationBySlug } from '@/features/notifications/api/notification-api';
+import {
+    deleteNotification,
+    fetchNotificationBySlug,
+} from '@/features/notifications/api/notification-api';
 import { useRefreshImageUrls } from '@/hooks/use-refresh-image-urls';
 import { refreshNotificationUrls } from '@/features/notifications/api/notification-api';
+import { getApiError } from '@/lib/api';
+import { getErrorMessage } from '@/lib/error-messages';
 import { cn } from '@/lib/utils';
 import { tiptapJsonToHtml } from '@/lib/tiptap-converter';
 
@@ -32,6 +54,8 @@ const NOTIFICATION_TYPE_LABELS: Record<string, string> = {
 export function NotificationDetailPage() {
     const { slug } = useParams<{ slug: string }>();
     const { session } = useAuth();
+    const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const isSchoolAdmin = session?.user.role === 'SCHOOL_ADMIN';
 
     const detailQuery = useQuery({
@@ -42,6 +66,25 @@ export function NotificationDetailPage() {
 
     const notification = detailQuery.data;
     const notificationContent = tiptapJsonToHtml(notification?.content ?? '');
+
+    const deleteMutation = useMutation({
+        mutationFn: (notificationSlug: string) =>
+            deleteNotification(notificationSlug),
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: ['notifications'] });
+            toast.success('Đã xóa thông báo');
+            void navigate(ROUTES.notifications);
+        },
+        onError: (error) => {
+            const apiError = getApiError(error);
+            toast.error(
+                getErrorMessage(
+                    apiError?.code,
+                    apiError?.message ?? 'Xóa thông báo thất bại',
+                ),
+            );
+        },
+    });
 
     // Refresh thumbnail URL
     const thumbnailKeys = notification?.thumbnailStorageKey
@@ -104,6 +147,53 @@ export function NotificationDetailPage() {
                         >
                             Chỉnh sửa
                         </Button>
+                    )}
+                    {isSchoolAdmin && (
+                        <AlertDialog>
+                            <AlertDialogTrigger
+                                render={
+                                    <Button
+                                        type='button'
+                                        variant='destructive'
+                                        size='sm'
+                                        disabled={deleteMutation.isPending}
+                                    />
+                                }
+                            >
+                                <Trash2 className='mr-2 h-4 w-4' />
+                                Xóa
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                        Xóa thông báo này?
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Hành động này không thể hoàn tác. Thông báo
+                                        sẽ bị xóa vĩnh viễn cùng các tệp đính kèm.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel
+                                        variant='outline'
+                                        disabled={deleteMutation.isPending}
+                                    >
+                                        Hủy
+                                    </AlertDialogCancel>
+                                    <AlertDialogAction
+                                        variant='destructive'
+                                        disabled={deleteMutation.isPending}
+                                        onClick={() =>
+                                            deleteMutation.mutate(notification.slug)
+                                        }
+                                    >
+                                        {deleteMutation.isPending
+                                            ? 'Đang xóa…'
+                                            : 'Xóa'}
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     )}
                     <span
                         className={cn(

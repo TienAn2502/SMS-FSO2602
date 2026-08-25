@@ -65,6 +65,7 @@ import { TeachersPage } from '@/features/teachers/pages/teachers-page';
 import { TeachingAssignmentsPage } from '@/features/teaching-assignments/pages/teaching-assignments-page';
 import { TimetablePage } from '@/features/timetable/pages/timetable-page';
 import { UsersPage } from '@/features/users/pages/users-page';
+import DefaultRoute from '@/components/auth/default-route';
 
 export const router = createBrowserRouter([
     {
@@ -84,11 +85,7 @@ export const router = createBrowserRouter([
         children: [
             {
                 index: true,
-                element: (
-                    <RoleGate roles={['SCHOOL_ADMIN']}>
-                        <DashboardPage />
-                    </RoleGate>
-                ),
+                element: <DefaultRoute />,
             },
             {
                 path: ROUTES.platform.slice(1),
@@ -141,7 +138,9 @@ export const router = createBrowserRouter([
             {
                 path: ROUTES.notifications.slice(1),
                 element: (
-                    <RoleGate roles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT']}>
+                    <RoleGate
+                        roles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT']}
+                    >
                         <NotificationsPage />
                     </RoleGate>
                 ),
@@ -165,7 +164,9 @@ export const router = createBrowserRouter([
             {
                 path: `${ROUTES.notifications.slice(1)}/:slug`,
                 element: (
-                    <RoleGate roles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT']}>
+                    <RoleGate
+                        roles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT']}
+                    >
                         <NotificationDetailPage />
                     </RoleGate>
                 ),
@@ -174,7 +175,7 @@ export const router = createBrowserRouter([
                 path: ROUTES.blogs.slice(1),
                 element: (
                     <RoleGate
-                      roles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT']}
+                        roles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT']}
                     >
                         <BlogsPage />
                     </RoleGate>
@@ -200,7 +201,7 @@ export const router = createBrowserRouter([
                 path: `${ROUTES.blogs.slice(1)}/:slug`,
                 element: (
                     <RoleGate
-                      roles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT']}
+                        roles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT']}
                     >
                         <BlogDetailPage />
                     </RoleGate>

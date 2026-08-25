@@ -31,6 +31,10 @@ import {
 } from '@/modules/notifications/schemas/notification.schema';
 import { NotificationsService } from '@/modules/notifications/notifications.service';
 import z from 'zod';
+import {
+  paginationSchema,
+  type PaginationQuery,
+} from '@/common/schemas/shared.schema';
 
 @ApiTags('Notifications')
 @ApiCookieAuth('access_token')
@@ -79,15 +83,19 @@ export class NotificationsController {
   async listByRoom(
     @Body() body: { roomType: string; targetId: string }[],
     @CurrentUser() user: AuthenticatedUser,
+    @Query(new ZodValidationPipe(paginationSchema))
+    query: PaginationQuery,
   ) {
     const result = await this.notificationsService.listByRoom(
       user.activeSchoolId,
       body,
+      query,
     );
 
     return {
       success: true,
-      data: result,
+      data: result.items,
+      meta: result.meta,
       message: null,
     };
   }
