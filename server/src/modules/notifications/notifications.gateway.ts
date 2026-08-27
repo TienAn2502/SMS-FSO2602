@@ -15,7 +15,6 @@ export interface NotificationPayload {
   title: string;
   contentHtml: string;
   thumbnailUrl: string | null;
-  type: string;
   createdAt: string;
 }
 
@@ -86,7 +85,7 @@ export class NotificationsGateway
   }
 
   async handleDisconnect(client: Socket) {
-    console.log('Client disconnected ' + client.id);
+    // console.log('Client disconnected ' + client.id);
     const schoolId = (client.data as { schoolId: string; userId: string })
       .schoolId;
     const userId = (client.data as { schoolId: string; userId: string }).userId;
@@ -104,17 +103,17 @@ export class NotificationsGateway
   ) {
     this.socketServer.to(room).emit('notification', notification);
 
-    console.log('broadcastToRoom', schoolId, room, notification);
+    // console.log('broadcastToRoom', schoolId, room, notification);
     // push notification
 
     const usersInRoom = new Set<string>(
       await this.redisService.getUsersInRoom(schoolId, room),
     );
 
-    console.log('usersInRoom', usersInRoom);
+    // console.log('usersInRoom', usersInRoom);
 
     const onlineUsersSet = await this.redisService.getAllOnlineUsers(schoolId);
-    console.log('onlineUsersSet', onlineUsersSet);
+    // console.log('onlineUsersSet', onlineUsersSet);
 
     const offlineUserInSpecificRoom: Set<string> = new Set<string>();
 
@@ -123,14 +122,14 @@ export class NotificationsGateway
         offlineUserInSpecificRoom.add(userId);
       }
     }
-    console.log('offlineUserInSpecificRoom', offlineUserInSpecificRoom);
+    // console.log('offlineUserInSpecificRoom', offlineUserInSpecificRoom);
 
     const pushSubscriptions =
       await this.pushSubscriptionsService.findManyByUserId(
         offlineUserInSpecificRoom,
       );
 
-    console.log('pushSubscriptions', pushSubscriptions);
+    // console.log('pushSubscriptions', pushSubscriptions);
 
     for (const pushSubscription of pushSubscriptions) {
       await this.pushSubscriptionsService.sendNotification(pushSubscription);

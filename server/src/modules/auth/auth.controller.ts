@@ -27,6 +27,7 @@ import {
   loginSchema,
   type LoginInput,
 } from '@/modules/auth/schemas/login.schema';
+import { Cookies } from '@/common/decorators/cookie.decorator';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -72,8 +73,11 @@ export class AuthController {
   @Post('logout')
   @ApiCookieAuth('access_token')
   @ApiOperation({ summary: 'Đăng xuất' })
-  logout(@Res({ passthrough: true }) response: Response) {
-    this.authService.logout(response);
+  async logout(
+    @Res({ passthrough: true }) response: Response,
+    @Cookies('refresh_token') refreshToken: string,
+  ) {
+    await this.authService.logout(response, refreshToken);
 
     return {
       success: true,

@@ -75,15 +75,13 @@ export class NotificationsService {
       };
     }
 
-    const orderBy: Prisma.NotificationOrderByWithRelationInput = {
-      [query.sortBy]: query.sortOrder,
-    };
-
     const [total, notifications] = await this.prisma.$transaction([
       this.prisma.notification.count({ where }),
       this.prisma.notification.findMany({
         where,
-        orderBy,
+        orderBy: {
+          createdAt: 'desc',
+        },
         skip: getSkip(query.page, query.limit),
         take: query.limit,
         include: notificationInclude,
@@ -212,7 +210,6 @@ export class NotificationsService {
         slug,
         content: content as unknown as Prisma.InputJsonValue,
         thumbnailStorageKey,
-        type: input.type,
         createdById,
         rooms: {
           create: input.rooms.map((room) => ({
@@ -281,7 +278,6 @@ export class NotificationsService {
         title,
         slug,
         content,
-        type: 'INFO',
         createdById,
         rooms: {
           create: {
@@ -327,7 +323,6 @@ export class NotificationsService {
         title,
         slug,
         content,
-        type: 'INFO',
         createdById,
         rooms: {
           create: {
@@ -398,7 +393,7 @@ export class NotificationsService {
     };
   }
 
-  async getAvailableRooms(schoolId: string): Promise<NotificationRoomInfo[]> {
+  getAvailableRooms(schoolId: string): NotificationRoomInfo[] {
     return [
       {
         id: `school:${schoolId}`,
@@ -612,7 +607,6 @@ export class NotificationsService {
         title: notification.title,
         contentHtml: notification.contentHtml,
         thumbnailUrl: notification.thumbnailUrl,
-        type: notification.type,
         createdAt: notification.createdAt,
       });
     }
@@ -684,7 +678,6 @@ export class NotificationsService {
       slug: string;
       content: Prisma.InputJsonValue | null;
       thumbnailStorageKey: string | null;
-      type: string;
       createdById: string | null;
       createdAt: Date;
       updatedAt: Date;
@@ -736,7 +729,6 @@ export class NotificationsService {
       contentHtml,
       thumbnailUrl,
       thumbnailStorageKey: notification.thumbnailStorageKey,
-      type: notification.type as 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR',
       rooms: notification.rooms.map((room) => ({
         roomType: room.roomType as 'SCHOOL' | 'HOMEROOM' | 'GRADE' | 'COURSE',
         targetId: room.targetId,

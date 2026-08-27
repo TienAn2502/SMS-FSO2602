@@ -52,7 +52,6 @@ const createNotificationSchema = z.object({
             'Nội dung là bắt buộc',
         ),
     thumbnail: z.custom<ThumbnailUploadValue | null>().nullable().optional(),
-    type: z.enum(['INFO', 'SUCCESS', 'WARNING', 'ERROR']),
 });
 
 type CreateNotificationFormValues = z.infer<typeof createNotificationSchema>;
@@ -86,7 +85,6 @@ export function NotificationCreatePage() {
         ).notificationRooms;
         return rooms ?? [];
     }, [socketInfo]);
-
 
     const groupedRooms = useMemo((): RoomGroup[] => {
         const groups: Record<string, AuthNotificationRoom[]> = {
@@ -160,8 +158,8 @@ export function NotificationCreatePage() {
             title: '',
             contentHtml: '',
             thumbnail: null,
-            type: 'INFO',
         },
+        mode: 'onChange',
     });
 
     const mutation = useMutation({
@@ -198,7 +196,6 @@ export function NotificationCreatePage() {
             return createNotification({
                 title: values.title,
                 content,
-                type: values.type,
                 thumbnailFileId: values.thumbnail?.fileId,
                 thumbnailMimeType: values.thumbnail?.mimeType,
                 tempFiles,
@@ -260,20 +257,6 @@ export function NotificationCreatePage() {
                                     {errors.title.message}
                                 </p>
                             ) : null}
-                        </div>
-
-                        <div className='space-y-2'>
-                            <Label htmlFor='type'>Loại thông báo</Label>
-                            <select
-                                id='type'
-                                className={cn(selectClassName)}
-                                {...register('type')}
-                            >
-                                <option value='INFO'>Thông tin</option>
-                                <option value='SUCCESS'>Thành công</option>
-                                <option value='WARNING'>Cảnh báo</option>
-                                <option value='ERROR'>Lỗi</option>
-                            </select>
                         </div>
 
                         <div className='space-y-2'>

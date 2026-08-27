@@ -2,8 +2,6 @@ import type { TiptapContent } from '@/features/blogs/types';
 import { api } from '@/lib/api';
 import type { ApiSuccessResponse } from '@/types/api.types';
 
-export type NotificationType = 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR';
-
 export type NotificationRoomType = 'SCHOOL' | 'HOMEROOM' | 'GRADE' | 'COURSE';
 
 export interface NotificationRoom {
@@ -27,7 +25,6 @@ export interface Notification {
     contentHtml: string;
     thumbnailUrl: string | null;
     thumbnailStorageKey: string | null;
-    type: NotificationType;
     rooms: NotificationRoomResponse[];
     createdById: string | null;
     createdByName: string | null;
@@ -49,7 +46,6 @@ export interface CreateNotificationInput {
         sizeBytes: number;
         originalName: string;
     }>;
-    type: NotificationType;
     thumbnailFileId?: string | null;
     thumbnailMimeType?: string | null;
     rooms: RoomInput[];
@@ -64,7 +60,6 @@ export interface UpdateNotificationInput {
         sizeBytes: number;
         originalName: string;
     }>;
-    type?: NotificationType;
     thumbnailFileId?: string | null;
     thumbnailMimeType?: string | null;
     thumbnailNeedToDelete?: string | null;

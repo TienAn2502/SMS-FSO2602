@@ -1,10 +1,6 @@
 import { format, parseISO } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import {
-    useMutation,
-    useQuery,
-    useQueryClient,
-} from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Trash2 } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
@@ -169,8 +165,9 @@ export function NotificationDetailPage() {
                                         Xóa thông báo này?
                                     </AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        Hành động này không thể hoàn tác. Thông báo
-                                        sẽ bị xóa vĩnh viễn cùng các tệp đính kèm.
+                                        Hành động này không thể hoàn tác. Thông
+                                        báo sẽ bị xóa vĩnh viễn cùng các tệp
+                                        đính kèm.
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
@@ -184,7 +181,9 @@ export function NotificationDetailPage() {
                                         variant='destructive'
                                         disabled={deleteMutation.isPending}
                                         onClick={() =>
-                                            deleteMutation.mutate(notification.slug)
+                                            deleteMutation.mutate(
+                                                notification.slug,
+                                            )
                                         }
                                     >
                                         {deleteMutation.isPending

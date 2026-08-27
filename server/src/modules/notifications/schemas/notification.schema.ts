@@ -66,7 +66,6 @@ export const createNotificationSchema = z.object({
   content: tiptapContentSchema,
   thumbnailFileId: uuidParamSchema.optional().nullable(),
   thumbnailMimeType: z.string().optional().nullable(),
-  type: notificationTypeEnumSchema.default('INFO'),
   tempFiles: z.array(tempFileItemSchema).default([]),
   rooms: z.array(roomInputSchema).min(1, 'Phải chọn ít nhất một phòng gửi'),
 });

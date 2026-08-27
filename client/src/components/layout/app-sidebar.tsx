@@ -41,7 +41,14 @@ interface NavItem {
     label: string;
     icon: typeof LayoutDashboard;
     roles?: UserRole[];
-    group?: 'main' | 'academic' | 'sprint4' | 'sprint5' | 'sprint6' | 'sprint7' | 'portal';
+    group?:
+        | 'main'
+        | 'academic'
+        | 'sprint4'
+        | 'sprint5'
+        | 'sprint6'
+        | 'sprint7'
+        | 'portal';
     activePrefix?: boolean;
 }
 
@@ -209,6 +216,13 @@ const NAV_ITEMS: NavItem[] = [
         icon: Bell,
         roles: ['SCHOOL_ADMIN'],
         group: 'main',
+    },
+    {
+        to: ROUTES.schoolNotifications,
+        label: 'Thông báo',
+        icon: Bell,
+        group: 'portal',
+        roles: ['TEACHER', 'STUDENT', 'PARENT'],
     },
     {
         to: ROUTES.changePassword,

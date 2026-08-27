@@ -1,5 +1,3 @@
-import type { Notification, NotificationRoom, User } from '@prisma/client';
-
 // TiTip JSON content type
 export interface TiptapNode {
   type: string;
@@ -23,7 +21,6 @@ export interface NotificationResponse {
   contentHtml: string;
   thumbnailUrl: string | null;
   thumbnailStorageKey: string | null;
-  type: 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR';
   rooms: NotificationRoomResponse[];
   createdById: string | null;
   createdByName: string | null;

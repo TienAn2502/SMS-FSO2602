@@ -108,6 +108,18 @@ export class AuthService {
       );
     }
 
+    // Check xem refresh token có trong blacklist không
+    const isRefreshTokenInBlacklist =
+      await this.redisService.isRefreshTokenInBlacklist(refreshToken);
+    if (isRefreshTokenInBlacklist) {
+      this.cookieService.clearAuthCookies(response);
+      throw new AppException(
+        'SESSION_EXPIRED',
+        'Phiên đăng nhập đã hết hạn',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
     let payload: RefreshTokenPayload;
     try {
       payload = this.jwtTokenService.verifyRefreshToken(refreshToken);
@@ -184,8 +196,9 @@ export class AuthService {
     return buildAuthSessionForUser(this.prisma, user, sessionUser);
   }
 
-  logout(response: Response): void {
+  async logout(response: Response, refreshToken: string): Promise<void> {
     this.cookieService.clearAuthCookies(response);
+    await this.redisService.addRefreshTokenToBlacklist(refreshToken);
   }
 
   async getMe(sessionUser: AuthenticatedUser): Promise<AuthSessionData> {

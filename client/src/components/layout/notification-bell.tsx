@@ -36,9 +36,23 @@ function formatRelativeTime(dateStr: string): string {
     });
 }
 
+// function resolveNotificationRoute(
+//     event: any,
+//     role: UserRole | undefined,
+// ): string {
+//     const eventType = event;
+//     // Fallback khi role không xác định
+//     if (!role) return ROUTES.portal;
+//     switch (eventType) {
+//         case 'GRADE_SAVED':
+//             return resolveGradeSaved(targetType, targetId, studentId, role);
+//     }
+// }
+
 export function NotificationBell() {
     const [realtimeBuffer, setRealtimeBuffer] = useState<Notification[]>([]);
     const [isNewNotification, setIsNewNotification] = useState(false);
+    const [isLoadingMore, setIsLoadingMore] = useState(true);
 
     const prevCountRef = useRef(0);
     const { subscribe, isSubscribed } = usePushNotification();
@@ -58,8 +72,6 @@ export function NotificationBell() {
         });
     }, [socketInfo]);
 
-    // console.log('notificationRooms', socketInfo?.notificationRooms);
-
     // Handle realtime notifications
     useEffect(() => {
         const handleNotification = (data: Notification) => {
@@ -71,9 +83,9 @@ export function NotificationBell() {
             });
 
             setIsNewNotification(true);
+            setIsLoadingMore(false);
 
             if (!isSubscribed) {
-                console.log('subscribe');
                 subscribe();
             }
 
@@ -120,10 +132,14 @@ export function NotificationBell() {
 
     // Load next page when reaching the bottom
     useEffect(() => {
-        if (inView && hasNextPage) {
-            fetchNextPage();
-        }
-    }, [inView, hasNextPage, fetchNextPage]);
+        const handleFetchNextPage = async () => {
+            if (inView && hasNextPage) {
+                await fetchNextPage();
+                setIsLoadingMore(true);
+            }
+        };
+        handleFetchNextPage();
+    }, [inView, hasNextPage, fetchNextPage, setIsLoadingMore]);
 
     // Gom tất cả notifications từ các pages
     const notifications = useMemo(() => {
@@ -175,7 +191,9 @@ export function NotificationBell() {
                     <Bell
                         className={cn(
                             'h-5 w-5',
-                            isNewNotification && 'animate-bounce',
+                            isNewNotification &&
+                                !isLoadingMore &&
+                                'animate-bounce',
                         )}
                     />
 
@@ -183,7 +201,9 @@ export function NotificationBell() {
                         <span
                             className={cn(
                                 'absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-medium text-white transition-transform',
-                                isNewNotification && 'animate-ping',
+                                isNewNotification &&
+                                    !isLoadingMore &&
+                                    'animate-ping',
                             )}
                         >
                             {unreadCount > 9 ? '9+' : unreadCount}
