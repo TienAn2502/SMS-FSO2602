@@ -9,10 +9,7 @@ import { AppException } from '@/common/exceptions/app.exception';
 import { PrismaService } from '@/common/database/prisma.service';
 import { parseIsoDate } from '@/common/schemas/academic.schema';
 import type { PaginationMeta } from '@/common/types/api-response.types';
-import {
-  buildPaginationMeta,
-  getSkip,
-} from '@/common/utils/pagination.util';
+import { buildPaginationMeta, getSkip } from '@/common/utils/pagination.util';
 import { CourseSectionsService } from '@/modules/course-sections/course-sections.service';
 import { SemestersService } from '@/modules/semesters/semesters.service';
 import { TeachersService } from '@/modules/teachers/teachers.service';

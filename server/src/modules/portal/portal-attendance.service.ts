@@ -1,17 +1,12 @@
+import { NotificationsService } from '@/modules/notifications/notifications.service';
 import { HttpStatus, Injectable } from '@nestjs/common';
-import {
-  AcademicEntityStatus,
-  AttendanceSessionStatus,
-} from '@prisma/client';
+import { AcademicEntityStatus, AttendanceSessionStatus } from '@prisma/client';
 
 import type { AuthenticatedUser } from '@/common/auth/auth.types';
 import { PrismaService } from '@/common/database/prisma.service';
 import { AppException } from '@/common/exceptions/app.exception';
 import type { PaginationMeta } from '@/common/types/api-response.types';
-import {
-  buildPaginationMeta,
-  getSkip,
-} from '@/common/utils/pagination.util';
+import { buildPaginationMeta, getSkip } from '@/common/utils/pagination.util';
 import { AttendanceRecordsService } from '@/modules/attendance-records/attendance-records.service';
 import type { AttendanceSessionDetailResponse } from '@/modules/attendance-sessions/mappers/attendance-session.mapper';
 import type { AttendanceSessionResponse } from '@/modules/attendance-sessions/mappers/attendance-session.mapper';
@@ -39,6 +34,7 @@ export class PortalAttendanceService {
     private readonly semestersService: SemestersService,
     private readonly attendanceSessionsService: AttendanceSessionsService,
     private readonly attendanceRecordsService: AttendanceRecordsService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async getMyAttendanceClasses(
@@ -156,6 +152,15 @@ export class PortalAttendanceService {
       user.activeSchoolId,
       user.id,
       sessionId,
+    );
+
+    await this.notificationsService.attendanceLockedNotification(
+      user.activeSchoolId,
+      user.id,
+      input.courseSectionName,
+      input.courseSectionId,
+      input.periodNumber,
+      sessionId
     );
 
     return this.attendanceSessionsService.update(

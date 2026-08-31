@@ -1,13 +1,16 @@
 import { Bell } from 'lucide-react';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import {
+    useInfiniteQuery,
+    useMutation,
+    useQueryClient,
+} from '@tanstack/react-query';
 import { Link } from 'react-router';
-import { formatDistanceToNow, parseISO } from 'date-fns';
-import { vi } from 'date-fns/locale';
-import { useEffect, useMemo, useRef, useState } from 'react';
-
+import { useEffect, useMemo, useState } from 'react';
+import React from 'react';
 import { ROUTES } from '@/app/router/routes';
 import {
     fetchRoomNotifications,
+    updateNotificationSeen,
     type Notification,
 } from '@/features/notifications/api/notification-api';
 import { Button } from '@/components/ui/button';
@@ -21,45 +24,164 @@ import { useNotificationSocket } from '@/features/notifications/context/use-noti
 import { usePushNotification } from '@/features/push-subscriptions/hooks/use-push-notification';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { useInView } from 'react-intersection-observer';
+import DirectNotificationItem from '@/features/notifications/components/direct-notification-item';
+import NotificationWithChildSelector from '@/features/notifications/components/notification-with-child-selector';
+import useMyChildren from '@/features/notifications/hooks/use-my-children';
 
-const TYPE_COLORS: Record<string, string> = {
-    INFO: 'bg-blue-500',
-    SUCCESS: 'bg-emerald-500',
-    WARNING: 'bg-amber-500',
-    ERROR: 'bg-red-500',
-};
+function resolveNotificationRoute(
+    role: string,
+    notification: any,
+    students: any[],
+    setIsDropDownOpen: React.Dispatch<React.SetStateAction<boolean>>,
+) {
+    switch (notification.type) {
+        case 'ANNOUNCEMENT':
+            return (
+                <DirectNotificationItem
+                    notification={notification}
+                    url={`${ROUTES.notifications}/${notification.slug}`}
+                />
+            );
+        case 'GRADE_LOCKED':
+        case 'GRADE_SAVED':
+            return resolveGradeSaved(
+                role,
+                notification,
+                students,
+                setIsDropDownOpen,
+            );
 
-function formatRelativeTime(dateStr: string): string {
-    return formatDistanceToNow(parseISO(dateStr), {
-        addSuffix: true,
-        locale: vi,
-    });
+        case 'ACADEMIC_YEAR_LOCKED':
+        case 'SEMESTER_LOCKED':
+            return resolveSemesterLocked(
+                role,
+                notification,
+                students,
+                setIsDropDownOpen,
+            );
+
+        case 'ATTENDANCE_LOCKED':
+            return resolveAttendanceLocked(
+                role,
+                notification,
+                students,
+                setIsDropDownOpen,
+            );
+    }
 }
 
-// function resolveNotificationRoute(
-//     event: any,
-//     role: UserRole | undefined,
-// ): string {
-//     const eventType = event;
-//     // Fallback khi role không xác định
-//     if (!role) return ROUTES.portal;
-//     switch (eventType) {
-//         case 'GRADE_SAVED':
-//             return resolveGradeSaved(targetType, targetId, studentId, role);
-//     }
-// }
+function resolveGradeSaved(
+    userRole: any,
+    notification: any,
+    students: any[],
+    setIsDropDownOpen: React.Dispatch<React.SetStateAction<boolean>>,
+) {
+    switch (userRole) {
+        case 'STUDENT':
+            return (
+                <DirectNotificationItem
+                    notification={notification}
+                    url={'/portal/my-scores'}
+                />
+            );
+        case 'PARENT':
+            return (
+                <NotificationWithChildSelector
+                    suffix='scores'
+                    notification={notification}
+                    students={students}
+                    setIsDropDownOpen={setIsDropDownOpen}
+                />
+            );
+        case 'SCHOOL_ADMIN':
+            return (
+                <DirectNotificationItem
+                    notification={notification}
+                    url={`/assessments/sections/${notification.rooms[0].targetId}`}
+                />
+            );
+    }
+}
+function resolveSemesterLocked(
+    userRole: any,
+    notification: any,
+    students: any[],
+    setIsDropDownOpen: React.Dispatch<React.SetStateAction<boolean>>,
+) {
+    switch (userRole) {
+        case 'STUDENT':
+            return (
+                <DirectNotificationItem
+                    notification={notification}
+                    url={'/grade-summaries'}
+                />
+            );
+        case 'PARENT':
+            return (
+                <NotificationWithChildSelector
+                    suffix='summaries'
+                    notification={notification}
+                    students={students}
+                    setIsDropDownOpen={setIsDropDownOpen}
+                />
+            );
+        case 'SCHOOL_ADMIN':
+            return (
+                <DirectNotificationItem
+                    notification={notification}
+                    url={'/grade-summaries'}
+                />
+            );
+    }
+}
+
+function resolveAttendanceLocked(
+    userRole: any,
+    notification: any,
+    students: any[],
+    setIsDropDownOpen: React.Dispatch<React.SetStateAction<boolean>>,
+) {
+    switch (userRole) {
+        case 'STUDENT':
+            return (
+                <DirectNotificationItem
+                    notification={notification}
+                    url={'/portal/my-attendance'}
+                />
+            );
+        case 'PARENT':
+            return (
+                <NotificationWithChildSelector
+                    suffix='attendance'
+                    notification={notification}
+                    students={students}
+                    setIsDropDownOpen={setIsDropDownOpen}
+                />
+            );
+        case 'SCHOOL_ADMIN':
+            return (
+                <DirectNotificationItem
+                    notification={notification}
+                    url={`/attendance-sessions/${notification.metadata.attendanceId}`}
+                />
+            );
+    }
+}
 
 export function NotificationBell() {
     const [realtimeBuffer, setRealtimeBuffer] = useState<Notification[]>([]);
     const [isNewNotification, setIsNewNotification] = useState(false);
     const [isLoadingMore, setIsLoadingMore] = useState(true);
-
-    const prevCountRef = useRef(0);
+    const [isDropDownOpen, setIsDropDownOpen] = useState<boolean>(false);
+    const [unSeenCount, setUnSeenCount] = useState<number>(0);
     const { subscribe, isSubscribed } = usePushNotification();
     const { ref, inView } = useInView();
+    const queryClient = useQueryClient();
 
     const { socket: notificationSocket } = useNotificationSocket();
-    const { socketInfo } = useAuth();
+    const { socketInfo, session } = useAuth();
+
+    const { children } = useMyChildren();
 
     const notificationRooms = useMemo(() => {
         return socketInfo?.notificationRooms.map((r) => {
@@ -71,6 +193,14 @@ export function NotificationBell() {
             };
         });
     }, [socketInfo]);
+
+    // 'notifications', 'recent'
+    const { mutate: handleUpdateNotificationSeen } = useMutation({
+        mutationFn: updateNotificationSeen,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['notifications'] });
+        },
+    });
 
     // Handle realtime notifications
     useEffect(() => {
@@ -112,6 +242,14 @@ export function NotificationBell() {
                         limit: 10,
                     },
                 ),
+            select(data) {
+                return {
+                    pages: data.pages, // Giữ nguyên các trang chứa items và meta
+                    pageParams: data.pageParams,
+                    unSeenNotifications:
+                        data.pages[0]?.unSeenNotifications ?? 0, // Đưa ra ngoài ngang hàng
+                };
+            },
 
             initialPageParam: 1,
 
@@ -172,22 +310,25 @@ export function NotificationBell() {
         return [...uniqueRealtime, ...notifications];
     }, [notifications, realtimeBuffer]);
 
-    // Track badge count for animation
     useEffect(() => {
-        if (notifications.length > prevCountRef.current) {
-            setIsNewNotification(true);
-            setTimeout(() => setIsNewNotification(false), 2000);
-        }
+        const handleRenderUnSeenCount = () => {
+            if (data && typeof data.unSeenNotifications === 'number') {
+                setUnSeenCount(data.unSeenNotifications);
+            }
+        };
 
-        prevCountRef.current = notifications.length;
-    }, [notifications.length]);
-
-    const unreadCount = notifications.length;
+        handleRenderUnSeenCount();
+    }, [data]);
 
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger>
-                <Button variant='ghost' size='icon' className='relative'>
+        <DropdownMenu open={isDropDownOpen} onOpenChange={setIsDropDownOpen}>
+            <DropdownMenuTrigger asChild>
+                <Button
+                    onClick={() => handleUpdateNotificationSeen()}
+                    variant='ghost'
+                    size='icon'
+                    className='relative'
+                >
                     <Bell
                         className={cn(
                             'h-5 w-5',
@@ -196,8 +337,7 @@ export function NotificationBell() {
                                 'animate-bounce',
                         )}
                     />
-
-                    {unreadCount > 0 && (
+                    {unSeenCount > 0 && (
                         <span
                             className={cn(
                                 'absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-medium text-white transition-transform',
@@ -206,7 +346,7 @@ export function NotificationBell() {
                                     'animate-ping',
                             )}
                         >
-                            {unreadCount > 9 ? '9+' : unreadCount}
+                            {unSeenCount > 9 ? '9+' : String(unSeenCount)}
                         </span>
                     )}
 
@@ -241,39 +381,14 @@ export function NotificationBell() {
                     ) : (
                         <div className='py-1'>
                             {allNotifications.map((notification) => (
-                                <Link
-                                    key={notification.id}
-                                    to={`${ROUTES.notifications}/${notification.slug}`}
-                                    className='block px-4 py-3 hover:bg-muted/50'
-                                >
-                                    <div className='flex items-start gap-3'>
-                                        <span
-                                            className={cn(
-                                                'mt-1.5 h-2 w-2 shrink-0 rounded-full',
-                                                TYPE_COLORS[
-                                                    notification.type
-                                                ] || 'bg-gray-500',
-                                            )}
-                                        />
-
-                                        <div className='min-w-0 flex-1'>
-                                            <p className='truncate text-sm'>
-                                                {notification.title}
-                                            </p>
-
-                                            <p className='mt-0.5 truncate text-xs text-muted-foreground'>
-                                                {notification.createdByName ||
-                                                    'Ban Giám hiệu'}
-                                            </p>
-
-                                            <p className='mt-0.5 text-xs text-muted-foreground'>
-                                                {formatRelativeTime(
-                                                    notification.createdAt,
-                                                )}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </Link>
+                                <React.Fragment key={notification.id}>
+                                    {resolveNotificationRoute(
+                                        session!.user.role,
+                                        notification,
+                                        children,
+                                        setIsDropDownOpen,
+                                    )}
+                                </React.Fragment>
                             ))}
 
                             <div ref={ref}>

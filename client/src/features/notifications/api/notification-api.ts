@@ -114,9 +114,11 @@ export async function fetchRoomNotifications(
     params?: NotificationListParams,
 ) {
     const { data } = await api.post('/notifications/rooms', body, { params });
+    console.log(data);
 
     return {
         items: data.data ?? [],
+        unSeenNotifications: data.unSeenNotifications,
         meta: data.meta ?? {
             page: 1,
             limit: 10,
@@ -189,3 +191,19 @@ export interface LegacyNotificationRoom {
     room: string;
     display: string;
 }
+
+export const getUserInRoom = async (room: string, userIds: string[]) => {
+    const { data } = await api.post('/notifications/users/room', {
+        room,
+        userIds,
+    });
+
+    return data.data;
+};
+
+export const updateNotificationSeen = async () => {
+    await api.patch('/notifications/seen', {});
+};
+export const readNotification = async (notificationId: string) => {
+    await api.post(`/notifications/${notificationId}/read`);
+};

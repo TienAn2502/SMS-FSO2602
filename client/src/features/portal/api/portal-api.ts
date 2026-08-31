@@ -297,6 +297,9 @@ export async function initializePortalAttendanceRecords(sessionId: string) {
 
 export async function closePortalAttendanceSession(
     sessionId: string,
+    courseSectionId: string,
+    courseSectionName: string,
+    periodNumber: number,
     note?: string | null,
 ) {
     const { data } = await api.patch<ApiSuccessResponse<AttendanceSession>>(
@@ -304,6 +307,9 @@ export async function closePortalAttendanceSession(
         {
             status: 'CLOSED',
             note: note ?? null,
+            courseSectionId,
+            courseSectionName,
+            periodNumber,
         },
     );
     return data.data;
@@ -736,9 +742,8 @@ export async function upsertMyHomeroomConductRecords(input: {
         note?: string;
     }>;
 }) {
-    const { data } = await api.put<ApiSuccessResponse<PortalConductRecordRow[]>>(
-        '/portal/my-homeroom/conduct-records',
-        input,
-    );
+    const { data } = await api.put<
+        ApiSuccessResponse<PortalConductRecordRow[]>
+    >('/portal/my-homeroom/conduct-records', input);
     return data.data;
 }

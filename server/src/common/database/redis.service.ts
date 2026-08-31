@@ -80,8 +80,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     await this.client.sadd(roomId, userId);
   }
 
-  async getUsersInRoom(schoolId: string, roomId: string): Promise<string[]> {
-    // return this.client.smembers(`school:${schoolId}:room:${roomId}`);
+  async getUsersInRoom(roomId: string): Promise<string[]> {
     return this.client.smembers(roomId);
   }
 
@@ -177,7 +176,17 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     return result !== null;
   }
 
-  // async isRefreshTokenInBlacklist(refreshToken: string): Promise<boolean> {
-  //   return this.client.sismember('refresh_token_blacklist', refreshToken);
-  // }
+  async filterUsersInRoom(room: string, users: string[]) {
+    console.log(room);
+    if (users.length === 0) return [];
+    const result: string[] = [];
+    for (const id of users) {
+      const isHas = await this.client.sismember(room, id);
+      if (isHas === 1) {
+        result.push(id);
+      }
+    }
+
+    return result;
+  }
 }

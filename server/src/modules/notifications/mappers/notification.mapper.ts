@@ -1,3 +1,5 @@
+import { NotificationType } from '@prisma/client';
+
 // TiTip JSON content type
 export interface TiptapNode {
   type: string;
@@ -26,6 +28,8 @@ export interface NotificationResponse {
   createdByName: string | null;
   createdAt: string;
   updatedAt: string;
+  type: NotificationType;
+  isRead?: boolean;
 }
 
 export interface NotificationRoomResponse {
@@ -41,6 +45,5 @@ export const notificationInclude = {
       fullName: true,
     },
   },
-
   rooms: true,
 };

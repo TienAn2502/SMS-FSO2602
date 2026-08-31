@@ -87,6 +87,7 @@ export class AuthService {
     // Lưu userId vào room trong redis
     if (socketInfo && Object.keys(socketInfo).length > 0) {
       for (const room of socketInfo.notificationRooms) {
+        console.log('room', room);
         await this.redisService.addUserToRoom(room.room, user.id);
       }
     }
@@ -736,7 +737,7 @@ export class AuthService {
         room: `school:${schoolId}`,
         display: school?.shortName || school?.name || 'Trường',
       },
-      // { room: `school:${schoolId}teacher`, display: 'Tất cả giáo viên' },
+      { room: `teachers:${schoolId}`, display: 'Tất cả giáo viên' },
     ];
 
     // Room teacher:{id}

@@ -36,6 +36,9 @@ export type PortalBulkUpsertAttendanceRecordsInput = z.infer<
 export const portalCloseAttendanceSessionSchema = z.object({
   status: z.literal('CLOSED'),
   note: z.string().trim().max(2000).nullable().optional(),
+  courseSectionId: z.uuid(),
+  courseSectionName: z.string(),
+  periodNumber: z.number(),
 });
 
 export type PortalCloseAttendanceSessionInput = z.infer<

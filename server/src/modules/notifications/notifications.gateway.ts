@@ -90,7 +90,6 @@ export class NotificationsGateway
       .schoolId;
     const userId = (client.data as { schoolId: string; userId: string }).userId;
     if (schoolId && userId) {
-      // console.log('removeUserSocket', schoolId, userId, client.id);
       await this.redisService.removeUserSocket(schoolId, userId, client.id);
       await this.redisService.removeSocketUser(schoolId, client.id);
     }
@@ -103,17 +102,11 @@ export class NotificationsGateway
   ) {
     this.socketServer.to(room).emit('notification', notification);
 
-    // console.log('broadcastToRoom', schoolId, room, notification);
-    // push notification
-
     const usersInRoom = new Set<string>(
-      await this.redisService.getUsersInRoom(schoolId, room),
+      await this.redisService.getUsersInRoom(room),
     );
 
-    // console.log('usersInRoom', usersInRoom);
-
     const onlineUsersSet = await this.redisService.getAllOnlineUsers(schoolId);
-    // console.log('onlineUsersSet', onlineUsersSet);
 
     const offlineUserInSpecificRoom: Set<string> = new Set<string>();
 
@@ -122,14 +115,11 @@ export class NotificationsGateway
         offlineUserInSpecificRoom.add(userId);
       }
     }
-    // console.log('offlineUserInSpecificRoom', offlineUserInSpecificRoom);
 
     const pushSubscriptions =
       await this.pushSubscriptionsService.findManyByUserId(
         offlineUserInSpecificRoom,
       );
-
-    // console.log('pushSubscriptions', pushSubscriptions);
 
     for (const pushSubscription of pushSubscriptions) {
       await this.pushSubscriptionsService.sendNotification(pushSubscription);

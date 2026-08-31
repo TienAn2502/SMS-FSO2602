@@ -1,5 +1,5 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { Notification, Prisma } from '@prisma/client';
+import { Notification, NotificationType, Prisma } from '@prisma/client';
 
 import { AppException } from '@/common/exceptions/app.exception';
 import { PrismaService } from '@/common/database/prisma.service';
@@ -21,6 +21,9 @@ import type {
 } from '@/modules/notifications/schemas/notification.schema';
 import { tiptapJsonToHtml } from '@/modules/blogs/utils/tiptap-json-to-html';
 import { type PaginationQuery } from '@/common/schemas/shared.schema';
+import { RedisService } from '@/common/database/redis.service';
+import { AuthenticatedUser } from '@/common/auth/auth.types';
+import { parseIsoDate } from '@/common/schemas/academic.schema';
 
 export interface NotificationRoomInfo {
   id: string;
@@ -41,11 +44,13 @@ export class NotificationsService {
     private readonly r2Service: R2Service,
     private readonly filesService: FilesService,
     private readonly notificationsGateway: NotificationsGateway,
+    private readonly redisService: RedisService,
   ) {}
 
   async list(
     schoolId: string,
     query: ListNotificationsQuery,
+    userId: string,
   ): Promise<{ items: NotificationResponse[]; meta: PaginationMeta }> {
     // Filter notifications by SCHOOL room type
     const schoolRoomConditions = {
@@ -84,15 +89,29 @@ export class NotificationsService {
         },
         skip: getSkip(query.page, query.limit),
         take: query.limit,
-        include: notificationInclude,
+        include: {
+          ...notificationInclude,
+          notificationReads: {
+            select: {
+              readAt: true,
+            },
+            where: {
+              userId,
+            },
+          },
+        },
       }),
     ]);
 
     const items = await Promise.all(
       notifications.map(async (notification) => {
         const thumbnailUrl = await this.getThumbnailUrl(notification);
+        const isRead = !!notification.notificationReads?.[0];
         return this.toNotificationResponseWithContent(
-          notification,
+          {
+            ...notification,
+            isRead,
+          },
           thumbnailUrl,
         );
       }),
@@ -107,7 +126,14 @@ export class NotificationsService {
   async findById(schoolId: string, id: string): Promise<NotificationResponse> {
     const notification = await this.prisma.notification.findFirst({
       where: { id, schoolId },
-      include: notificationInclude,
+      include: {
+        ...notificationInclude,
+        notificationReads: {
+          select: {
+            readAt: true,
+          },
+        },
+      },
     });
 
     if (!notification) {
@@ -119,7 +145,10 @@ export class NotificationsService {
     }
 
     const thumbnailUrl = await this.getThumbnailUrl(notification);
-    return this.toNotificationResponseWithContent(notification, thumbnailUrl);
+    return this.toNotificationResponseWithContent(
+      { ...notification, isRead: notification.notificationReads.length > 0 },
+      thumbnailUrl,
+    );
   }
 
   async findBySlug(
@@ -208,6 +237,7 @@ export class NotificationsService {
         schoolId,
         title: input.title,
         slug,
+        type: NotificationType.ANNOUNCEMENT,
         content: content as unknown as Prisma.InputJsonValue,
         thumbnailStorageKey,
         createdById,
@@ -239,7 +269,7 @@ export class NotificationsService {
    */
   private buildNotificationContent(
     mainText: string,
-    callToAction = 'Quý phụ huynh vui lòng kiểm tra sổ điểm của con em mình.',
+    callToAction: string = 'Quý phụ huynh vui lòng kiểm tra sổ điểm của con em mình.',
   ): string {
     return tiptapJsonToHtml({
       type: 'doc',
@@ -277,6 +307,9 @@ export class NotificationsService {
         schoolId,
         title,
         slug,
+        type: isLocked
+          ? NotificationType.GRADE_LOCKED
+          : NotificationType.GRADE_SAVED,
         content,
         createdById,
         rooms: {
@@ -322,6 +355,9 @@ export class NotificationsService {
         schoolId,
         title,
         slug,
+        type: isSemester
+          ? NotificationType.SEMESTER_LOCKED
+          : NotificationType.ACADEMIC_YEAR_LOCKED,
         content,
         createdById,
         rooms: {
@@ -342,11 +378,63 @@ export class NotificationsService {
     await this.broadcastToRooms(schoolId, response);
   }
 
-  async listByRoom(
+  formatDate(date: Date) {
+    return new Intl.DateTimeFormat('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).format(date);
+  }
+
+  async attendanceLockedNotification(
     schoolId: string,
+    createdById: string,
+    courseSectionName: string,
+    courseSectionId: string,
+    periodNumber: number,
+    sessionId: string,
+  ) {
+    const date = new Date();
+    const mainText = `Giáo viên đã đóng điểm danh lớp ${courseSectionName} ngày ${this.formatDate(date)} - Tiết ${periodNumber}`;
+    const content = this.buildNotificationContent(mainText);
+    const slug = await this.generateUniqueSlug(schoolId, mainText);
+
+    const notification = await this.prisma.notification.create({
+      data: {
+        schoolId,
+        title: mainText,
+        slug,
+        type: NotificationType.ATTENDANCE_LOCKED,
+        content,
+        createdById,
+        rooms: {
+          create: {
+            roomType: 'COURSE',
+            targetId: courseSectionId,
+          },
+        },
+      },
+      include: notificationInclude,
+    });
+
+    const response = await this.toNotificationResponseWithContent(
+      notification,
+      // { ...notification, metadata: { targetId: sessionId } },
+      null,
+    );
+
+    await this.broadcastToRooms(schoolId, response);
+  }
+
+  async listByRoom(
+    user: AuthenticatedUser,
     rooms: { roomType: string; targetId: string }[],
     query: PaginationQuery,
-  ): Promise<{ items: NotificationResponse[]; meta: PaginationMeta }> {
+  ): Promise<{
+    items: NotificationResponse[];
+    unSeenNotifications: number;
+    meta: PaginationMeta;
+  }> {
     // 1. Chuẩn hóa điều kiện lọc theo cặp roomType và targetId
     const roomConditions = rooms.map((room) => ({
       roomType: room.roomType.toUpperCase(),
@@ -355,23 +443,61 @@ export class NotificationsService {
 
     // 2. Xây dựng câu lệnh điều kiện `where` cho Prisma
     const where: Prisma.NotificationWhereInput = {
-      schoolId,
+      schoolId: user.activeSchoolId,
       rooms: {
         some: {
           OR: roomConditions,
         },
       },
+      createdById: {
+        not: user.id, // không lấy ra thông báo mà người đang lấy là người đăng
+      },
     };
 
-    // 3. Thực thi transaction để lấy tổng số lượng và danh sách phân trang song song
-    const [total, data] = await this.prisma.$transaction([
+    // 1. Lấy mốc thời gian check gần nhất của user
+    const seenRecord = await this.prisma.notificationSeen.findUnique({
+      where: {
+        userId: user.id,
+      },
+      select: {
+        lastCheckedNotificationsAt: true,
+      },
+    });
+
+    // 2. Thực thi transaction
+    const [total, data, unSeenCount] = await this.prisma.$transaction([
       this.prisma.notification.count({ where }),
       this.prisma.notification.findMany({
         where,
         orderBy: { createdAt: 'desc' },
         skip: getSkip(query.page, query.limit),
         take: query.limit,
-        include: notificationInclude,
+        include: {
+          ...notificationInclude,
+          notificationReads: {
+            select: {
+              readAt: true,
+            },
+            where: {
+              userId: user.id,
+            },
+          },
+        },
+      }),
+      this.prisma.notification.count({
+        where: {
+          schoolId: user.activeSchoolId,
+          createdById: {
+            not: user.id,
+          },
+          ...(seenRecord!.lastCheckedNotificationsAt
+            ? {
+                createdAt: {
+                  gt: seenRecord?.lastCheckedNotificationsAt,
+                },
+              }
+            : {}),
+        },
       }),
     ]);
 
@@ -379,8 +505,55 @@ export class NotificationsService {
     const items = await Promise.all(
       data.map(async (notification) => {
         const thumbnailUrl = await this.getThumbnailUrl(notification);
+        const isRead = !!notification.notificationReads?.[0];
+        if (notification.type === NotificationType.ATTENDANCE_LOCKED) {
+          const courseSectionId = notification.rooms[0].targetId;
+          const notificationDate = notification.createdAt
+            .toISOString()
+            .split('T')[0];
+          if (!courseSectionId) {
+            return this.toNotificationResponseWithContent(
+              {
+                ...notification,
+                isRead,
+              },
+              thumbnailUrl,
+            );
+          }
+          const attendanceInfo = await this.prisma.attendanceSession.findFirst({
+            where: {
+              courseSectionId,
+              sessionDate: parseIsoDate(notificationDate),
+            },
+            select: {
+              id: true,
+            },
+          });
+
+          if (!attendanceInfo) {
+            return this.toNotificationResponseWithContent(
+              {
+                ...notification,
+                isRead,
+              },
+              thumbnailUrl,
+            );
+          }
+
+          return this.toNotificationResponseWithContent(
+            {
+              ...notification,
+              metadata: { attendanceId: attendanceInfo.id },
+              isRead,
+            },
+            thumbnailUrl,
+          );
+        }
         return this.toNotificationResponseWithContent(
-          notification,
+          {
+            ...notification,
+            isRead,
+          },
           thumbnailUrl,
         );
       }),
@@ -389,6 +562,7 @@ export class NotificationsService {
     // 5. Trả về kết quả kèm metadata phân trang
     return {
       items,
+      unSeenNotifications: unSeenCount,
       meta: buildPaginationMeta(query.page, query.limit, total),
     };
   }
@@ -428,7 +602,6 @@ export class NotificationsService {
     updatedById: string,
     input: UpdateNotificationInput,
   ): Promise<NotificationResponse> {
-    console.log(input);
     const existing = await this.prisma.notification.findFirst({
       where: { schoolId, slug },
       include: notificationInclude,
@@ -522,7 +695,7 @@ export class NotificationsService {
       ...(content !== undefined
         ? { content: content as unknown as Prisma.InputJsonValue }
         : {}),
-      ...(input.type !== undefined ? { type: input.type } : {}),
+      type: NotificationType.ANNOUNCEMENT,
       ...(thumbnailStorageKey !== undefined ? { thumbnailStorageKey } : {}),
     };
 
@@ -539,7 +712,6 @@ export class NotificationsService {
       });
 
       if (input.fileNeedToDelete && input.fileNeedToDelete.length > 0) {
-        console.log('input.fileNeedToDelete', input.fileNeedToDelete);
         await this.filesService.deleteFiles(input.fileNeedToDelete, schoolId);
       }
 
@@ -686,6 +858,11 @@ export class NotificationsService {
         targetId: string | null;
       }>;
       createdBy?: { fullName: string | null } | null;
+      type: NotificationType;
+      metadata?: {
+        attendanceId: string;
+      };
+      isRead?: boolean;
     },
     thumbnailUrl: string | null,
   ): Promise<NotificationResponse> {
@@ -737,6 +914,11 @@ export class NotificationsService {
       createdByName: notification.createdBy?.fullName ?? null,
       createdAt: notification.createdAt.toISOString(),
       updatedAt: notification.updatedAt.toISOString(),
+      type: notification.type,
+      ...(notification.metadata ? { metadata: notification.metadata } : {}),
+      ...(notification.isRead !== undefined
+        ? { isRead: notification.isRead }
+        : {}),
     };
   }
 
@@ -769,5 +951,52 @@ export class NotificationsService {
     }
 
     return slug;
+  }
+
+  async getUserInRoom(usersIds: any[], roomId: string) {
+    const result = await this.redisService.filterUsersInRoom(roomId, usersIds);
+    return result;
+  }
+
+  async updateLastSeenNotifications(userId: string) {
+    await this.prisma.notificationSeen.upsert({
+      where: {
+        userId,
+      },
+      update: {
+        lastCheckedNotificationsAt: new Date(),
+      },
+      create: {
+        userId: userId,
+      },
+    });
+  }
+
+  async markAsReadNotification(userId: string, notificationId: string) {
+    await this.prisma.notificationRead.upsert({
+      where: {
+        notificationId_userId: {
+          notificationId,
+          userId,
+        },
+      },
+      create: {
+        notificationId,
+        userId,
+      },
+      update: { readAt: new Date() },
+    });
+  }
+
+  private async isNotificationRead(notificationId: string, userId: string) {
+    const result = await this.prisma.notificationRead.findUnique({
+      where: {
+        notificationId_userId: {
+          notificationId,
+          userId,
+        },
+      },
+    });
+    return result;
   }
 }

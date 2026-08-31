@@ -135,10 +135,12 @@ enum BlogStatus {
 }
 
 enum NotificationType {
-  INFO
-  SUCCESS
-  WARNING
-  ERROR
+  GRADE_SAVED
+  GRADE_LOCKED
+  ATTENDANCE_LOCKED
+  SEMESTER_LOCKED
+  ACADEMIC_YEAR_LOCKED
+  ANNOUNCEMENT
 }
 
 enum NotificationRoomType {
@@ -215,6 +217,8 @@ model User {
   authoredBlogs        Blog[]             @relation("BlogAuthor")
   createdNotifications Notification[]     @relation("NotificationCreator")
   pushSubscriptions    PushSubscription[]
+  notificationReads NotificationRead[]
+  notificationSeen  NotificationSeen?
 
   @@index([schoolId])
   @@index([status])
@@ -870,9 +874,11 @@ model Notification {
   createdById         String?  @map("created_by_id") @db.Uuid
   createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  type                NotificationType
 
   school    School             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   createdBy User?              @relation("NotificationCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  notificationReads NotificationRead[]
   rooms     NotificationRoom[]
 
   @@unique([schoolId, slug])
@@ -908,4 +914,28 @@ model PushSubscription {
 
   @@index([userId])
   @@map("push_subscriptions")
+}
+
+model NotificationRead {
+  // Bỏ cột id dư thừa đi vì đã dùng @@id ở dưới
+  notificationId String       @map("notification_id") @db.Uuid
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  userId         String       @map("user_id") @db.Uuid
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  readAt         DateTime     @default(now()) @map("read_at") 
+
+  @@id([notificationId, userId]) 
+  @@index([userId])
+  @@map("notification_reads") 
+}
+
+model NotificationSeen {
+  userId                     String   @id @map("user_id") @db.Uuid
+  user                       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  lastCheckedNotificationsAt DateTime @default(now()) @map("last_checked_notification_at") @db.Timestamptz(6)
+
+  @@map("notification_seens")
 }

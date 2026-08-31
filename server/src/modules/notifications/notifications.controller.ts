@@ -40,18 +40,18 @@ import {
 @ApiCookieAuth('access_token')
 @Controller('notifications')
 @UseGuards(TenantGuard, RolesGuard)
+@Roles(
+  UserRole.SCHOOL_ADMIN,
+  UserRole.TEACHER,
+  UserRole.STUDENT,
+  UserRole.PARENT,
+)
 export class NotificationsController {
   constructor(
     private readonly notificationsService: NotificationsService,
     private readonly r2Service: R2Service,
   ) {}
 
-  @Roles(
-    UserRole.SCHOOL_ADMIN,
-    UserRole.TEACHER,
-    UserRole.STUDENT,
-    UserRole.PARENT,
-  )
   @Get()
   @ApiOperation({ summary: 'Danh sách thông báo' })
   async list(
@@ -62,6 +62,7 @@ export class NotificationsController {
     const result = await this.notificationsService.list(
       user.activeSchoolId,
       query,
+      user.id,
     );
 
     return {
@@ -72,12 +73,6 @@ export class NotificationsController {
     };
   }
 
-  @Roles(
-    UserRole.SCHOOL_ADMIN,
-    UserRole.TEACHER,
-    UserRole.STUDENT,
-    UserRole.PARENT,
-  )
   @Post('rooms')
   @ApiOperation({ summary: 'Danh sách thông báo theo phòng' })
   async listByRoom(
@@ -87,7 +82,7 @@ export class NotificationsController {
     query: PaginationQuery,
   ) {
     const result = await this.notificationsService.listByRoom(
-      user.activeSchoolId,
+      user,
       body,
       query,
     );
@@ -95,16 +90,12 @@ export class NotificationsController {
     return {
       success: true,
       data: result.items,
+      unSeenNotifications: result.unSeenNotifications,
       meta: result.meta,
       message: null,
     };
   }
-  @Roles(
-    UserRole.SCHOOL_ADMIN,
-    UserRole.TEACHER,
-    UserRole.STUDENT,
-    UserRole.PARENT,
-  )
+
   @Get('by-slug/:slug')
   @ApiOperation({ summary: 'Chi tiết thông báo theo slug' })
   async findBySlug(
@@ -124,12 +115,6 @@ export class NotificationsController {
   }
 
   @Get('refresh-urls')
-  @Roles(
-    UserRole.SCHOOL_ADMIN,
-    UserRole.TEACHER,
-    UserRole.STUDENT,
-    UserRole.PARENT,
-  )
   @ApiOperation({ summary: 'Refresh signed URLs for notifications' })
   async refreshUrls(
     @CurrentUser() user: AuthenticatedUser,
@@ -153,15 +138,9 @@ export class NotificationsController {
   }
 
   @Get('rooms/available')
-  @Roles(
-    UserRole.SCHOOL_ADMIN,
-    UserRole.TEACHER,
-    UserRole.STUDENT,
-    UserRole.PARENT,
-  )
   @ApiOperation({ summary: 'Danh sách phòng thông báo khả dụng' })
-  async getAvailableRooms(@CurrentUser() user: AuthenticatedUser) {
-    const rooms = await this.notificationsService.getAvailableRooms(
+  getAvailableRooms(@CurrentUser() user: AuthenticatedUser) {
+    const rooms = this.notificationsService.getAvailableRooms(
       user.activeSchoolId,
     );
 
@@ -192,6 +171,12 @@ export class NotificationsController {
       data,
       message: 'Gửi thông báo thành công',
     };
+  }
+
+  @Patch('seen')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async updateLastSeenNotifications(@CurrentUser() user: AuthenticatedUser) {
+    await this.notificationsService.updateLastSeenNotifications(user.id);
   }
 
   @Roles(UserRole.SCHOOL_ADMIN)
@@ -232,5 +217,27 @@ export class NotificationsController {
       data: null,
       message: 'Xóa thông báo thành công',
     };
+  }
+
+  @Post('/users/room')
+  @HttpCode(HttpStatus.OK)
+  async getUserByRoom(@Body() body: any) {
+    const data = await this.notificationsService.getUserInRoom(
+      body.userIds,
+      body.room,
+    );
+    return {
+      success: true,
+      data,
+    };
+  }
+
+  @Post(':id/read')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async markAsReadNotification(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', new ZodValidationPipe(z.uuid())) id: string,
+  ) {
+    await this.notificationsService.markAsReadNotification(user.id, id);
   }
 }

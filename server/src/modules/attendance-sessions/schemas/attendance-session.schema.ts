@@ -20,7 +20,9 @@ export const listAttendanceSessionsQuerySchema = paginationSchema.extend({
   sessionDate: isoDateSchema.optional(),
   status: attendanceSessionStatusSchema.optional(),
   includeAllSemesters: z.coerce.boolean().optional().default(false),
-  sortBy: z.enum(['sessionDate', 'periodNumber', 'status']).default('sessionDate'),
+  sortBy: z
+    .enum(['sessionDate', 'periodNumber', 'status'])
+    .default('sessionDate'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
 
@@ -46,10 +48,9 @@ export const updateAttendanceSessionSchema = z
     status: attendanceSessionStatusSchema.optional(),
     note: z.string().trim().max(2000).nullable().optional(),
   })
-  .refine(
-    (value) => value.status !== undefined || value.note !== undefined,
-    { message: 'Cần ít nhất một trường để cập nhật' },
-  );
+  .refine((value) => value.status !== undefined || value.note !== undefined, {
+    message: 'Cần ít nhất một trường để cập nhật',
+  });
 
 export type UpdateAttendanceSessionInput = z.infer<
   typeof updateAttendanceSessionSchema

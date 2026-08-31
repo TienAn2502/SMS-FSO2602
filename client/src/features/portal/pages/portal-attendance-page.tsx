@@ -33,7 +33,7 @@ import { selectClassName } from '@/lib/form-styles';
 export function PortalAttendancePage() {
     const queryClient = useQueryClient();
     const [courseSectionId, setCourseSectionId] = useState('');
-    const [sessionDate, setSessionDate] = useState('2025-09-01');
+    const [sessionDate, setSessionDate] = useState('2025-09-05');
     const [periodNumber, setPeriodNumber] = useState(1);
     const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
     // bản nháp để lưu trữ dữ liệu điểm danh của học sinh
@@ -139,8 +139,19 @@ export function PortalAttendancePage() {
         },
     });
 
+    const classes = classesQuery.data ?? [];
+    const session = sessionQuery.data;
+    const isClosed = session?.status === 'CLOSED';
+    const hasRecords = (session?.records.length ?? 0) > 0;
+
     const closeMutation = useMutation({
-        mutationFn: () => closePortalAttendanceSession(activeSessionId!),
+        mutationFn: () =>
+            closePortalAttendanceSession(
+                session!.id,
+                session!.courseSectionId,
+                session!.courseSectionName,
+                session!.periodNumber,
+            ),
         onSuccess: () => {
             void queryClient.invalidateQueries({
                 queryKey: ['portal', 'attendance-sessions', activeSessionId],
@@ -167,11 +178,6 @@ export function PortalAttendancePage() {
             />
         );
     }
-
-    const classes = classesQuery.data ?? [];
-    const session = sessionQuery.data;
-    const isClosed = session?.status === 'CLOSED';
-    const hasRecords = (session?.records.length ?? 0) > 0;
 
     return (
         <div className='space-y-6'>
