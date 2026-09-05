@@ -10,6 +10,7 @@ import type { Request } from 'express';
 import { IS_PUBLIC_KEY } from '@/common/auth/auth.constants';
 import { isImpersonating } from '@/common/auth/impersonation.util';
 import { AppException } from '@/common/exceptions/app.exception';
+import { AuthenticatedUser } from '@/common/auth/auth.types';
 
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
@@ -30,7 +31,7 @@ export class ImpersonationReadOnlyGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<Request>();
     const user = request.user;
 
-    if (!user || !isImpersonating(user)) {
+    if (!user || !isImpersonating(user as AuthenticatedUser)) {
       return true;
     }
 

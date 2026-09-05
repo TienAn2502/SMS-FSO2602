@@ -219,6 +219,7 @@ model User {
   pushSubscriptions    PushSubscription[]
   notificationReads NotificationRead[]
   notificationSeen  NotificationSeen?
+  sessions  DeviceSession[]
 
   @@index([schoolId])
   @@index([status])
@@ -938,4 +939,29 @@ model NotificationSeen {
   lastCheckedNotificationsAt DateTime @default(now()) @map("last_checked_notification_at") @db.Timestamptz(6)
 
   @@map("notification_seens")
+}
+
+model DeviceSession {
+  id         String       @id @default(uuid()) @db.Uuid 
+
+  userId         String   @db.Uuid @map("user_id")
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  deviceId       String   @map("device_id")
+
+  os             String   
+  browser        String   
+  deviceType     String?   @map("device_type")
+  deviceVendor String? @map("device_vendor")
+  deviceModel String? @map("device_model")
+
+  ipAddress      String   @map("ip_address")
+
+  createdAt      DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt      DateTime @updatedAt  @map("updated_at")       @db.Timestamptz(6)
+  expiredAt      DateTime @map("expired_at")          @db.Timestamptz(6)       
+
+ 
+  @@unique([userId, deviceId])
+  @@map("device_session")
 }

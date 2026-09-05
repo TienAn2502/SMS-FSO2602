@@ -65,6 +65,7 @@ import { TeachersPage } from '@/features/teachers/pages/teachers-page';
 import { TeachingAssignmentsPage } from '@/features/teaching-assignments/pages/teaching-assignments-page';
 import { TimetablePage } from '@/features/timetable/pages/timetable-page';
 import { UsersPage } from '@/features/users/pages/users-page';
+import { DeviceSessionsPage } from '@/features/device-sessions/pages/device-sessions-page';
 import DefaultRoute from '@/components/auth/default-route';
 
 export const router = createBrowserRouter([
@@ -212,6 +213,14 @@ export const router = createBrowserRouter([
                 element: (
                     <RoleGate roles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT']}>
                         <ChangePasswordPage />
+                    </RoleGate>
+                ),
+            },
+            {
+                path: ROUTES.deviceSessions.slice(1),
+                element: (
+                    <RoleGate roles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT']}>
+                        <DeviceSessionsPage />
                     </RoleGate>
                 ),
             },

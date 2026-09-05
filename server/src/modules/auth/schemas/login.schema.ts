@@ -13,6 +13,7 @@ export const loginSchema = z
     identifier: z.string().trim().min(1).max(255).optional(),
     email: z.string().trim().min(1).max(255).optional(),
     password: z.string().min(1, 'Mật khẩu là bắt buộc'),
+    deviceId: z.string().min(1, 'Id thiết bị là bắt buộc'),
   })
   .superRefine((value, ctx) => {
     if (!value.identifier?.trim() && !value.email?.trim()) {
@@ -26,6 +27,7 @@ export const loginSchema = z
   .transform((value) => ({
     identifier: (value.identifier ?? value.email ?? '').trim(),
     password: value.password,
+    deviceId: value.deviceId,
   }));
 
 export type LoginInput = z.infer<typeof loginSchema>;

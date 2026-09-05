@@ -48,6 +48,7 @@ export const ROUTES = {
     portalHomeroomSummaries: '/portal/my-homeroom/summaries',
     portalNotifications: '/portal/notifications',
     portalNotificationDetail: '/portal/notifications/:slug',
+    deviceSessions: '/account/devices',
 } as const;
 
 export function getPlatformSchoolDetailPath(id: string): string {

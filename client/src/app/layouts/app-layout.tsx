@@ -12,7 +12,14 @@ export function AppLayout() {
             <SidebarInset className='min-h-0 overflow-hidden'>
                 <ImpersonationBanner />
                 <AppHeader />
-                <div className='min-h-0 flex-1 overflow-y-auto p-6 pb-10'>
+                <div
+                    style={{
+                        overscrollBehaviorY: 'contain',
+                        WebkitOverflowScrolling: 'touch', // Giúp cuộn mượt mà (momentum scrolling) trên iOS Safari
+                        touchAction: 'pan-y', // Ưu tiên tuyệt đối cho cử chỉ cuộn dọc, bỏ qua độ trễ chạm
+                    }}
+                    className='min-h-0 flex-1 overflow-y-auto p-6 pb-10'
+                >
                     <Outlet />
                 </div>
             </SidebarInset>

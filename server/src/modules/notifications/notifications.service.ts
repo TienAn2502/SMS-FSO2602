@@ -490,7 +490,7 @@ export class NotificationsService {
           createdById: {
             not: user.id,
           },
-          ...(seenRecord!.lastCheckedNotificationsAt
+          ...(seenRecord?.lastCheckedNotificationsAt
             ? {
                 createdAt: {
                   gt: seenRecord?.lastCheckedNotificationsAt,

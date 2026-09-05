@@ -37,6 +37,8 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { BlogsModule } from './modules/blogs/blogs.module';
 import { PushSubscriptionsModule } from './modules/push-subscriptions/push-subscriptions.module';
 import { CommonModule } from '@/common/auth/common.module';
+import { DeviceSessionModule } from './modules/device-session/device-session.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -80,6 +82,8 @@ import { CommonModule } from '@/common/auth/common.module';
     BlogsModule,
     PushSubscriptionsModule,
     CommonModule,
+    DeviceSessionModule,
+    ScheduleModule.forRoot(),
   ],
 })
 export class AppModule {}

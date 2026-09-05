@@ -14,6 +14,7 @@ import type {
   AccessTokenPayload,
   AuthenticatedUser,
 } from '@/common/auth/auth.types';
+import { RedisService } from '@/common/database/redis.service';
 
 @Injectable()
 export class JwtAccessStrategy extends PassportStrategy(
@@ -23,6 +24,7 @@ export class JwtAccessStrategy extends PassportStrategy(
   constructor(
     configService: ConfigService<EnvConfig, true>,
     private readonly prisma: PrismaService,
+    private readonly redisService: RedisService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
@@ -35,7 +37,6 @@ export class JwtAccessStrategy extends PassportStrategy(
   }
 
   async validate(payload: AccessTokenPayload): Promise<AuthenticatedUser> {
-    // * Sau sẽ thành query xuống Redis thay vì Database
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
       include: { school: true },
@@ -54,6 +55,18 @@ export class JwtAccessStrategy extends PassportStrategy(
         'ACCOUNT_INACTIVE',
         'Tài khoản đã bị khóa hoặc không hoạt động',
         HttpStatus.FORBIDDEN,
+      );
+    }
+
+    const isSessionStillValid = await this.redisService.getSessionFromWhiteList(
+      payload.sessionId,
+    );
+
+    if (!isSessionStillValid) {
+      throw new AppException(
+        'SESSION_EXPIRED',
+        'Phiên đã hết hạn',
+        HttpStatus.UNAUTHORIZED,
       );
     }
 
@@ -90,6 +103,8 @@ export class JwtAccessStrategy extends PassportStrategy(
       activeSchoolId: activeSchoolId ?? '',
       impersonatedBy: payload.impersonatedBy,
       impersonationMode: payload.impersonationMode,
+      sessionId: payload.sessionId,
+      deviceId: payload.deviceId,
     };
   }
 }

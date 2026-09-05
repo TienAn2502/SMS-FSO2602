@@ -194,7 +194,6 @@ export function NotificationBell() {
         });
     }, [socketInfo]);
 
-    // 'notifications', 'recent'
     const { mutate: handleUpdateNotificationSeen } = useMutation({
         mutationFn: updateNotificationSeen,
         onSuccess: () => {
@@ -322,7 +321,7 @@ export function NotificationBell() {
 
     return (
         <DropdownMenu open={isDropDownOpen} onOpenChange={setIsDropDownOpen}>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger>
                 <Button
                     onClick={() => handleUpdateNotificationSeen()}
                     variant='ghost'

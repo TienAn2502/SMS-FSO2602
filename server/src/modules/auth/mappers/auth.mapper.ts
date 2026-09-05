@@ -18,6 +18,8 @@ export function toAuthSessionData(
   activeSchool: School | null,
   impersonation: ImpersonationSessionData | null = null,
   socketInfo: UserSocketInfo | null = null,
+  sessionId: string,
+  deviceId: string,
 ): AuthSessionData {
   return {
     user: {
@@ -26,6 +28,8 @@ export function toAuthSessionData(
       fullName: user.fullName,
       role: user.role,
       status: user.status,
+      sessionId: sessionId,
+      deviceId: deviceId,
     },
     activeSchoolId: activeSchool?.id ?? null,
     activeSchool: activeSchool
@@ -63,7 +67,14 @@ export async function buildAuthSessionForUser(
   socketInfo: UserSocketInfo | null = null,
 ): Promise<AuthSessionData> {
   if (!sessionUser.activeSchoolId) {
-    return toAuthSessionData(user, null, null);
+    return toAuthSessionData(
+      user,
+      null,
+      null,
+      null,
+      sessionUser.sessionId,
+      sessionUser.deviceId,
+    );
   }
 
   const activeSchool = await prisma.school.findUnique({
@@ -86,5 +97,12 @@ export async function buildAuthSessionForUser(
       )
     : null;
 
-  return toAuthSessionData(user, activeSchool, impersonation, socketInfo);
+  return toAuthSessionData(
+    user,
+    activeSchool,
+    impersonation,
+    socketInfo,
+    sessionUser.sessionId,
+    sessionUser.deviceId,
+  );
 }

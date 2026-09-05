@@ -11,6 +11,7 @@ import type { Request } from 'express';
 import { ROLES_KEY } from '@/common/auth/auth.constants';
 import { hasEffectiveRole } from '@/common/auth/impersonation.util';
 import { AppException } from '@/common/exceptions/app.exception';
+import { AuthenticatedUser } from '@/common/auth/auth.types';
 
 // Check role xem có hợp lệ không
 @Injectable()
@@ -39,7 +40,11 @@ export class RolesGuard implements CanActivate {
     }
 
     //  Check xem có phải system admin không
-    if (!requiredRoles.some((role) => hasEffectiveRole(user, role))) {
+    if (
+      !requiredRoles.some((role) =>
+        hasEffectiveRole(user as AuthenticatedUser, role),
+      )
+    ) {
       throw new AppException(
         'FORBIDDEN',
         'Bạn không có quyền thực hiện thao tác này',

@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
+  Ip,
   Post,
   Req,
   Res,
@@ -40,8 +42,13 @@ export class AuthController {
   async login(
     @Body(new ZodValidationPipe(loginSchema)) body: LoginInput,
     @Res({ passthrough: true }) response: Response,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
   ) {
-    const data = await this.authService.login(body, response);
+    const data = await this.authService.login(
+      { ...body, ipAddress, userAgent },
+      response,
+    );
 
     return {
       success: true,
@@ -75,9 +82,9 @@ export class AuthController {
   @ApiOperation({ summary: 'Đăng xuất' })
   async logout(
     @Res({ passthrough: true }) response: Response,
-    @Cookies('refresh_token') refreshToken: string,
+    @Cookies(AUTH_COOKIE.ACCESS) accessToken: string,
   ) {
-    await this.authService.logout(response, refreshToken);
+    await this.authService.logout(response, accessToken);
 
     return {
       success: true,
@@ -90,7 +97,7 @@ export class AuthController {
   @ApiCookieAuth('access_token')
   @ApiOperation({ summary: 'Thông tin session hiện tại' })
   async me(@CurrentUser() user: AuthenticatedUser) {
-    return this.authService.getMe(user);
+    return this.authService.getMe(user, user.sessionId, user.deviceId);
   }
 
   @Post('change-password')

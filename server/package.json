@@ -76,6 +76,7 @@
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/platform-socket.io": "^11.1.29",
+    "@nestjs/schedule": "^12.0.1",
     "@nestjs/swagger": "^11.4.6",
     "@nestjs/websockets": "^11.1.29",
     "@prisma/client": "^6.19.3",
@@ -101,6 +102,7 @@
     "sharp": "^0.35.3",
     "slugify": "^1.6.9",
     "socket.io": "^4.8.3",
+    "ua-parser-js": "^2.0.10",
     "web-push": "^3.6.7",
     "zod": "^4.4.3"
   },

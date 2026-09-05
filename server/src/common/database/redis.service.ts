@@ -163,14 +163,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     return userIds;
   }
 
-  async addRefreshTokenToBlacklist(refreshToken: string): Promise<void> {
-    await this.client.setex(
-      `auth:rt:${refreshToken}`,
-      7 * 24 * 60 * 60, // Số giây (7 ngày)
-      'revoked',
-    );
-  }
-
   async isRefreshTokenInBlacklist(refreshToken: string): Promise<boolean> {
     const result = await this.client.get(`auth:rt:${refreshToken}`);
     return result !== null;
@@ -188,5 +180,27 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     return result;
+  }
+
+  async addUserToWhiteList(sessionId: string, userId: string) {
+    const result = await this.client.setex(
+      `session:${sessionId}`,
+      7 * 24 * 60 * 60, // Số giây (7 ngày)
+      userId,
+    );
+    return result;
+  }
+
+  async getSessionFromWhiteList(sessionId: string) {
+    const result = await this.client.exists(`session:${sessionId}`);
+    return result > 0;
+  }
+
+  async deleteOneSessionFromWhitelist(sessionId: string) {
+    await this.client.del(`session:${sessionId}`);
+  }
+
+  async deleteManySessionFromWhitelist(sessionIdKeys: Set<string>) {
+    await this.client.unlink(...sessionIdKeys);
   }
 }

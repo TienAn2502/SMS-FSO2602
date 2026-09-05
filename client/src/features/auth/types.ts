@@ -1,18 +1,20 @@
 import type { UserRole } from '@/types/api.types';
 
 export interface AuthUser {
-  id: string;
-  email: string;
-  fullName: string;
-  role: UserRole;
-  status: string;
+    id: string;
+    email: string;
+    fullName: string;
+    role: UserRole;
+    status: string;
+    sessionId: string;
+    deviceId: string;
 }
 
 export interface AuthSchool {
-  id: string;
-  code: string;
-  name: string;
-  shortName: string | null;
+    id: string;
+    code: string;
+    name: string;
+    shortName: string | null;
 }
 
 // ============================================================
@@ -20,51 +22,51 @@ export interface AuthSchool {
 // ============================================================
 
 export interface NotificationRoom {
-  room: string;
-  display: string;
+    room: string;
+    display: string;
 }
 
 export interface StudentSocketInfo {
-  notificationRooms: NotificationRoom[];
+    notificationRooms: NotificationRoom[];
 }
 
 export interface ParentSocketInfo {
-  notificationRooms: NotificationRoom[];
+    notificationRooms: NotificationRoom[];
 }
 
 export interface TeacherSocketInfo {
-  notificationRooms: NotificationRoom[];
+    notificationRooms: NotificationRoom[];
 }
 
 export interface SchoolAdminSocketInfo {
-  notificationRooms: NotificationRoom[];
+    notificationRooms: NotificationRoom[];
 }
 
 export type UserSocketInfo =
-  | StudentSocketInfo
-  | ParentSocketInfo
-  | TeacherSocketInfo
-  | SchoolAdminSocketInfo;
+    | StudentSocketInfo
+    | ParentSocketInfo
+    | TeacherSocketInfo
+    | SchoolAdminSocketInfo;
 
 export interface AuthSession {
-  user: AuthUser;
-  activeSchoolId: string | null;
-  activeSchool: AuthSchool | null;
-  impersonation: ImpersonationSession | null;
-  socketInfo: UserSocketInfo | null;
+    user: AuthUser;
+    activeSchoolId: string | null;
+    activeSchool: AuthSchool | null;
+    impersonation: ImpersonationSession | null;
+    socketInfo: UserSocketInfo | null;
 }
 
 export type ImpersonationMode = 'read_only' | 'full';
 
 export interface ImpersonationSession {
-  targetSchoolId: string;
-  targetSchoolName: string;
-  impersonatedBy: string;
-  mode: ImpersonationMode;
-  startedAt: string;
+    targetSchoolId: string;
+    targetSchoolName: string;
+    impersonatedBy: string;
+    mode: ImpersonationMode;
+    startedAt: string;
 }
 
 export interface LoginInput {
-  identifier: string;
-  password: string;
+    identifier: string;
+    password: string;
 }

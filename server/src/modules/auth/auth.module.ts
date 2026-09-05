@@ -16,9 +16,15 @@ import { PersonCodeService } from '@/common/utils/person-code.service';
 import { AuthController } from '@/modules/auth/auth.controller';
 import { AuthService } from '@/modules/auth/auth.service';
 import { RedisModule } from '@/common/database/redis.module';
+import { DeviceSessionModule } from '@/modules/device-session/device-session.module';
 
 @Module({
-  imports: [PassportModule.register({}), JwtModule.register({}), RedisModule],
+  imports: [
+    PassportModule.register({}),
+    JwtModule.register({}),
+    RedisModule,
+    DeviceSessionModule,
+  ],
   controllers: [AuthController],
   providers: [
     AuthService,

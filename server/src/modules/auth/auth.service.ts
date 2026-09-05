@@ -33,6 +33,8 @@ import {
   looksLikePhone,
 } from '@/modules/auth/utils/login-identifier.util';
 import { RedisService } from '@/common/database/redis.service';
+import { UaService } from '@/modules/device-session/ua.service';
+import { DeviceSessionService } from '@/modules/device-session/device-session.service';
 
 @Injectable()
 export class AuthService {
@@ -42,9 +44,14 @@ export class AuthService {
     private readonly jwtTokenService: JwtTokenService,
     private readonly cookieService: CookieService,
     private readonly redisService: RedisService,
+    private readonly uaService: UaService,
+    private readonly deviceSession: DeviceSessionService,
   ) {}
 
-  async login(input: LoginInput, response: Response): Promise<AuthSessionData> {
+  async login(
+    input: LoginInput & { ipAddress: string; userAgent: string },
+    response: Response,
+  ): Promise<AuthSessionData> {
     const user = await this.resolveUserByLoginIdentifier(input.identifier);
 
     if (!user) {
@@ -78,6 +85,26 @@ export class AuthService {
       );
     }
 
+    // device session
+    const userAgent = this.uaService.parse(input.userAgent);
+    console.log('userAgent', userAgent);
+
+    const deviceSession = await this.deviceSession.create({
+      userId: user.id,
+      deviceId: input.deviceId,
+      ipAddress: input.ipAddress,
+      browser: userAgent.browser ?? 'Unknown',
+      os: userAgent.os ?? 'Unknown',
+      deviceType: userAgent.deviceType ?? undefined,
+      deviceVendor: userAgent.deviceVendor ?? undefined,
+      deviceModel: userAgent.deviceModel ?? undefined,
+    });
+
+    await this.redisService.addUserToWhiteList(
+      deviceSession.sessionId,
+      user.id,
+    );
+
     const socketInfo = await this.buildSocketInfoByRole(
       user.role,
       user.id,
@@ -87,13 +114,25 @@ export class AuthService {
     // Lưu userId vào room trong redis
     if (socketInfo && Object.keys(socketInfo).length > 0) {
       for (const room of socketInfo.notificationRooms) {
-        console.log('room', room);
         await this.redisService.addUserToRoom(room.room, user.id);
       }
     }
 
-    this.issueTokens(response, user.id, user.schoolId ?? undefined);
-    return toAuthSessionData(user, user.school, null, socketInfo);
+    this.issueTokens(
+      response,
+      user.id,
+      deviceSession.sessionId,
+      deviceSession.deviceId,
+      user.schoolId ?? undefined,
+    );
+    return toAuthSessionData(
+      user,
+      user.school,
+      null,
+      socketInfo,
+      deviceSession.sessionId,
+      deviceSession.deviceId,
+    );
   }
 
   async refresh(
@@ -109,11 +148,10 @@ export class AuthService {
       );
     }
 
-    // Check xem refresh token có trong blacklist không
-    const isRefreshTokenInBlacklist =
-      await this.redisService.isRefreshTokenInBlacklist(refreshToken);
-    if (isRefreshTokenInBlacklist) {
-      this.cookieService.clearAuthCookies(response);
+    let payload: RefreshTokenPayload;
+    try {
+      payload = this.jwtTokenService.verifyRefreshToken(refreshToken);
+    } catch {
       throw new AppException(
         'SESSION_EXPIRED',
         'Phiên đăng nhập đã hết hạn',
@@ -121,10 +159,11 @@ export class AuthService {
       );
     }
 
-    let payload: RefreshTokenPayload;
-    try {
-      payload = this.jwtTokenService.verifyRefreshToken(refreshToken);
-    } catch {
+    const isSessionStillAvailable = await this.prisma.deviceSession.findUnique({
+      where: { id: payload.sessionId },
+    });
+
+    if (!isSessionStillAvailable) {
       throw new AppException(
         'SESSION_EXPIRED',
         'Phiên đăng nhập đã hết hạn',
@@ -152,6 +191,16 @@ export class AuthService {
         HttpStatus.FORBIDDEN,
       );
     }
+    await this.redisService.addUserToWhiteList(payload.sessionId, payload.sub);
+    const newExpiredAt = new Date();
+    newExpiredAt.setDate(newExpiredAt.getDate() + 7);
+    await this.prisma.deviceSession.update({
+      where: { id: payload.sessionId },
+      data: {
+        expiredAt: newExpiredAt,
+        updatedAt: new Date(),
+      },
+    });
 
     this.assertSchoolActiveForLogin(user.role, user.school?.status);
 
@@ -169,6 +218,8 @@ export class AuthService {
     this.issueTokens(
       response,
       user.id,
+      payload.sessionId,
+      payload.deviceId,
       activeSchoolId,
       preservingImpersonation
         ? {
@@ -192,17 +243,41 @@ export class AuthService {
       impersonationMode: preservingImpersonation
         ? preservedAccessPayload.impersonationMode
         : undefined,
+      sessionId: payload.sessionId,
+      deviceId: payload.deviceId,
     };
 
     return buildAuthSessionForUser(this.prisma, user, sessionUser);
   }
 
-  async logout(response: Response, refreshToken: string): Promise<void> {
+  async logout(response: Response, accessToken: string): Promise<void> {
+    let payload: RefreshTokenPayload;
+    try {
+      payload = this.jwtTokenService.verifyAccessToken(accessToken);
+    } catch {
+      throw new AppException(
+        'SESSION_EXPIRED',
+        'Phiên đăng nhập đã hết hạn',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    // clear device
+    await Promise.all([
+      this.prisma.deviceSession.delete({
+        where: { id: payload.sessionId },
+      }),
+      this.redisService.deleteOneSessionFromWhitelist(payload.sessionId),
+    ]);
+
     this.cookieService.clearAuthCookies(response);
-    await this.redisService.addRefreshTokenToBlacklist(refreshToken);
   }
 
-  async getMe(sessionUser: AuthenticatedUser): Promise<AuthSessionData> {
+  async getMe(
+    sessionUser: AuthenticatedUser,
+    sessionId: string,
+    deviceId: string,
+  ): Promise<AuthSessionData> {
     const user = await this.prisma.user.findUnique({
       where: { id: sessionUser.id },
       include: { school: true },
@@ -230,7 +305,16 @@ export class AuthService {
       user.id,
       user.schoolId!,
     );
-    return buildAuthSessionForUser(this.prisma, user, sessionUser, socketInfo);
+    return buildAuthSessionForUser(
+      this.prisma,
+      user,
+      {
+        ...sessionUser,
+        sessionId: sessionId,
+        deviceId: deviceId,
+      },
+      socketInfo,
+    );
   }
 
   async changePassword(
@@ -300,14 +384,11 @@ export class AuthService {
     });
   }
 
-  issueAccessToken(response: Response, payload: AccessTokenPayload): void {
-    const accessToken = this.jwtTokenService.signAccessToken(payload);
-    this.cookieService.setAccessCookie(response, accessToken);
-  }
-
   private issueTokens(
     response: Response,
     userId: string,
+    sessionId: string,
+    deviceId: string,
     activeSchoolId?: string,
     impersonation?: Pick<
       AccessTokenPayload,
@@ -323,9 +404,13 @@ export class AuthService {
             impersonationMode: impersonation.impersonationMode ?? 'read_only',
           }
         : {}),
+      sessionId,
+      deviceId,
     });
     const refreshToken = this.jwtTokenService.signRefreshToken({
       sub: userId,
+      sessionId,
+      deviceId,
     });
 
     this.cookieService.setAuthCookies(response, accessToken, refreshToken);

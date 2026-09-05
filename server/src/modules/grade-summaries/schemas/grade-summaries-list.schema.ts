@@ -56,9 +56,7 @@ export const recomputeYearSummariesSchema = z.object({
 });
 
 export const updateYearSummaryNextHomeroomSchema = z.object({
-  nextHomeroomClassId: z
-    .uuid('Lớp năm sau không hợp lệ')
-    .nullable(),
+  nextHomeroomClassId: z.uuid('Lớp năm sau không hợp lệ').nullable(),
 });
 
 export type UpdateYearSummaryNextHomeroomInput = z.infer<
@@ -81,7 +79,9 @@ export type ListSubjectResultsQuery = z.infer<
 export type ListSemesterSummariesQuery = z.infer<
   typeof listSemesterSummariesQuerySchema
 >;
-export type ListYearSummariesQuery = z.infer<typeof listYearSummariesQuerySchema>;
+export type ListYearSummariesQuery = z.infer<
+  typeof listYearSummariesQuerySchema
+>;
 export type FinalizeSemesterSummariesInput = z.infer<
   typeof finalizeSemesterSummariesSchema
 >;

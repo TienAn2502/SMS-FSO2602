@@ -45,6 +45,8 @@ export interface AccessTokenPayload {
   activeSchoolId?: string;
   impersonatedBy?: string;
   impersonationMode?: ImpersonationMode;
+  sessionId: string;
+  deviceId: string;
 }
 
 export interface ImpersonationSessionData {
@@ -57,6 +59,8 @@ export interface ImpersonationSessionData {
 
 export interface RefreshTokenPayload {
   sub: string;
+  sessionId: string;
+  deviceId: string;
 }
 
 export interface AuthenticatedUser {
@@ -70,6 +74,8 @@ export interface AuthenticatedUser {
   activeSchoolId: string;
   impersonatedBy?: string;
   impersonationMode?: ImpersonationMode;
+  sessionId: string;
+  deviceId: string;
 }
 
 export interface AuthSessionData {
@@ -79,6 +85,8 @@ export interface AuthSessionData {
     fullName: string;
     role: UserRole;
     status: UserStatus;
+    sessionId: string;
+    deviceId: string;
   };
   activeSchoolId: string | null;
   activeSchool: {

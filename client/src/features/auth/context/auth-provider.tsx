@@ -54,6 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             login: handleLogin,
             logout: handleLogout,
             refetch,
+            test: 123,
         }),
         [meQuery.data, meQuery.isLoading, handleLogin, handleLogout, refetch],
     );
