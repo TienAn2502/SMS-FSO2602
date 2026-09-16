@@ -19,7 +19,7 @@ export class SessionCleanupCronService {
       const result = await this.prisma.deviceSession.deleteMany({
         where: {
           expiredAt: {
-            lt: new Date(), // Xóa tất cả các bản ghi có thời gian hết hạn nhỏ hơn hiện tại
+            lte: new Date(), // Xóa tất cả các bản ghi có thời gian hết hạn nhỏ hơn hiện tại
           },
         },
       });

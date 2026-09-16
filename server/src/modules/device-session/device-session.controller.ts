@@ -57,7 +57,7 @@ export class DeviceSessionController {
     @Param('userId') userId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    console.log(user.sessionId);
+    // console.log(user.sessionId);
     const result = await this.deviceSessionService.listDeviceSessions(
       userId,
       user.sessionId,

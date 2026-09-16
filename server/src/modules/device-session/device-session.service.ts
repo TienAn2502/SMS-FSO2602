@@ -14,7 +14,6 @@ export class DeviceSessionService {
     input: CreateDeviceSessionInput,
   ): Promise<{ sessionId: string; deviceId: string }> {
     const expiredAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-
     const result = await this.prisma.deviceSession.upsert({
       where: {
         userId_deviceId: {
@@ -30,6 +29,7 @@ export class DeviceSessionService {
         deviceType: input.deviceType,
         deviceVendor: input.deviceVendor,
         deviceModel: input.deviceModel,
+        // expiredAt: expiredAt, // Cập nhật lại hạn mới cho phiên
         expiredAt: expiredAt, // Cập nhật lại hạn mới cho phiên
       },
       create: {
@@ -56,7 +56,7 @@ export class DeviceSessionService {
       this.prisma.deviceSession.delete({
         where: { id: sessionId },
       }),
-      this.redisService.deleteOneSessionFromWhitelist(sessionId),
+      this.redisService.deleteSession(sessionId),
     ]);
   }
 
@@ -96,8 +96,8 @@ export class DeviceSessionService {
           userId,
         },
       }),
-      // 2 Xóa whitelist trong Redis
-      this.redisService.deleteManySessionFromWhitelist(new Set(sessionIdKeys)),
+      // 2 Xóa session trong Redis
+      this.redisService.deleteSessions(new Set(sessionIdKeys)),
     ]);
   }
 }

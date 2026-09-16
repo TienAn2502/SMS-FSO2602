@@ -47,6 +47,9 @@ function getDeviceIcon(deviceType: string | null) {
 }
 
 function getDeviceName(device: DeviceSessionItem) {
+    if (!device) {
+        return 'Thiết bị không xác định';
+    }
     if (device.deviceModel) {
         return `${device.deviceVendor ?? ''} ${device.deviceModel}`.trim();
     }

@@ -16,7 +16,10 @@ const DefaultRoute = () => {
         return <Navigate to={ROUTES.portal} replace />;
     }
 
-    if (role === 'SCHOOL_ADMIN') {
+    if (
+        role === 'SCHOOL_ADMIN' ||
+        session.impersonation?.impersonatedBy === session.user.id
+    ) {
         return <DashboardPage />;
     }
 

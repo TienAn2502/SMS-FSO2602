@@ -43,14 +43,14 @@ const formSchema = z.object({
   name: z.string().trim().min(1, 'Tên trường là bắt buộc'),
   shortName: z.string().optional(),
   schoolType: z.enum(['TH', 'THCS', 'THPT']),
-  email: z.string().email('Email không hợp lệ').or(z.literal('')),
+  email: z.email('Email không hợp lệ').or(z.literal('')),
   phone: z.string().optional(),
   address: z.string().optional(),
 });
 
 const createAdminSchema = z.object({
   fullName: z.string().trim().min(1, 'Họ tên là bắt buộc'),
-  email: z.string().email('Email không hợp lệ'),
+  email: z.email('Email không hợp lệ'),
   password: z.string().min(8, 'Mật khẩu phải có ít nhất 8 ký tự'),
 });
 

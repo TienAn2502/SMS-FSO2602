@@ -39,11 +39,16 @@ export class PlatformImpersonationController {
     @Param('id', new ZodValidationPipe(uuidParamSchema)) id: string,
     @Body(new ZodValidationPipe(startPlatformImpersonationSchema.partial()))
     body: Partial<StartPlatformImpersonationInput>,
-    // @Res({ passthrough: true }) response: Response,
+    @Res({ passthrough: true }) response: Response,
   ) {
-    const data = await this.platformImpersonationService.start(user, id, {
-      mode: body.mode ?? 'read_only',
-    });
+    const data = await this.platformImpersonationService.start(
+      user,
+      id,
+      {
+        mode: body.mode ?? 'read_only',
+      },
+      response,
+    );
 
     return {
       success: true,
@@ -57,11 +62,11 @@ export class PlatformImpersonationController {
   @ApiOperation({
     summary: 'Kết thúc đăng nhập thay — trở về context nền tảng',
   })
-  async end(
+  end(
     @CurrentUser() user: AuthenticatedUser,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const data = await this.platformImpersonationService.end(user, response);
+    const data = this.platformImpersonationService.end(user, response);
 
     return {
       success: true,

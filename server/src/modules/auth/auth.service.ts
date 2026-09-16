@@ -87,7 +87,6 @@ export class AuthService {
 
     // device session
     const userAgent = this.uaService.parse(input.userAgent);
-    console.log('userAgent', userAgent);
 
     const deviceSession = await this.deviceSession.create({
       userId: user.id,
@@ -100,10 +99,7 @@ export class AuthService {
       deviceModel: userAgent.deviceModel ?? undefined,
     });
 
-    await this.redisService.addUserToWhiteList(
-      deviceSession.sessionId,
-      user.id,
-    );
+    await this.redisService.addSession(deviceSession.sessionId, user.id);
 
     const socketInfo = await this.buildSocketInfoByRole(
       user.role,
@@ -141,6 +137,17 @@ export class AuthService {
     response: Response,
   ): Promise<AuthSessionData> {
     if (!refreshToken) {
+      throw new AppException(
+        'SESSION_EXPIRED',
+        'Phiên đăng nhập đã hết hạn',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    const isRefreshTokenInBlackList =
+      await this.redisService.isRefreshTokenInBlacklist(refreshToken);
+
+    if (isRefreshTokenInBlackList) {
       throw new AppException(
         'SESSION_EXPIRED',
         'Phiên đăng nhập đã hết hạn',
@@ -191,7 +198,7 @@ export class AuthService {
         HttpStatus.FORBIDDEN,
       );
     }
-    await this.redisService.addUserToWhiteList(payload.sessionId, payload.sub);
+    await this.redisService.addSession(payload.sessionId, payload.sub);
     const newExpiredAt = new Date();
     newExpiredAt.setDate(newExpiredAt.getDate() + 7);
     await this.prisma.deviceSession.update({
@@ -250,25 +257,23 @@ export class AuthService {
     return buildAuthSessionForUser(this.prisma, user, sessionUser);
   }
 
-  async logout(response: Response, accessToken: string): Promise<void> {
-    let payload: RefreshTokenPayload;
-    try {
-      payload = this.jwtTokenService.verifyAccessToken(accessToken);
-    } catch {
-      throw new AppException(
-        'SESSION_EXPIRED',
-        'Phiên đăng nhập đã hết hạn',
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
+  async logout(
+    response: Response,
+    accessToken: string | undefined,
+  ): Promise<void> {
+    if (accessToken) {
+      const payload = this.jwtTokenService.decodeAccessToken(accessToken);
 
-    // clear device
-    await Promise.all([
-      this.prisma.deviceSession.delete({
-        where: { id: payload.sessionId },
-      }),
-      this.redisService.deleteOneSessionFromWhitelist(payload.sessionId),
-    ]);
+      if (payload && payload.sessionId) {
+        await Promise.all([
+          this.prisma.deviceSession.delete({
+            where: { id: payload.sessionId },
+          }),
+
+          this.redisService.deleteSession(payload.sessionId),
+        ]);
+      }
+    }
 
     this.cookieService.clearAuthCookies(response);
   }
@@ -384,7 +389,7 @@ export class AuthService {
     });
   }
 
-  private issueTokens(
+  issueTokens(
     response: Response,
     userId: string,
     sessionId: string,

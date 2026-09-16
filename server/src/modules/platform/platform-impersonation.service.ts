@@ -25,6 +25,7 @@ export class PlatformImpersonationService {
     actor: AuthenticatedUser,
     schoolId: string,
     input: StartPlatformImpersonationInput,
+    response: Response,
   ): Promise<PlatformImpersonationStartResult> {
     if (actor.role !== UserRole.SYSTEM_ADMIN) {
       throw new AppException(
@@ -62,12 +63,17 @@ export class PlatformImpersonationService {
       startedAt,
     );
 
-    // this.authService.issueAccessToken(response, {
-    //   sub: actor.id,
-    //   activeSchoolId: school.id,
-    //   impersonatedBy: actor.id,
-    //   impersonationMode: input.mode,
-    // });
+    this.authService.issueTokens(
+      response,
+      actor.id,
+      actor.sessionId,
+      actor.deviceId,
+      school.id,
+      {
+        impersonatedBy: actor.id,
+        impersonationMode: input.mode,
+      },
+    );
 
     return {
       impersonation,
@@ -75,10 +81,10 @@ export class PlatformImpersonationService {
     };
   }
 
-  async end(
+  end(
     actor: AuthenticatedUser,
     response: Response,
-  ): Promise<PlatformImpersonationEndResult> {
+  ): PlatformImpersonationEndResult {
     if (!isImpersonating(actor)) {
       throw new AppException(
         'IMPERSONATION_NOT_ACTIVE',
@@ -87,9 +93,12 @@ export class PlatformImpersonationService {
       );
     }
 
-    // this.authService.issueAccessToken(response, {
-    //   sub: actor.id,
-    // });
+    this.authService.issueTokens(
+      response,
+      actor.id,
+      actor.sessionId,
+      actor.deviceId,
+    );
 
     return {
       ended: true,
