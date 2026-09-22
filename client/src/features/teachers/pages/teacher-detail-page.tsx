@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useParams } from 'react-router';
 import { toast } from 'sonner';
@@ -13,6 +14,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/features/auth/hooks/use-auth';
+import {
+  fetchAllAcademicYears,
+  fetchSemesters,
+  type Semester,
+} from '@/features/academic-years/api/academic-years-api';
 import {
   createTeacherUser,
   fetchTeacher,
@@ -33,6 +40,7 @@ const profileSchema = z.object({
 export function TeacherDetailPage() {
   const { id = '' } = useParams();
   const queryClient = useQueryClient();
+  const { session } = useAuth();
 
   const teacherQuery = useQuery({
     queryKey: ['teachers', id],
@@ -40,9 +48,62 @@ export function TeacherDetailPage() {
     enabled: Boolean(id),
   });
 
+  // Fetch academic years and semesters to find current semester
+  const academicYearsQuery = useQuery({
+    queryKey: ['academic-years', session?.activeSchoolId],
+    queryFn: () => fetchAllAcademicYears(),
+    enabled: Boolean(session?.activeSchoolId),
+  });
+
+  const semestersQuery = useQuery({
+    queryKey: [
+      'semesters',
+      session?.activeSchoolId,
+      academicYearsQuery.data?.items.find((y) => y.isCurrent)?.id,
+    ],
+    queryFn: () =>
+      fetchSemesters(
+        academicYearsQuery.data?.items.find((y) => y.isCurrent)?.id ?? '',
+      ),
+    enabled: Boolean(academicYearsQuery.data?.items.find((y) => y.isCurrent)?.id),
+  });
+
+  const currentSemester = semestersQuery.data?.find((s: Semester) => s.isCurrent);
+
+  // Create a map of academic year id to name for display
+  const academicYearMap = useMemo(() => {
+    const map = new Map<string, string>();
+    academicYearsQuery.data?.items.forEach((year) => {
+      map.set(year.id, year.name);
+    });
+    return map;
+  }, [academicYearsQuery.data?.items]);
+
+  // Current assignments filtered by current semester
   const assignmentsQuery = useQuery({
-    queryKey: ['teaching-assignments', 'teacher', id],
-    queryFn: () => fetchTeacherTeachingAssignments(id, { limit: 50 }),
+    queryKey: [
+      'teaching-assignments',
+      'teacher',
+      id,
+      currentSemester?.id,
+    ],
+    queryFn: () =>
+      fetchTeacherTeachingAssignments(id, {
+        semesterId: currentSemester?.id,
+        limit: 50,
+        status: 'ACTIVE',
+      }),
+    enabled: Boolean(id && currentSemester?.id),
+  });
+
+  // All assignments for history (not filtered by semester)
+  const allAssignmentsQuery = useQuery({
+    queryKey: ['teaching-assignments', 'teacher', id, 'all'],
+    queryFn: () =>
+      fetchTeacherTeachingAssignments(id, {
+        includeAllSemesters: true,
+        limit: 100,
+      }),
     enabled: Boolean(id),
   });
 
@@ -155,21 +216,113 @@ export function TeacherDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Phân công hiện tại (HK hiện hành)</CardTitle>
+          <CardTitle>
+            Phân công hiện tại{' '}
+            {currentSemester
+              ? `(${currentSemester.name}${
+                  currentSemester.isCurrent ? ' — hiện tại' : ''
+                })`
+              : semestersQuery.isLoading
+                ? '(Đang tải...)'
+                : '(Không có học kỳ hiện hành)'}
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          {assignmentsQuery.isLoading ? <LoadingState /> : null}
-          {assignmentsQuery.data?.items.length === 0 ? (
-            <p className='text-sm text-muted-foreground'>Chưa có phân công.</p>
+          {semestersQuery.isLoading || assignmentsQuery.isLoading ? (
+            <LoadingState />
+          ) : null}
+          {semestersQuery.isError ? (
+            <ErrorState
+              message='Không tải được thông tin học kỳ'
+              onRetry={() => void semestersQuery.refetch()}
+            />
+          ) : null}
+          {assignmentsQuery.isError ? (
+            <ErrorState
+              message='Không tải được phân công'
+              onRetry={() => void assignmentsQuery.refetch()}
+            />
+          ) : null}
+          {!semestersQuery.isLoading &&
+          !semestersQuery.isError &&
+          assignmentsQuery.isSuccess ? (
+            assignmentsQuery.data.items.length === 0 ? (
+              <p className='text-sm text-muted-foreground'>
+                Chưa có phân công
+                {currentSemester ? ` trong ${currentSemester.name}` : ''}.
+              </p>
+            ) : (
+              <ul className='space-y-2'>
+                {assignmentsQuery.data.items.map((item) => (
+                  <li
+                    key={item.id}
+                    className='rounded-md border px-3 py-2 text-sm'
+                  >
+                    <span className='font-medium'>{item.courseSectionCode}</span>
+                    <span className='text-muted-foreground'>
+                      {' '}
+                      — {item.courseSectionName}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )
+          ) : null}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Lịch sử phân công</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {allAssignmentsQuery.isLoading ? (
+            <LoadingState />
+          ) : allAssignmentsQuery.isError ? (
+            <ErrorState
+              message='Không tải được lịch sử phân công'
+              onRetry={() => void allAssignmentsQuery.refetch()}
+            />
+          ) : allAssignmentsQuery.data?.items.length === 0 ? (
+            <p className='text-sm text-muted-foreground'>
+              Chưa có lịch sử phân công.
+            </p>
           ) : (
-            <ul className='space-y-2'>
-              {assignmentsQuery.data?.items.map((item) => (
-                <li key={item.id} className='rounded-md border px-3 py-2 text-sm'>
-                  <span className='font-medium'>{item.courseSectionCode}</span>
-                  <span className='text-muted-foreground'> — {item.courseSectionName}</span>
-                </li>
-              ))}
-            </ul>
+            <div className='overflow-x-auto'>
+              <table className='w-full min-w-150 border-collapse text-sm'>
+                <thead>
+                  <tr className='border-b text-left text-muted-foreground'>
+                    <th className='py-2 pr-4 font-medium'>Năm học</th>
+                    <th className='py-2 pr-4 font-medium'>Học kỳ</th>
+                    <th className='py-2 pr-4 font-medium'>Lớp môn</th>
+                    <th className='py-2 pr-4 font-medium'>Tên lớp môn</th>
+                    <th className='py-2 font-medium'>Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allAssignmentsQuery.data?.items.map((item) => (
+                    <tr key={item.id} className='border-b'>
+                      <td className='py-2 pr-4'>
+                        {academicYearMap.get(item.academicYearId) ?? item.academicYearId}
+                      </td>
+                      <td className='py-2 pr-4'>
+                        {item.semesterCode}{' '}
+                        {item.semesterId === currentSemester?.id
+                          ? '(hiện tại)'
+                          : ''}
+                      </td>
+                      <td className='py-2 pr-4 font-medium'>
+                        {item.courseSectionCode}
+                      </td>
+                      <td className='py-2 pr-4'>{item.courseSectionName}</td>
+                      <td className='py-2'>
+                        {ACADEMIC_STATUS_LABELS[item.status]}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </CardContent>
       </Card>

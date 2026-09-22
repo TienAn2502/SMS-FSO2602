@@ -15,7 +15,10 @@ import {
 import type { PaginationMeta } from '@/common/types/api-response.types';
 import { STUDENT_YEAR_ENROLLMENT_STATUSES } from '@/common/utils/enrollment-status.util';
 import { buildPaginationMeta, getSkip } from '@/common/utils/pagination.util';
-import { planEvenClassPlacement, isRetainedGradeCompatible } from '@/modules/class-placement/class-placement.util';
+import {
+  planEvenClassPlacement,
+  isRetainedGradeCompatible,
+} from '@/modules/class-placement/class-placement.util';
 import type {
   AssignClassPlacementInput,
   AutoBalanceClassPlacementInput,
@@ -96,10 +99,7 @@ export class ClassPlacementService {
     };
   }
 
-  async previewAutoBalance(
-    schoolId: string,
-    query: AutoBalancePreviewQuery,
-  ) {
+  async previewAutoBalance(schoolId: string, query: AutoBalancePreviewQuery) {
     const plan = await this.buildAutoBalancePlan(schoolId, {
       semesterId: query.semesterId,
       gradeLevelId: query.gradeLevelId,
@@ -127,25 +127,20 @@ export class ClassPlacementService {
     };
   }
 
-  async assign(
-    schoolId: string,
-    input: AssignClassPlacementInput,
-  ) {
+  async assign(schoolId: string, input: AssignClassPlacementInput) {
     const semester = await this.requireSemester(schoolId, input.semesterId);
     const enrolledAt = input.enrolledAt
       ? parseIsoDate(input.enrolledAt)
       : semester.startDate;
 
-    const studentIds = [...new Set(input.assignments.map((row) => row.studentId))];
+    const studentIds = [
+      ...new Set(input.assignments.map((row) => row.studentId)),
+    ];
     const classIds = [
       ...new Set(input.assignments.map((row) => row.homeroomClassId)),
     ];
 
-    await this.assertStudentsUnassigned(
-      schoolId,
-      input.semesterId,
-      studentIds,
-    );
+    await this.assertStudentsUnassigned(schoolId, input.semesterId, studentIds);
 
     const classes = await this.prisma.homeroomClass.findMany({
       where: {
@@ -276,7 +271,7 @@ export class ClassPlacementService {
     const semester = await this.requireSemester(schoolId, input.semesterId);
 
     const gradeLevel = await this.prisma.gradeLevel.findFirst({
-      where: { id: input.gradeLevelId, schoolId },
+      where: { id: input.gradeLevelId },
       select: { id: true, code: true, name: true },
     });
 

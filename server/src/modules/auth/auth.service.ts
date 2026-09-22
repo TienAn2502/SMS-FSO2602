@@ -31,6 +31,7 @@ import {
   looksLikeEmail,
   looksLikePersonCode,
   looksLikePhone,
+  normalizeIp,
 } from '@/modules/auth/utils/login-identifier.util';
 import { RedisService } from '@/common/database/redis.service';
 import { UaService } from '@/modules/device-session/ua.service';
@@ -91,7 +92,7 @@ export class AuthService {
     const deviceSession = await this.deviceSession.create({
       userId: user.id,
       deviceId: input.deviceId,
-      ipAddress: input.ipAddress,
+      ipAddress: normalizeIp(input.ipAddress),
       browser: userAgent.browser ?? 'Unknown',
       os: userAgent.os ?? 'Unknown',
       deviceType: userAgent.deviceType ?? undefined,
@@ -923,7 +924,6 @@ export class AuthService {
 
     // Room grade:{gradeLevelId}
     const gradeLevels = await this.prisma.gradeLevel.findMany({
-      where: { schoolId },
       select: { id: true, name: true, code: true },
     });
 

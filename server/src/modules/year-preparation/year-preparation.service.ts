@@ -124,8 +124,7 @@ export class YearPreparationService {
       targetAcademicYearId: ctx.targetYear.id,
       targetAcademicYearName: ctx.targetYear.name,
       classesToCreate: plan.classNeeds.filter((need) => !need.exists).length,
-      classesAlreadyExist: plan.classNeeds.filter((need) => need.exists)
-        .length,
+      classesAlreadyExist: plan.classNeeds.filter((need) => need.exists).length,
       classPlans: plan.classNeeds.map((need) => ({
         code: need.code,
         gradeLevelCode: need.gradeLevelCode,
@@ -331,7 +330,6 @@ export class YearPreparationService {
     }
 
     const gradeLevels = await this.prisma.gradeLevel.findMany({
-      where: { schoolId },
       select: { id: true, code: true, name: true },
       orderBy: { code: 'asc' },
     });
@@ -414,10 +412,7 @@ export class YearPreparationService {
   private buildClassAndMappingPlan(
     ctx: Awaited<ReturnType<YearPreparationService['loadContext']>>,
   ) {
-    const needsByKey = new Map<
-      string,
-      ClassNeed & { exists: boolean }
-    >();
+    const needsByKey = new Map<string, ClassNeed & { exists: boolean }>();
 
     const promotedSourceClassIds = new Set<string>();
 

@@ -38,14 +38,11 @@ export class TeachingAssignmentsImportTemplateService {
       TEACHING_ASSIGNMENT_IMPORT_COLUMNS,
       TEACHING_ASSIGNMENT_IMPORT_SAMPLE_ROWS,
     );
-    builder.addInstructionSheet(
-      'Huong_dan',
-      [
-        ...TEACHING_ASSIGNMENT_IMPORT_INSTRUCTION_LINES,
-        '',
-        'File mẫu tham khảo: docs/samples/teaching-assignments-import-sample.xlsx',
-      ],
-    );
+    builder.addInstructionSheet('Huong_dan', [
+      ...TEACHING_ASSIGNMENT_IMPORT_INSTRUCTION_LINES,
+      '',
+      'File mẫu tham khảo: docs/samples/teaching-assignments-import-sample.xlsx',
+    ]);
     return builder.toBuffer();
   }
 
@@ -100,13 +97,13 @@ export class TeachingAssignmentsImportTemplateService {
     }
 
     const gradeLevels = await this.prisma.gradeLevel.findMany({
-      where: { schoolId },
       select: { code: true },
     });
-    const entryGradeCode = [...gradeLevels]
-      .map((row) => ({ code: row.code, value: Number(row.code) }))
-      .filter((row) => Number.isFinite(row.value))
-      .sort((a, b) => a.value - b.value)[0]?.code ?? null;
+    const entryGradeCode =
+      [...gradeLevels]
+        .map((row) => ({ code: row.code, value: Number(row.code) }))
+        .filter((row) => Number.isFinite(row.value))
+        .sort((a, b) => a.value - b.value)[0]?.code ?? null;
 
     const teacherEmailByClassSubject =
       await this.loadPreviousYearTeacherByClassSubject(
@@ -123,9 +120,7 @@ export class TeachingAssignmentsImportTemplateService {
       const classCode = section.homeroomClass?.code ?? '';
       const gradeCode = section.homeroomClass?.gradeLevel.code ?? '';
       const subjectCode = section.gradeLevelSubject.subject.code;
-      const isEntry = Boolean(
-        entryGradeCode && gradeCode === entryGradeCode,
-      );
+      const isEntry = Boolean(entryGradeCode && gradeCode === entryGradeCode);
 
       let email = '';
       if (isEntry) {

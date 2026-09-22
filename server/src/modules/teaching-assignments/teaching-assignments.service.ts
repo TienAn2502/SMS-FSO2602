@@ -239,11 +239,6 @@ export class TeachingAssignmentsService {
     return toTeachingAssignmentResponse(updated);
   }
 
-  /**
-   * Sao chép phân công giảng dạy HK nguồn → HK đích (vd. HK1 → HK2).
-   * Giả định: lớp môn HK đích đã được tạo trước (copy course-sections) với cùng mã.
-   * Mỗi lớp môn chỉ có tối đa một GV ACTIVE; HK nguồn không bị đóng.
-   */
   async copyFromSemester(
     schoolId: string,
     input: CopySemesterTeachingAssignmentsInput,

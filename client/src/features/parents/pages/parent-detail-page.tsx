@@ -32,7 +32,7 @@ const profileSchema = z.object({
 });
 
 const linkSchema = z.object({
-  studentId: z.string().uuid(),
+  studentId: z.uuid(),
   relationship: z.enum(['FATHER', 'MOTHER', 'GUARDIAN', 'OTHER']),
   isPrimaryContact: z.boolean().optional(),
 });

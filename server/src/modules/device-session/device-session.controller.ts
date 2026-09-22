@@ -22,6 +22,7 @@ import { type DeleteManyDevicesInput } from '@/modules/device-session/schema';
   UserRole.TEACHER,
   UserRole.STUDENT,
   UserRole.PARENT,
+  UserRole.SYSTEM_ADMIN,
 )
 export class DeviceSessionController {
   constructor(private readonly deviceSessionService: DeviceSessionService) {}
@@ -57,7 +58,7 @@ export class DeviceSessionController {
     @Param('userId') userId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    // console.log(user.sessionId);
+    console.log('user.sessionId', user.sessionId);
     const result = await this.deviceSessionService.listDeviceSessions(
       userId,
       user.sessionId,

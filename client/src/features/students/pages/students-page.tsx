@@ -28,7 +28,10 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { fetchAllAcademicYears, fetchSemesters } from '@/features/academic-years/api/academic-years-api';
+import {
+    fetchAllAcademicYears,
+    fetchSemesters,
+} from '@/features/academic-years/api/academic-years-api';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { fetchHomeroomClasses } from '@/features/homeroom-classes/api/homeroom-classes-api';
 import {
@@ -138,9 +141,7 @@ export function StudentsPage() {
             years.find((year) => year.isCurrent) ?? years[0] ?? null;
 
         if (defaultYear) {
-            setColumnFilters([
-                { id: 'academicYearId', value: defaultYear.id },
-            ]);
+            setColumnFilters([{ id: 'academicYearId', value: defaultYear.id }]);
         }
 
         setFiltersReady(true);
@@ -599,7 +600,10 @@ export function StudentsPage() {
                                         : 'Chọn năm học trước'}
                                 </option>
                                 {semesters.map((semester) => (
-                                    <option key={semester.id} value={semester.id}>
+                                    <option
+                                        key={semester.id}
+                                        value={semester.id}
+                                    >
                                         {semester.name}
                                     </option>
                                 ))}

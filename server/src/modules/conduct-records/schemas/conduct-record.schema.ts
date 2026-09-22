@@ -38,16 +38,9 @@ export const listConductRecordsQuerySchema = paginationSchema.extend({
   search: z.string().trim().optional(),
 });
 
-export const finalizeConductRecordsSchema = z.object({
-  homeroomClassId: z.uuid('Lớp chủ nhiệm không hợp lệ'),
-});
-
 export type BulkUpsertConductRecordsInput = z.infer<
   typeof bulkUpsertConductRecordsSchema
 >;
 export type ListConductRecordsQuery = z.infer<
   typeof listConductRecordsQuerySchema
->;
-export type FinalizeConductRecordsInput = z.infer<
-  typeof finalizeConductRecordsSchema
 >;

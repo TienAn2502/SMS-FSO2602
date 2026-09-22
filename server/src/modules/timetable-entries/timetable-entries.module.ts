@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 
 import { CourseSectionsModule } from '@/modules/course-sections/course-sections.module';
 import { SemestersModule } from '@/modules/semesters/semesters.module';
@@ -8,7 +8,11 @@ import { TimetableEntriesController } from '@/modules/timetable-entries/timetabl
 import { TimetableEntriesService } from '@/modules/timetable-entries/timetable-entries.service';
 
 @Module({
-  imports: [TeachersModule, CourseSectionsModule, SemestersModule],
+  imports: [
+    TeachersModule,
+    forwardRef(() => CourseSectionsModule), // 2 module cần lẫn nhau nên phải dùng forwardRef
+    SemestersModule,
+  ],
   controllers: [
     TimetableEntriesController,
     TimetableEntriesByCourseSectionController,

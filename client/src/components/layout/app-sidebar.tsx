@@ -166,7 +166,7 @@ const NAV_ITEMS: NavItem[] = [
     {
         to: ROUTES.deviceSessions,
         label: 'Thiết bị đã đăng nhập',
-        icon: Smartphone,
+        icon: Laptop,
         group: 'portal',
         roles: ['TEACHER', 'STUDENT', 'PARENT'],
     },
@@ -244,7 +244,7 @@ const NAV_ITEMS: NavItem[] = [
         to: ROUTES.deviceSessions,
         label: 'Thiết bị đã đăng nhập',
         icon: Laptop,
-        roles: ['SCHOOL_ADMIN'],
+        roles: ['SCHOOL_ADMIN', 'SYSTEM_ADMIN'],
         group: 'main',
     },
     {
@@ -265,14 +265,14 @@ const NAV_ITEMS: NavItem[] = [
         to: ROUTES.gradeLevelSubjects,
         label: 'Môn theo khối',
         icon: GraduationCap,
-        roles: ['SCHOOL_ADMIN'],
+        roles: ['SCHOOL_ADMIN', 'SYSTEM_ADMIN'],
         group: 'academic',
     },
     {
         to: ROUTES.subjects,
         label: 'Môn học',
         icon: BookOpen,
-        roles: ['SCHOOL_ADMIN'],
+        roles: ['SCHOOL_ADMIN', 'SYSTEM_ADMIN'],
         group: 'academic',
     },
     {

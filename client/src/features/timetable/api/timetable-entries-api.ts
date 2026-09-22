@@ -66,6 +66,17 @@ export async function fetchTimetableEntries(
   return { items: data.data, meta: data.meta };
 }
 
+export async function fetchTimetableEntriesByCourseSection(
+  courseSectionId: string,
+  params: Omit<ListTimetableEntriesParams, 'courseSectionId'> = {},
+) {
+  const { data } = await api.get<ApiPaginatedResponse<TimetableEntry>>(
+    `/course-sections/${courseSectionId}/timetable-entries`,
+    { params },
+  );
+  return { items: data.data, meta: data.meta };
+}
+
 export async function fetchTimetableMatrix(params: TimetableMatrixParams = {}) {
   const { data } = await api.get<ApiSuccessResponse<TimetableEntry[]>>(
     '/timetable-entries/matrix',

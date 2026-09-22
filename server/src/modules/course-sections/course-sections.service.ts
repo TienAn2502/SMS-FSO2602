@@ -11,10 +11,7 @@ import {
 import { AppException } from '@/common/exceptions/app.exception';
 import { PrismaService } from '@/common/database/prisma.service';
 import type { PaginationMeta } from '@/common/types/api-response.types';
-import {
-  buildPaginationMeta,
-  getSkip,
-} from '@/common/utils/pagination.util';
+import { buildPaginationMeta, getSkip } from '@/common/utils/pagination.util';
 import { GradeLevelsService } from '@/modules/grade-levels/grade-levels.service';
 import { HomeroomClassesService } from '@/modules/homeroom-classes/homeroom-classes.service';
 import { SubjectsService } from '@/modules/subjects/subjects.service';
@@ -229,6 +226,7 @@ export class CourseSectionsService {
       );
     }
 
+    // Các lớp đã tồn tại của HK đích
     const existingTargetSections = await this.prisma.courseSection.findMany({
       where: {
         schoolId,
@@ -319,7 +317,6 @@ export class CourseSectionsService {
       : await this.resolveGradeLevelId(schoolId, input.gradeLevelId);
 
     const gradeLevelSubject = await this.findGradeLevelSubject(
-      schoolId,
       gradeLevelId,
       input.subjectId,
     );
@@ -375,7 +372,6 @@ export class CourseSectionsService {
       const gradeLevelSubject = await this.prisma.gradeLevelSubject.findFirst({
         where: {
           id: existing.gradeLevelSubjectId,
-          schoolId,
         },
       });
 
@@ -500,22 +496,18 @@ export class CourseSectionsService {
       );
     }
 
-    const gradeLevel = await this.gradeLevelsService.findGradeLevelInTenant(
-      schoolId,
-      gradeLevelId,
-    );
+    const gradeLevel =
+      await this.gradeLevelsService.findGradeLevelInTenant(gradeLevelId);
 
     return gradeLevel.id;
   }
 
   private async findGradeLevelSubject(
-    schoolId: string,
     gradeLevelId: string,
     subjectId: string,
   ): Promise<GradeLevelSubject> {
     const gradeLevelSubject = await this.prisma.gradeLevelSubject.findFirst({
       where: {
-        schoolId,
         gradeLevelId,
         subjectId,
         status: AcademicEntityStatus.ACTIVE,

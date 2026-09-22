@@ -1,9 +1,5 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import {
-  AssessmentStatus,
-  AssessmentType,
-  Prisma,
-} from '@prisma/client';
+import { AssessmentStatus, AssessmentType, Prisma } from '@prisma/client';
 
 import { PrismaService } from '@/common/database/prisma.service';
 import { AppException } from '@/common/exceptions/app.exception';

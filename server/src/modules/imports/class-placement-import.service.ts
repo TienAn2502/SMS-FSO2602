@@ -208,7 +208,6 @@ export class ClassPlacementImportService {
     }
 
     const gradeLevels = await this.prisma.gradeLevel.findMany({
-      where: { schoolId },
       select: { id: true, code: true },
     });
     const gradeIdByCode = new Map(
@@ -655,8 +654,7 @@ export class ClassPlacementImportService {
     }
 
     const externalCodeToSet = !existing.externalCode
-      ? (row.external_code ??
-        (await codeAllocator.nextStudentCode(schoolId)))
+      ? (row.external_code ?? (await codeAllocator.nextStudentCode(schoolId)))
       : undefined;
 
     if (!existing.user && row.email) {

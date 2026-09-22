@@ -31,8 +31,6 @@ import {
   yearSummaryListInclude,
 } from '@/modules/grade-summaries/mappers/grade-summary.mapper';
 import type {
-  FinalizePromotionInput,
-  FinalizeSemesterSummariesInput,
   ListSemesterSummariesQuery,
   ListSubjectResultsQuery,
   ListYearSummariesQuery,
@@ -225,7 +223,6 @@ export class GradeSummariesService {
       schoolId,
       input.semesterId,
       targetStudentIds,
-      input.homeroomClassId,
     );
   }
 
@@ -453,73 +450,6 @@ export class GradeSummariesService {
     });
 
     return toYearSummaryListItem(updated);
-  }
-
-  async finalizeSemester(
-    schoolId: string,
-    semesterId: string,
-    input: FinalizeSemesterSummariesInput,
-  ) {
-    await this.assertHomeroomInSemester(
-      schoolId,
-      semesterId,
-      input.homeroomClassId,
-    );
-
-    const semester = await this.prisma.semester.findFirst({
-      where: { id: semesterId, schoolId },
-      select: { academicYearId: true },
-    });
-
-    if (semester) {
-      await backfillSubjectYearAverages(
-        this.prisma,
-        schoolId,
-        semester.academicYearId,
-      );
-    }
-
-    const now = new Date();
-
-    const [subjectClosed, summaryClosed, conductClosed] =
-      await this.prisma.$transaction([
-        this.prisma.studentSubjectResult.updateMany({
-          where: {
-            schoolId,
-            semesterId,
-            status: SummaryStatus.DRAFT,
-            courseSection: { homeroomClassId: input.homeroomClassId },
-          },
-          data: { status: SummaryStatus.CLOSED },
-        }),
-        this.prisma.studentSemesterSummary.updateMany({
-          where: {
-            schoolId,
-            semesterId,
-            homeroomClassId: input.homeroomClassId,
-            status: SummaryStatus.DRAFT,
-          },
-          data: {
-            status: SummaryStatus.CLOSED,
-            finalizedAt: now,
-          },
-        }),
-        this.prisma.studentConductRecord.updateMany({
-          where: {
-            schoolId,
-            semesterId,
-            homeroomClassId: input.homeroomClassId,
-            status: SummaryStatus.DRAFT,
-          },
-          data: { status: SummaryStatus.CLOSED },
-        }),
-      ]);
-
-    return {
-      subjectResultsClosed: subjectClosed.count,
-      semesterSummariesClosed: summaryClosed.count,
-      conductRecordsClosed: conductClosed.count,
-    };
   }
 
   async getSemesterFinalizeReadiness(
@@ -859,42 +789,6 @@ export class GradeSummariesService {
     };
   }
 
-  async finalizePromotion(
-    schoolId: string,
-    academicYearId: string,
-    input: FinalizePromotionInput,
-  ) {
-    // Tính toán lại điểm tổng kết học kỳ
-    await this.recomputeYearSummaries(
-      schoolId,
-      academicYearId,
-      input.homeroomClassId,
-    );
-
-    // Check xem đủ dữ liệu để tổng kết chưa
-    await this.assertPromotionCanBeFinalized(
-      schoolId,
-      academicYearId,
-      input.homeroomClassId,
-      input.decisions?.map((row) => row.studentId) ?? [],
-    );
-
-    // Áp dụng quyết định tổng kết của HS nhưng vẫn chưa chốt (draft)
-    await this.applyManualPromotionDecisions(
-      schoolId,
-      academicYearId,
-      input.homeroomClassId,
-      input.decisions ?? [],
-    );
-
-    // Chốt lên lớp
-    return this.closeDraftYearSummaries(
-      schoolId,
-      academicYearId,
-      input.homeroomClassId,
-    );
-  }
-
   async getYearPromotionFinalizeReadiness(
     schoolId: string,
     academicYearId: string,
@@ -1211,7 +1105,6 @@ export class GradeSummariesService {
     });
 
     const schoolGradeLevels = await this.prisma.gradeLevel.findMany({
-      where: { schoolId },
       select: { code: true },
     });
 
@@ -1419,30 +1312,6 @@ export class GradeSummariesService {
     }
   }
 
-  private async applyManualPromotionDecisions(
-    schoolId: string,
-    academicYearId: string,
-    homeroomClassId: string,
-    decisions: NonNullable<FinalizePromotionInput['decisions']>,
-  ): Promise<void> {
-    for (const decision of decisions) {
-      await this.prisma.studentYearSummary.updateMany({
-        where: {
-          schoolId,
-          academicYearId,
-          homeroomClassId,
-          studentId: decision.studentId,
-          status: SummaryStatus.DRAFT,
-        },
-        data: {
-          promotionDecision: decision.promotionDecision,
-          nextHomeroomClassId: decision.nextHomeroomClassId ?? null,
-          note: decision.note ?? null,
-        },
-      });
-    }
-  }
-
   private async closeDraftYearSummaries(
     schoolId: string,
     academicYearId: string,
@@ -1577,42 +1446,6 @@ export class GradeSummariesService {
     return result.count;
   }
 
-  private async assertHomeroomInSemester(
-    schoolId: string,
-    semesterId: string,
-    homeroomClassId: string,
-  ): Promise<void> {
-    const semester = await this.prisma.semester.findFirst({
-      where: { id: semesterId, schoolId },
-      select: { academicYearId: true },
-    });
-
-    if (!semester) {
-      throw new AppException(
-        'SEMESTER_NOT_FOUND',
-        'Không tìm thấy học kỳ',
-        HttpStatus.NOT_FOUND,
-      );
-    }
-
-    const homeroomClass = await this.prisma.homeroomClass.findFirst({
-      where: {
-        id: homeroomClassId,
-        schoolId,
-        academicYearId: semester.academicYearId,
-      },
-      select: { id: true },
-    });
-
-    if (!homeroomClass) {
-      throw new AppException(
-        'HOMEROOM_CLASS_NOT_FOUND',
-        'Không tìm thấy lớp chủ nhiệm',
-        HttpStatus.NOT_FOUND,
-      );
-    }
-  }
-
   private async resolveScope(
     schoolId: string,
     input: RecomputeGradeSummariesInput,
@@ -1639,53 +1472,11 @@ export class GradeSummariesService {
       );
     }
 
-    if (input.courseSectionId) {
-      const courseSection = await this.prisma.courseSection.findFirst({
-        where: {
-          id: input.courseSectionId,
-          schoolId,
-          semesterId: input.semesterId,
-        },
-        select: { id: true },
-      });
-
-      if (!courseSection) {
-        throw new AppException(
-          'COURSE_SECTION_NOT_FOUND',
-          'Không tìm thấy lớp môn học',
-          HttpStatus.NOT_FOUND,
-        );
-      }
-    }
-
-    if (input.homeroomClassId) {
-      const homeroomClass = await this.prisma.homeroomClass.findFirst({
-        where: {
-          id: input.homeroomClassId,
-          schoolId,
-          academicYearId: semester.academicYearId,
-        },
-        select: { id: true },
-      });
-
-      if (!homeroomClass) {
-        throw new AppException(
-          'HOMEROOM_CLASS_NOT_FOUND',
-          'Không tìm thấy lớp chủ nhiệm',
-          HttpStatus.NOT_FOUND,
-        );
-      }
-    }
-
     const courseSections = await this.prisma.courseSection.findMany({
       where: {
         schoolId,
         semesterId: input.semesterId,
         status: AcademicEntityStatus.ACTIVE,
-        ...(input.courseSectionId ? { id: input.courseSectionId } : {}),
-        ...(input.homeroomClassId
-          ? { homeroomClassId: input.homeroomClassId }
-          : {}),
       },
       select: {
         id: true,
@@ -1862,6 +1653,7 @@ export class GradeSummariesService {
       }),
     ]);
 
+    // Các loại điểm theo course section id
     const assessmentsBySectionId = new Map<string, ClosedAssessment[]>();
     for (const assessment of assessments) {
       const list = assessmentsBySectionId.get(assessment.courseSectionId) ?? [];
@@ -1869,6 +1661,7 @@ export class GradeSummariesService {
       assessmentsBySectionId.set(assessment.courseSectionId, list);
     }
 
+    // Các student id theo homeroom class id
     const studentIdsByHomeroomId = new Map<string, string[]>();
     const studentIdSet = new Set<string>();
     for (const enrollment of enrollments) {
@@ -1878,6 +1671,7 @@ export class GradeSummariesService {
       studentIdsByHomeroomId.set(enrollment.homeroomClassId, list);
     }
 
+    // Các điểm đã tồn tại theo student id và course section id
     const existingByKey = new Map<string, ExistingSubjectResultRow>();
     for (const row of existingResults) {
       existingByKey.set(`${row.studentId}::${row.courseSectionId}`, row);
@@ -2049,6 +1843,7 @@ export class GradeSummariesService {
       homeroomByStudentId.set(row.studentId, row.homeroomClassId);
     }
 
+    // Điểm của học sinh theo course section id
     const subjectResultsByStudentId = new Map<
       string,
       Array<{
@@ -2092,6 +1887,7 @@ export class GradeSummariesService {
         continue;
       }
 
+      // Thông tin tổng kết của học kỳ
       const fields = computeSemesterSummaryFields(
         subjectResultsByStudentId.get(studentId) ?? [],
         conductByStudentId.get(studentId),

@@ -160,6 +160,7 @@ export class StudentsService {
       include: studentInclude,
     });
 
+    // Cập nhật fullName ở user khi fullName ở student thay đổi
     if (input.fullName !== undefined && student.userId) {
       await this.prisma.user.update({
         where: { id: student.userId },

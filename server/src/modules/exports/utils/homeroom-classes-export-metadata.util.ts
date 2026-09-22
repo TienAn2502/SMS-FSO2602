@@ -50,7 +50,7 @@ export async function buildHomeroomClassesExportMetadata(
       : Promise.resolve(null),
     query.gradeLevelId
       ? prisma.gradeLevel.findFirst({
-          where: { id: query.gradeLevelId, schoolId },
+          where: { id: query.gradeLevelId },
           select: { name: true, code: true },
         })
       : Promise.resolve(null),

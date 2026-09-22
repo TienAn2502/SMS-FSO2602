@@ -1,15 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Param,
-  Patch,
-  Post,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 
@@ -22,19 +11,15 @@ import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe';
 import { uuidParamSchema } from '@/common/schemas/shared.schema';
 import { GradeLevelsService } from '@/modules/grade-levels/grade-levels.service';
 import {
-  createGradeLevelSchema,
   listGradeLevelsQuerySchema,
-  updateGradeLevelSchema,
-  type CreateGradeLevelInput,
   type ListGradeLevelsQuery,
-  type UpdateGradeLevelInput,
 } from '@/modules/grade-levels/schemas/grade-level.schema';
 
 @ApiTags('Grade Levels')
 @ApiCookieAuth('access_token')
 @Controller('grade-levels')
 @UseGuards(TenantGuard, RolesGuard)
-@Roles(UserRole.SCHOOL_ADMIN)
+@Roles(UserRole.SCHOOL_ADMIN, UserRole.SYSTEM_ADMIN)
 export class GradeLevelsController {
   constructor(private readonly gradeLevelsService: GradeLevelsService) {}
 
@@ -45,10 +30,7 @@ export class GradeLevelsController {
     @Query(new ZodValidationPipe(listGradeLevelsQuerySchema))
     query: ListGradeLevelsQuery,
   ) {
-    const result = await this.gradeLevelsService.list(
-      user.activeSchoolId,
-      query,
-    );
+    const result = await this.gradeLevelsService.list(user, query);
 
     return {
       success: true,
@@ -60,51 +42,7 @@ export class GradeLevelsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Chi tiết khối' })
-  findById(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('id', new ZodValidationPipe(uuidParamSchema)) id: string,
-  ) {
-    return this.gradeLevelsService.findById(user.activeSchoolId, id);
-  }
-
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Tạo khối' })
-  async create(
-    @CurrentUser() user: AuthenticatedUser,
-    @Body(new ZodValidationPipe(createGradeLevelSchema))
-    body: CreateGradeLevelInput,
-  ) {
-    const data = await this.gradeLevelsService.create(
-      user.activeSchoolId,
-      body,
-    );
-
-    return {
-      success: true,
-      data,
-      message: 'Tạo khối thành công',
-    };
-  }
-
-  @Patch(':id')
-  @ApiOperation({ summary: 'Cập nhật khối' })
-  async update(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('id', new ZodValidationPipe(uuidParamSchema)) id: string,
-    @Body(new ZodValidationPipe(updateGradeLevelSchema))
-    body: UpdateGradeLevelInput,
-  ) {
-    const data = await this.gradeLevelsService.update(
-      user.activeSchoolId,
-      id,
-      body,
-    );
-
-    return {
-      success: true,
-      data,
-      message: 'Cập nhật khối thành công',
-    };
+  findById(@Param('id', new ZodValidationPipe(uuidParamSchema)) id: string) {
+    return this.gradeLevelsService.findById(id);
   }
 }

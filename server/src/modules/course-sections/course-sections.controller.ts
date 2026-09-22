@@ -20,6 +20,11 @@ import { RolesGuard } from '@/common/guards/roles.guard';
 import { TenantGuard } from '@/common/guards/tenant.guard';
 import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe';
 import { uuidParamSchema } from '@/common/schemas/shared.schema';
+import {
+  listTimetableEntriesQuerySchema,
+  type ListTimetableEntriesQuery,
+} from '@/modules/timetable-entries/schemas/timetable-entry.schema';
+import { TimetableEntriesService } from '@/modules/timetable-entries/timetable-entries.service';
 import { CourseSectionsService } from '@/modules/course-sections/course-sections.service';
 import {
   copySemesterCourseSectionsSchema,
@@ -40,7 +45,10 @@ import {
 @UseGuards(TenantGuard, RolesGuard)
 @Roles(UserRole.SCHOOL_ADMIN)
 export class CourseSectionsController {
-  constructor(private readonly courseSectionsService: CourseSectionsService) {}
+  constructor(
+    private readonly courseSectionsService: CourseSectionsService,
+    private readonly timetableEntriesService: TimetableEntriesService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Danh sách lớp môn học' })
@@ -98,6 +106,30 @@ export class CourseSectionsController {
     @Param('id', new ZodValidationPipe(uuidParamSchema)) id: string,
   ) {
     return this.courseSectionsService.findById(user.activeSchoolId, id);
+  }
+
+  @Get(':id/timetable-entries')
+  @ApiOperation({
+    summary: 'Danh sách tiết thời khóa biểu của lớp môn học',
+  })
+  async listTimetableEntries(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', new ZodValidationPipe(uuidParamSchema)) id: string,
+    @Query(new ZodValidationPipe(listTimetableEntriesQuerySchema))
+    query: ListTimetableEntriesQuery,
+  ) {
+    const result = await this.timetableEntriesService.listByCourseSection(
+      user.activeSchoolId,
+      id,
+      query,
+    );
+
+    return {
+      success: true,
+      data: result.items,
+      meta: result.meta,
+      message: null,
+    };
   }
 
   @Post()

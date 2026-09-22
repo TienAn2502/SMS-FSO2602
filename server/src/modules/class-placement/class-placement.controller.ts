@@ -39,8 +39,7 @@ export class ClassPlacementController {
 
   @Get('unassigned')
   @ApiOperation({
-    summary:
-      'Danh sách HS chưa có lớp trong học kỳ (ở lại / mới lên cấp)',
+    summary: 'Danh sách HS chưa có lớp trong học kỳ (ở lại / mới lên cấp)',
   })
   async listUnassigned(
     @CurrentUser() user: AuthenticatedUser,

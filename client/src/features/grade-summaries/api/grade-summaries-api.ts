@@ -109,11 +109,7 @@ export async function updateYearSummaryNextHomeroom(
     return data.data;
 }
 
-export async function recomputeGradeSummaries(input: {
-    semesterId: string;
-    homeroomClassId?: string;
-    courseSectionId?: string;
-}) {
+export async function recomputeGradeSummaries(input: { semesterId: string }) {
     const { data } = await api.post<
         ApiSuccessResponse<{
             subjectResultsUpserted: number;
@@ -122,20 +118,6 @@ export async function recomputeGradeSummaries(input: {
             skippedClosed: number;
         }>
     >('/grade-summaries/recompute', input);
-    return data.data;
-}
-
-export async function finalizeSemesterSummaries(
-    semesterId: string,
-    homeroomClassId: string,
-) {
-    const { data } = await api.post<
-        ApiSuccessResponse<{
-            subjectResultsClosed: number;
-            semesterSummariesClosed: number;
-            conductRecordsClosed: number;
-        }>
-    >(`/grade-summaries/semesters/${semesterId}/finalize`, { homeroomClassId });
     return data.data;
 }
 
@@ -261,23 +243,6 @@ export async function finalizePromotionAll(academicYearId: string) {
         }>
     >(
         `/grade-summaries/academic-years/${academicYearId}/finalize-promotion-all`,
-    );
-    return data.data;
-}
-
-export async function finalizePromotion(
-    academicYearId: string,
-    input: { homeroomClassId: string },
-) {
-    const { data } = await api.post<
-        ApiSuccessResponse<{
-            yearSummariesClosed: number;
-            studentsInactivated: number;
-            parentsInactivated: number;
-        }>
-    >(
-        `/grade-summaries/academic-years/${academicYearId}/finalize-promotion`,
-        input,
     );
     return data.data;
 }

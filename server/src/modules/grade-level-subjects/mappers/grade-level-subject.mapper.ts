@@ -2,7 +2,13 @@ import type { GradeLevelSubject } from '@prisma/client';
 
 type GradeLevelSubjectWithRelations = GradeLevelSubject & {
   gradeLevel: { id: string; code: string; name: string };
-  subject: { id: string; code: string; name: string; status: GradeLevelSubject['status'] };
+  subject: {
+    id: string;
+    code: string;
+    name: string;
+    status: GradeLevelSubject['status'];
+    schoolId: string | null;
+  };
 };
 
 export interface GradeLevelSubjectResponse {
@@ -17,6 +23,7 @@ export interface GradeLevelSubjectResponse {
   periodsPerYear: number | null;
   evaluationMode: GradeLevelSubject['evaluationMode'];
   status: GradeLevelSubject['status'];
+  schoolId: string | null;
 }
 
 export function toGradeLevelSubjectResponse(
@@ -34,5 +41,6 @@ export function toGradeLevelSubjectResponse(
     periodsPerYear: record.periodsPerYear,
     evaluationMode: record.evaluationMode,
     status: record.status,
+    schoolId: record.subject.schoolId,
   };
 }

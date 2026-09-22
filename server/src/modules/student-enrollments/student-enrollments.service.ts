@@ -145,7 +145,6 @@ export class StudentEnrollmentsService {
 
     const semester = await this.semestersService.findSemesterInTenantById(
       schoolId,
-
       input.semesterId,
     );
 
@@ -745,11 +744,10 @@ export class StudentEnrollmentsService {
       );
     }
 
-    const targetSemester =
-      await this.semestersService.findSemesterInTenantById(
-        schoolId,
-        targetSemesterId,
-      );
+    const targetSemester = await this.semestersService.findSemesterInTenantById(
+      schoolId,
+      targetSemesterId,
+    );
 
     if (targetSemester.academicYearId === sourceAcademicYearId) {
       throw new AppException(
@@ -765,11 +763,7 @@ export class StudentEnrollmentsService {
         academicYearId: sourceAcademicYearId,
         status: SummaryStatus.CLOSED,
         promotionDecision: {
-          in: [
-            'PROMOTED',
-            'RETAINED',
-            'GRADUATED',
-          ],
+          in: ['PROMOTED', 'RETAINED', 'GRADUATED'],
         },
       },
       select: {

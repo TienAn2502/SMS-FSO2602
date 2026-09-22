@@ -170,6 +170,7 @@ export class PortalGradebookService {
       courseSectionId,
     );
 
+    // Đảm bảo sổ điểm được hiển thị (nếu chưa có sẽ tạo mới)
     await this.gradebookProvisionService.ensureGradebookProvisioned(
       user.activeSchoolId,
       courseSectionId,

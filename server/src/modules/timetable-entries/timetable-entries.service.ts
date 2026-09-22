@@ -4,10 +4,7 @@ import { AcademicEntityStatus, Prisma } from '@prisma/client';
 import { AppException } from '@/common/exceptions/app.exception';
 import { PrismaService } from '@/common/database/prisma.service';
 import type { PaginationMeta } from '@/common/types/api-response.types';
-import {
-  buildPaginationMeta,
-  getSkip,
-} from '@/common/utils/pagination.util';
+import { buildPaginationMeta, getSkip } from '@/common/utils/pagination.util';
 import { CourseSectionsService } from '@/modules/course-sections/course-sections.service';
 import { SemestersService } from '@/modules/semesters/semesters.service';
 import { TeachersService } from '@/modules/teachers/teachers.service';
@@ -260,8 +257,12 @@ export class TimetableEntriesService {
       const updated = await this.prisma.timetableEntry.update({
         where: { id: entryId },
         data: {
-          ...(input.teacherId !== undefined ? { teacherId: input.teacherId } : {}),
-          ...(input.dayOfWeek !== undefined ? { dayOfWeek: input.dayOfWeek } : {}),
+          ...(input.teacherId !== undefined
+            ? { teacherId: input.teacherId }
+            : {}),
+          ...(input.dayOfWeek !== undefined
+            ? { dayOfWeek: input.dayOfWeek }
+            : {}),
           ...(input.periodNumber !== undefined
             ? { periodNumber: input.periodNumber }
             : {}),

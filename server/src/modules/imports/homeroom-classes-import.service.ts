@@ -65,7 +65,7 @@ export class HomeroomClassesImportService {
     }
 
     const [gradeLevelByCode, teacherByEmail] = await Promise.all([
-      this.loadGradeLevelsByCode(schoolId),
+      this.loadGradeLevelsByCode(),
       this.loadTeachersByEmail(schoolId, rows),
     ]);
 
@@ -152,7 +152,9 @@ export class HomeroomClassesImportService {
     return { rows: parsedRows, errors };
   }
 
-  private normalizeRowData(data: Record<string, string>): Record<string, string> {
+  private normalizeRowData(
+    data: Record<string, string>,
+  ): Record<string, string> {
     const normalized: Record<string, string> = {};
 
     for (const [key, value] of Object.entries(data)) {
@@ -209,11 +211,8 @@ export class HomeroomClassesImportService {
     }
   }
 
-  private async loadGradeLevelsByCode(
-    schoolId: string,
-  ): Promise<Map<string, string>> {
+  private async loadGradeLevelsByCode(): Promise<Map<string, string>> {
     const gradeLevels = await this.prisma.gradeLevel.findMany({
-      where: { schoolId },
       select: { id: true, code: true },
     });
 
@@ -273,13 +272,8 @@ export class HomeroomClassesImportService {
       teacherByEmail: Map<string, string>;
     },
   ): Promise<'created' | 'updated'> {
-    const {
-      rowNumber,
-      row,
-      academicYearId,
-      gradeLevelByCode,
-      teacherByEmail,
-    } = params;
+    const { rowNumber, row, academicYearId, gradeLevelByCode, teacherByEmail } =
+      params;
 
     const gradeLevelId = gradeLevelByCode.get(row.ma_khoi.toLowerCase());
     if (!gradeLevelId) {

@@ -36,21 +36,14 @@ export class CourseSectionsImportTemplateService {
     for (const [sheetName, rows] of Object.entries(
       COURSE_SECTION_IMPORT_SAMPLE_BY_SHEET,
     )) {
-      builder.addSheetFromRows(
-        sheetName,
-        COURSE_SECTION_IMPORT_COLUMNS,
-        rows,
-      );
+      builder.addSheetFromRows(sheetName, COURSE_SECTION_IMPORT_COLUMNS, rows);
     }
 
-    builder.addInstructionSheet(
-      'Huong_dan',
-      [
-        ...COURSE_SECTION_IMPORT_INSTRUCTION_LINES,
-        '',
-        'File mẫu tham khảo: docs/samples/course-sections-import-sample.xlsx',
-      ],
-    );
+    builder.addInstructionSheet('Huong_dan', [
+      ...COURSE_SECTION_IMPORT_INSTRUCTION_LINES,
+      '',
+      'File mẫu tham khảo: docs/samples/course-sections-import-sample.xlsx',
+    ]);
 
     return builder.toBuffer();
   }
@@ -79,16 +72,15 @@ export class CourseSectionsImportTemplateService {
     }
 
     const gradeLevels = await this.prisma.gradeLevel.findMany({
-      where: { schoolId },
       select: { id: true, code: true },
     });
     const entryGradeCode = [...gradeLevels]
       .map((row) => ({ code: row.code, value: Number(row.code) }))
       .filter((row) => Number.isFinite(row.value))
       .sort((a, b) => a.value - b.value)[0]?.code;
-    const gradeCodeById = new Map(
-      gradeLevels.map((row) => [row.id, row.code] as const),
-    );
+    // const gradeCodeById = new Map(
+    //   gradeLevels.map((row) => [row.id, row.code] as const),
+    // );
     const entryGradeIds = new Set(
       gradeLevels
         .filter((row) => row.code === entryGradeCode)
@@ -115,7 +107,6 @@ export class CourseSectionsImportTemplateService {
     const gradeLevelIds = [...new Set(classes.map((row) => row.gradeLevelId))];
     const glsRows = await this.prisma.gradeLevelSubject.findMany({
       where: {
-        schoolId,
         gradeLevelId: { in: gradeLevelIds },
         status: AcademicEntityStatus.ACTIVE,
       },
@@ -197,19 +188,16 @@ export class CourseSectionsImportTemplateService {
       return null;
     }
 
-    builder.addInstructionSheet(
-      'Huong_dan',
-      [
-        ...COURSE_SECTION_IMPORT_INSTRUCTION_LINES,
-        '',
-        `File điền sẵn ${classes.length} lớp HC ACTIVE của năm học kỳ.`,
-        entryGradeCode
-          ? `Khối đầu cấp (${entryGradeCode}): ${entryClassCount} lớp — môn từ cấu hình khối (tạo mới).`
-          : `Khối đầu cấp: ${entryClassCount} lớp — môn từ cấu hình khối.`,
-        `Khối trên: ${upperClassCount} lớp — ${upperFromPrevYear} lớp lấy môn từ HK2 năm trước (đã lọc theo cấu hình khối hiện tại); còn lại dùng cấu hình khối.`,
-        'Chỉnh sửa / xóa dòng / thêm email_gv trước khi import. Import luôn tạo record mới.',
-      ],
-    );
+    builder.addInstructionSheet('Huong_dan', [
+      ...COURSE_SECTION_IMPORT_INSTRUCTION_LINES,
+      '',
+      `File điền sẵn ${classes.length} lớp HC ACTIVE của năm học kỳ.`,
+      entryGradeCode
+        ? `Khối đầu cấp (${entryGradeCode}): ${entryClassCount} lớp — môn từ cấu hình khối (tạo mới).`
+        : `Khối đầu cấp: ${entryClassCount} lớp — môn từ cấu hình khối.`,
+      `Khối trên: ${upperClassCount} lớp — ${upperFromPrevYear} lớp lấy môn từ HK2 năm trước (đã lọc theo cấu hình khối hiện tại); còn lại dùng cấu hình khối.`,
+      'Chỉnh sửa / xóa dòng / thêm email_gv trước khi import. Import luôn tạo record mới.',
+    ]);
 
     return builder.toBuffer();
   }

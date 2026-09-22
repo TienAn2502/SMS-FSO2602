@@ -10,7 +10,7 @@ import { toIsoDateString } from '@/common/schemas/academic.schema';
 type TeachingAssignmentWithRelations = TeachingAssignment & {
   teacher: Pick<Teacher, 'id' | 'fullName'>;
   courseSection: Pick<CourseSection, 'id' | 'code' | 'name' | 'semesterId'> & {
-    semester: Pick<Semester, 'academicYearId'>;
+    semester: Pick<Semester, 'id' | 'code' | 'name' | 'academicYearId'>;
   };
 };
 
@@ -22,6 +22,8 @@ export interface TeachingAssignmentResponse {
   courseSectionCode: string;
   courseSectionName: string;
   semesterId: string;
+  semesterName: string;
+  semesterCode: string;
   academicYearId: string;
   assignAt: string;
   endAt: string | null;
@@ -39,7 +41,7 @@ export const teachingAssignmentInclude = {
       name: true,
       semesterId: true,
       semester: {
-        select: { academicYearId: true },
+        select: { id: true, code: true, name: true, academicYearId: true },
       },
     },
   },
@@ -56,6 +58,8 @@ export function toTeachingAssignmentResponse(
     courseSectionCode: assignment.courseSection.code,
     courseSectionName: assignment.courseSection.name,
     semesterId: assignment.courseSection.semesterId,
+    semesterName: assignment.courseSection.semester.name,
+    semesterCode: assignment.courseSection.semester.code,
     academicYearId: assignment.courseSection.semester.academicYearId,
     assignAt: toIsoDateString(assignment.assignAt),
     endAt: assignment.endAt ? toIsoDateString(assignment.endAt) : null,

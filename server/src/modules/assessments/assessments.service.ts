@@ -1,19 +1,10 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import {
-  AcademicEntityStatus,
-  AssessmentStatus,
-  Prisma,
-} from '@prisma/client';
+import { AcademicEntityStatus, AssessmentStatus, Prisma } from '@prisma/client';
 
 import { AppException } from '@/common/exceptions/app.exception';
 import { PrismaService } from '@/common/database/prisma.service';
 import { parseIsoDate } from '@/common/schemas/academic.schema';
 import type { PaginationMeta } from '@/common/types/api-response.types';
-import {
-  FINAL_ASSESSMENT_QUOTA,
-  getRegularAssessmentQuota,
-  MIDTERM_ASSESSMENT_QUOTA,
-} from '@/common/utils/assessment-quota.util';
 import { validateDateRangeOrThrow } from '@/common/utils/date-range.util';
 import { buildPaginationMeta, getSkip } from '@/common/utils/pagination.util';
 import { CourseSectionsService } from '@/modules/course-sections/course-sections.service';
@@ -174,7 +165,6 @@ export class AssessmentsService {
         select: {
           id: true,
           code: true,
-          name: true,
           semesterId: true,
           homeroomClass: { select: { code: true } },
           semester: {
@@ -182,13 +172,10 @@ export class AssessmentsService {
               id: true,
               name: true,
               academicYearId: true,
-              academicYear: { select: { id: true, name: true } },
             },
           },
           gradeLevelSubject: {
             select: {
-              periodsPerYear: true,
-              evaluationMode: true,
               subject: { select: { code: true, name: true } },
             },
           },
@@ -196,7 +183,7 @@ export class AssessmentsService {
             where: { status: AcademicEntityStatus.ACTIVE },
             take: 1,
             select: {
-              teacher: { select: { id: true, fullName: true } },
+              teacher: { select: { fullName: true } },
             },
           },
         },
@@ -204,45 +191,33 @@ export class AssessmentsService {
     ]);
 
     const courseSectionIds = courseSections.map((section) => section.id);
-    const statsMap = await this.buildGradebookOverviewStatsMap(courseSectionIds);
+    const statsMap =
+      await this.buildGradebookOverviewStatsMap(courseSectionIds);
 
     const items = courseSections.map((section) => {
       const teacher = section.teachingAssignments[0]?.teacher ?? null;
       const stats = statsMap.get(section.id) ?? {
-        assessmentCount: 0,
         scoreCount: 0,
         scoredCount: 0,
-        openAssessmentCount: 0,
+        assessmentCount: 0,
         isLocked: false,
       };
-      const regularQuota =
-        getRegularAssessmentQuota(
-          section.gradeLevelSubject.periodsPerYear,
-          section.gradeLevelSubject.evaluationMode,
-        ) ?? 0;
-      const expectedAssessmentCount =
-        regularQuota + MIDTERM_ASSESSMENT_QUOTA + FINAL_ASSESSMENT_QUOTA;
 
       return {
         courseSectionId: section.id,
         courseSectionCode: section.code,
-        courseSectionName: section.name,
         semesterId: section.semesterId,
         semesterName: section.semester.name,
-        academicYearId: section.semester.academicYearId,
-        academicYearName: section.semester.academicYear.name,
         homeroomClassCode: section.homeroomClass?.code ?? null,
         subjectCode: section.gradeLevelSubject.subject.code,
         subjectName: section.gradeLevelSubject.subject.name,
-        teacherId: teacher?.id ?? null,
         teacherFullName: teacher?.fullName ?? null,
-        assessmentCount: stats.assessmentCount,
-        expectedAssessmentCount,
         scoreCount: stats.scoreCount,
         scoredCount: stats.scoredCount,
-        openAssessmentCount: stats.openAssessmentCount,
-        gradebookStatus: this.resolveGradebookOverviewStatus(stats),
-        isLocked: stats.isLocked,
+        gradebookStatus: this.resolveGradebookOverviewStatus(
+          stats.assessmentCount,
+          stats.isLocked,
+        ),
       } satisfies GradebookOverviewItem;
     });
 
@@ -502,7 +477,9 @@ export class AssessmentsService {
             ],
           }
         : {}),
-      ...(assessmentStatusFilter ? { assessments: assessmentStatusFilter } : {}),
+      ...(assessmentStatusFilter
+        ? { assessments: assessmentStatusFilter }
+        : {}),
     };
   }
 
@@ -547,7 +524,6 @@ export class AssessmentsService {
         assessmentCount: number;
         scoreCount: number;
         scoredCount: number;
-        openAssessmentCount: number;
         isLocked: boolean;
       }
     >();
@@ -570,21 +546,22 @@ export class AssessmentsService {
     const scoredCountMap = await this.buildScoredCountMap(assessmentIds);
 
     for (const courseSectionId of courseSectionIds) {
+      // Những đầu điểm của môn học này
       const sectionAssessments = assessments.filter(
         (row) => row.courseSectionId === courseSectionId,
       );
+      // Số lượng đầu điểm
       const assessmentCount = sectionAssessments.length;
+      // Tổng số lượng điểm của cả lớp
       const scoreCount = sectionAssessments.reduce(
         (sum, row) => sum + row._count.scores,
         0,
       );
+      // Số lượng điểm đã chấm
       const scoredCount = sectionAssessments.reduce(
         (sum, row) => sum + (scoredCountMap.get(row.id) ?? 0),
         0,
       );
-      const openAssessmentCount = sectionAssessments.filter(
-        (row) => row.status === AssessmentStatus.OPEN,
-      ).length;
       const isLocked =
         assessmentCount > 0 &&
         sectionAssessments.every(
@@ -595,7 +572,6 @@ export class AssessmentsService {
         assessmentCount,
         scoreCount,
         scoredCount,
-        openAssessmentCount,
         isLocked,
       });
     }
@@ -603,15 +579,15 @@ export class AssessmentsService {
     return map;
   }
 
-  private resolveGradebookOverviewStatus(stats: {
-    assessmentCount: number;
-    isLocked: boolean;
-  }): GradebookOverviewStatus {
-    if (stats.assessmentCount === 0) {
+  private resolveGradebookOverviewStatus(
+    assessmentCount: number,
+    isLocked: boolean,
+  ): GradebookOverviewStatus {
+    if (assessmentCount === 0) {
       return 'NOT_STARTED';
     }
 
-    if (stats.isLocked) {
+    if (isLocked) {
       return 'LOCKED';
     }
 

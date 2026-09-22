@@ -50,8 +50,8 @@ import type { AcademicEntityStatus } from '@/types/api.types';
 const PAGE_SIZE = 20;
 
 const createSchema = z.object({
-  academicYearId: z.string().uuid('Chọn năm học'),
-  gradeLevelId: z.string().uuid('Chọn khối'),
+  academicYearId: z.uuid('Chọn năm học'),
+  gradeLevelId: z.uuid('Chọn khối'),
   name: z.string().trim().min(1, 'Tên lớp là bắt buộc'),
   code: z.string().trim().min(1, 'Mã lớp là bắt buộc'),
   capacity: z.string().optional(),

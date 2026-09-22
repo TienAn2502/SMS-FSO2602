@@ -9,10 +9,7 @@ import {
 import { AppException } from '@/common/exceptions/app.exception';
 import { PrismaService } from '@/common/database/prisma.service';
 import type { PaginationMeta } from '@/common/types/api-response.types';
-import {
-  buildPaginationMeta,
-  getSkip,
-} from '@/common/utils/pagination.util';
+import { buildPaginationMeta, getSkip } from '@/common/utils/pagination.util';
 import { PasswordService } from '@/common/utils/password.service';
 import { PersonCodeService } from '@/common/utils/person-code.service';
 import {
@@ -204,7 +201,6 @@ export class ParentsService {
   async createUser(
     schoolId: string,
     parentId: string,
-    _input: CreateParentUserInput,
   ): Promise<ParentResponse> {
     const parent = await this.findParentInTenant(schoolId, parentId);
 

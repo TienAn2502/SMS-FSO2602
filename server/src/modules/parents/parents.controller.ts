@@ -23,14 +23,12 @@ import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe';
 import { uuidParamSchema } from '@/common/schemas/shared.schema';
 import {
   createParentSchema,
-  createParentUserSchema,
   linkParentStudentSchema,
   linkParentUserSchema,
   listParentsQuerySchema,
   updateParentSchema,
   updateParentStatusSchema,
   type CreateParentInput,
-  type CreateParentUserInput,
   type LinkParentStudentInput,
   type LinkParentUserInput,
   type ListParentsQuery,
@@ -139,14 +137,8 @@ export class ParentsController {
   async createUser(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', new ZodValidationPipe(uuidParamSchema)) id: string,
-    @Body(new ZodValidationPipe(createParentUserSchema))
-    body: CreateParentUserInput,
   ) {
-    const data = await this.parentsService.createUser(
-      user.activeSchoolId,
-      id,
-      body,
-    );
+    const data = await this.parentsService.createUser(user.activeSchoolId, id);
 
     return {
       success: true,

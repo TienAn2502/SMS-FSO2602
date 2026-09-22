@@ -20,15 +20,11 @@ import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe';
 import { uuidParamSchema } from '@/common/schemas/shared.schema';
 import { GradeSummariesService } from '@/modules/grade-summaries/grade-summaries.service';
 import {
-  finalizePromotionSchema,
-  finalizeSemesterSummariesSchema,
   listSemesterSummariesQuerySchema,
   listSubjectResultsQuerySchema,
   listYearSummariesQuerySchema,
   recomputeYearSummariesSchema,
   updateYearSummaryNextHomeroomSchema,
-  type FinalizePromotionInput,
-  type FinalizeSemesterSummariesInput,
   type ListSemesterSummariesQuery,
   type ListSubjectResultsQuery,
   type ListYearSummariesQuery,
@@ -189,28 +185,6 @@ export class GradeSummariesController {
     };
   }
 
-  @Post('semesters/:semesterId/finalize')
-  @ApiOperation({ summary: 'Khóa tổng kết học kỳ theo lớp chủ nhiệm' })
-  async finalizeSemester(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('semesterId', new ZodValidationPipe(uuidParamSchema))
-    semesterId: string,
-    @Body(new ZodValidationPipe(finalizeSemesterSummariesSchema))
-    body: FinalizeSemesterSummariesInput,
-  ) {
-    const data = await this.gradeSummariesService.finalizeSemester(
-      user.activeSchoolId,
-      semesterId,
-      body,
-    );
-
-    return {
-      success: true,
-      data,
-      message: 'Khóa tổng kết học kỳ thành công',
-    };
-  }
-
   @Get('semesters/:semesterId/finalize-readiness')
   @ApiOperation({ summary: 'Kiểm tra điều kiện khóa học kỳ toàn trường' })
   async getSemesterFinalizeReadiness(
@@ -247,28 +221,6 @@ export class GradeSummariesController {
       success: true,
       data,
       message: 'Khóa học kỳ thành công',
-    };
-  }
-
-  @Post('academic-years/:academicYearId/finalize-promotion')
-  @ApiOperation({ summary: 'Chốt xét lên lớp theo lớp chủ nhiệm' })
-  async finalizePromotion(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('academicYearId', new ZodValidationPipe(uuidParamSchema))
-    academicYearId: string,
-    @Body(new ZodValidationPipe(finalizePromotionSchema))
-    body: FinalizePromotionInput,
-  ) {
-    const data = await this.gradeSummariesService.finalizePromotion(
-      user.activeSchoolId,
-      academicYearId,
-      body,
-    );
-
-    return {
-      success: true,
-      data,
-      message: 'Chốt xét lên lớp thành công',
     };
   }
 

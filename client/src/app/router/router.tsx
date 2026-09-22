@@ -12,7 +12,6 @@ import { AcademicYearsPage } from '@/features/academic-years/pages/academic-year
 import { SemesterDetailPage } from '@/features/academic-years/pages/semester-detail-page';
 import { CourseSectionDetailPage } from '@/features/course-sections/pages/course-section-detail-page';
 import { CourseSectionsPage } from '@/features/course-sections/pages/course-sections-page';
-import { DashboardPage } from '@/features/dashboard/pages/dashboard-page';
 import { PlatformDashboardPage } from '@/features/platform/pages/platform-dashboard-page';
 import { PlatformSchoolsPage } from '@/features/platform/pages/platform-schools-page';
 import { PlatformSchoolDetailPage } from '@/features/platform/pages/platform-school-detail-page';
@@ -219,7 +218,15 @@ export const router = createBrowserRouter([
             {
                 path: ROUTES.deviceSessions.slice(1),
                 element: (
-                    <RoleGate roles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT']}>
+                    <RoleGate
+                        roles={[
+                            'SCHOOL_ADMIN',
+                            'TEACHER',
+                            'STUDENT',
+                            'PARENT',
+                            'SYSTEM_ADMIN',
+                        ]}
+                    >
                         <DeviceSessionsPage />
                     </RoleGate>
                 ),
@@ -259,7 +266,7 @@ export const router = createBrowserRouter([
             {
                 path: ROUTES.gradeLevelSubjects.slice(1),
                 element: (
-                    <RoleGate roles={['SCHOOL_ADMIN']}>
+                    <RoleGate roles={['SCHOOL_ADMIN', 'SYSTEM_ADMIN']}>
                         <GradeLevelSubjectsPage />
                     </RoleGate>
                 ),
@@ -267,7 +274,7 @@ export const router = createBrowserRouter([
             {
                 path: ROUTES.subjects.slice(1),
                 element: (
-                    <RoleGate roles={['SCHOOL_ADMIN']}>
+                    <RoleGate roles={['SCHOOL_ADMIN', 'SYSTEM_ADMIN']}>
                         <SubjectsPage />
                     </RoleGate>
                 ),

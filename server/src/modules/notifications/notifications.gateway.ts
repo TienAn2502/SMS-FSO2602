@@ -9,6 +9,8 @@ import cookie from 'cookie';
 import { JwtTokenService } from '@/common/auth/jwt-token.service';
 import { RedisService } from '@/common/database/redis.service';
 import { PushSubscriptionsService } from '@/modules/push-subscriptions/push-subscriptions.service';
+import { AccessTokenPayload } from '@/common/auth/auth.types';
+import { Logger } from '@nestjs/common';
 
 export interface NotificationPayload {
   id: string;
@@ -29,6 +31,7 @@ export interface NotificationPayload {
 export class NotificationsGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
+  private readonly logger = new Logger(NotificationsGateway.name);
   @WebSocketServer()
   socketServer!: Server;
 
@@ -59,7 +62,16 @@ export class NotificationsGateway
       return;
     }
 
-    const payload = this.jwtTokenService.verifyAccessToken(token);
+    let payload: AccessTokenPayload;
+
+    try {
+      payload = this.jwtTokenService.verifyAccessToken(token);
+    } catch (error) {
+      this.logger.warn('Socket authentication failed:', error);
+
+      client.disconnect();
+      return;
+    }
     if (!payload || !payload.sub) {
       client.disconnect();
       return;

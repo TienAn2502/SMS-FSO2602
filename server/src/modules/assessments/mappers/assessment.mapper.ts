@@ -64,23 +64,15 @@ export type GradebookOverviewStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'LOCKED';
 export interface GradebookOverviewItem {
   courseSectionId: string;
   courseSectionCode: string;
-  courseSectionName: string;
   semesterId: string;
   semesterName: string;
-  academicYearId: string;
-  academicYearName: string;
   homeroomClassCode: string | null;
   subjectCode: string;
   subjectName: string;
-  teacherId: string | null;
   teacherFullName: string | null;
-  assessmentCount: number;
-  expectedAssessmentCount: number;
   scoreCount: number;
   scoredCount: number;
-  openAssessmentCount: number;
   gradebookStatus: GradebookOverviewStatus;
-  isLocked: boolean;
 }
 
 export const assessmentInclude = {

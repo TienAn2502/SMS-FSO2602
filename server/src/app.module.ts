@@ -39,6 +39,8 @@ import { PushSubscriptionsModule } from './modules/push-subscriptions/push-subsc
 import { CommonModule } from '@/common/auth/common.module';
 import { DeviceSessionModule } from './modules/device-session/device-session.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -84,6 +86,20 @@ import { ScheduleModule } from '@nestjs/schedule';
     CommonModule,
     DeviceSessionModule,
     ScheduleModule.forRoot(),
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 60_000,
+          limit: 100,
+        },
+      ],
+    }),
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}

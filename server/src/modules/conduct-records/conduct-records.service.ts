@@ -16,7 +16,6 @@ import {
 } from '@/modules/conduct-records/mappers/conduct-record.mapper';
 import type {
   BulkUpsertConductRecordsInput,
-  FinalizeConductRecordsInput,
   ListConductRecordsQuery,
 } from '@/modules/conduct-records/schemas/conduct-record.schema';
 
@@ -174,34 +173,6 @@ export class ConductRecordsService {
     });
 
     return rows.map(toConductRecordResponse);
-  }
-
-  async finalizeSemester(
-    schoolId: string,
-    semesterId: string,
-    input: FinalizeConductRecordsInput,
-    options: BulkUpsertOptions = {},
-  ): Promise<{ closedCount: number }> {
-    await this.assertHomeroomClassScope(
-      schoolId,
-      input.homeroomClassId,
-      semesterId,
-      options.requireHomeroomTeacherId,
-    );
-
-    const result = await this.prisma.studentConductRecord.updateMany({
-      where: {
-        schoolId,
-        semesterId,
-        homeroomClassId: input.homeroomClassId,
-        status: SummaryStatus.DRAFT,
-      },
-      data: {
-        status: SummaryStatus.CLOSED,
-      },
-    });
-
-    return { closedCount: result.count };
   }
 
   async listHomeroomGrid(

@@ -58,18 +58,9 @@ export class SemesterPreparationService {
       }),
     ]);
 
-    const enrollmentsReady =
-      source.enrollments === 0
-        ? target.enrollments > 0
-        : target.enrollments >= source.enrollments;
-    const courseSectionsReady =
-      source.courseSections === 0
-        ? target.courseSections > 0
-        : target.courseSections >= source.courseSections;
-    const teachingAssignmentsReady =
-      source.teachingAssignments === 0
-        ? target.teachingAssignments > 0
-        : target.teachingAssignments >= source.teachingAssignments;
+    const enrollmentsReady = source.enrollments > 0;
+    const courseSectionsReady = source.courseSections > 0;
+    const teachingAssignmentsReady = source.teachingAssignments > 0;
 
     const sourceSemester = await this.semestersService.findSemesterInTenantById(
       schoolId,
@@ -132,18 +123,10 @@ export class SemesterPreparationService {
         copyInput,
       );
 
-    const status = await this.getStatus(
-      schoolId,
-      academicYearId,
-      targetSemesterId,
-      input.sourceSemesterId,
-    );
-
     return {
       courseSections,
       enrollments,
       teachingAssignments,
-      status,
     };
   }
 
@@ -162,8 +145,14 @@ export class SemesterPreparationService {
     }
 
     const [sourceSemester, targetSemester] = await Promise.all([
-      this.semestersService.findSemesterInTenantById(schoolId, sourceSemesterId),
-      this.semestersService.findSemesterInTenantById(schoolId, targetSemesterId),
+      this.semestersService.findSemesterInTenantById(
+        schoolId,
+        sourceSemesterId,
+      ),
+      this.semestersService.findSemesterInTenantById(
+        schoolId,
+        targetSemesterId,
+      ),
     ]);
 
     if (

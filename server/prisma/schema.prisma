@@ -172,9 +172,7 @@ model School {
   studentEnrollments       StudentEnrollment[]
   academicYears            AcademicYear[]
   semesters                Semester[]
-  gradeLevels              GradeLevel[]
   subjects                 Subject[]
-  gradeLevelSubjects       GradeLevelSubject[]
   homeroomClasses          HomeroomClass[]
   courseSections           CourseSection[]
   teachers                 Teacher[]
@@ -284,28 +282,25 @@ model Semester {
 
 model GradeLevel {
   id       String @id @default(uuid()) @db.Uuid
-  schoolId String @map("school_id") @db.Uuid
   name     String @db.VarChar(100)
   code     String @db.VarChar(20)
 
-  school             School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   gradeLevelSubjects GradeLevelSubject[]
   homeroomClasses    HomeroomClass[]
 
-  @@unique([schoolId, code])
-  @@index([schoolId])
+  @@unique([code])
   @@map("grade_levels")
 }
 
 model Subject {
   id          String               @id @default(uuid()) @db.Uuid
-  schoolId    String               @map("school_id") @db.Uuid
+  schoolId       String?               @map("school_id") @db.Uuid  // nullable
   code        String               @db.VarChar(20)
   name        String               @db.VarChar(255)
   description String?              @db.Text
   status      AcademicEntityStatus @default(ACTIVE)
 
-  school             School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  school             School?              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   gradeLevelSubjects GradeLevelSubject[]
 
   @@unique([schoolId, code])
@@ -316,7 +311,6 @@ model Subject {
 
 model GradeLevelSubject {
   id             String                @id @default(uuid()) @db.Uuid
-  schoolId       String                @map("school_id") @db.Uuid
   gradeLevelId   String                @map("grade_level_id") @db.Uuid
   subjectId      String                @map("subject_id") @db.Uuid
   isRequired     Boolean               @default(true) @map("is_required")
@@ -324,13 +318,11 @@ model GradeLevelSubject {
   evaluationMode SubjectEvaluationMode @default(NUMERIC) @map("evaluation_mode")
   status         AcademicEntityStatus  @default(ACTIVE)
 
-  school         School          @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  gradeLevel     GradeLevel      @relation(fields: [gradeLevelId], references: [id], onDelete: Cascade)
-  subject        Subject         @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  gradeLevel     GradeLevel       @relation(fields: [gradeLevelId], references: [id], onDelete: Cascade)
+  subject        Subject          @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   courseSections CourseSection[]
 
-  @@unique([schoolId, gradeLevelId, subjectId])
-  @@index([schoolId])
+  @@unique([gradeLevelId, subjectId])
   @@index([gradeLevelId])
   @@index([subjectId])
   @@map("grade_level_subjects")

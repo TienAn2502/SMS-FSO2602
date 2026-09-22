@@ -118,7 +118,8 @@ export class StudentEnrollmentsController {
   @Post('copy-from-semester')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Sao chép ghi danh ACTIVE từ học kỳ nguồn sang học kỳ đích (vd. HK1 → HK2)',
+    summary:
+      'Sao chép ghi danh ACTIVE từ học kỳ nguồn sang học kỳ đích (vd. HK1 → HK2)',
   })
   async copyFromSemester(
     @CurrentUser() user: AuthenticatedUser,
@@ -167,8 +168,7 @@ export class StudentEnrollmentsController {
   @Post('sync-stale')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary:
-      'Đóng ghi danh ACTIVE ở các học kỳ không hiện hành trong năm học',
+    summary: 'Đóng ghi danh ACTIVE ở các học kỳ không hiện hành trong năm học',
   })
   async syncStale(
     @CurrentUser() user: AuthenticatedUser,

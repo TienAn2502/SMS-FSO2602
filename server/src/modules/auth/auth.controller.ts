@@ -30,12 +30,19 @@ import {
   type LoginInput,
 } from '@/modules/auth/schemas/login.schema';
 import { Cookies } from '@/common/decorators/cookie.decorator';
+import { Throttle } from '@nestjs/throttler';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Throttle({
+    default: {
+      limit: 5,
+      ttl: 60_000,
+    },
+  })
   @Post('login')
   @Public()
   @ApiOperation({ summary: 'Đăng nhập' })
@@ -57,6 +64,12 @@ export class AuthController {
     };
   }
 
+  @Throttle({
+    default: {
+      limit: 10,
+      ttl: 60_000,
+    },
+  })
   @Post('refresh')
   @Public()
   @ApiOperation({ summary: 'Làm mới access token' })
@@ -77,6 +90,12 @@ export class AuthController {
     };
   }
 
+  @Throttle({
+    default: {
+      limit: 25,
+      ttl: 60_000,
+    },
+  })
   @Post('logout')
   @ApiCookieAuth('access_token')
   @ApiOperation({ summary: 'Đăng xuất' })
@@ -93,6 +112,12 @@ export class AuthController {
     };
   }
 
+  @Throttle({
+    default: {
+      limit: 100,
+      ttl: 60_000,
+    },
+  })
   @Get('me')
   @ApiCookieAuth('access_token')
   @ApiOperation({ summary: 'Thông tin session hiện tại' })
@@ -100,6 +125,12 @@ export class AuthController {
     return this.authService.getMe(user, user.sessionId, user.deviceId);
   }
 
+  @Throttle({
+    default: {
+      limit: 5,
+      ttl: 60_000,
+    },
+  })
   @Post('change-password')
   @ApiCookieAuth('access_token')
   @UseGuards(RolesGuard)

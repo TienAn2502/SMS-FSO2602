@@ -266,7 +266,8 @@ export class CourseSectionsImportService {
           },
         ]);
       }
-    }    const subjectByCode = new Map(
+    }
+    const subjectByCode = new Map(
       subjects.map((row) => [row.code.toUpperCase(), row] as const),
     );
 
@@ -275,7 +276,6 @@ export class CourseSectionsImportService {
     ];
     const gradeLevelSubjects = await this.prisma.gradeLevelSubject.findMany({
       where: {
-        schoolId,
         gradeLevelId: { in: gradeLevelIds },
         subjectId: { in: subjects.map((row) => row.id) },
         status: AcademicEntityStatus.ACTIVE,
@@ -320,9 +320,8 @@ export class CourseSectionsImportService {
 
     const existingByClassSubject = new Map<string, string>(
       existingSections
-        .filter(
-          (row): row is typeof row & { homeroomClassId: string } =>
-            Boolean(row.homeroomClassId),
+        .filter((row): row is typeof row & { homeroomClassId: string } =>
+          Boolean(row.homeroomClassId),
         )
         .map((row) => [
           `${row.homeroomClassId}:${row.gradeLevelSubjectId}`,

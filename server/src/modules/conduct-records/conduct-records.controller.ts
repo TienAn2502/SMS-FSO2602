@@ -21,10 +21,8 @@ import { uuidParamSchema } from '@/common/schemas/shared.schema';
 import { ConductRecordsService } from '@/modules/conduct-records/conduct-records.service';
 import {
   bulkUpsertConductRecordsSchema,
-  finalizeConductRecordsSchema,
   listConductRecordsQuerySchema,
   type BulkUpsertConductRecordsInput,
-  type FinalizeConductRecordsInput,
   type ListConductRecordsQuery,
 } from '@/modules/conduct-records/schemas/conduct-record.schema';
 
@@ -72,28 +70,6 @@ export class ConductRecordsController {
       success: true,
       data,
       message: 'Ghi hạnh kiểm thành công',
-    };
-  }
-
-  @Post('semesters/:semesterId/finalize')
-  @ApiOperation({ summary: 'Khóa hạnh kiểm học kỳ theo lớp chủ nhiệm' })
-  async finalize(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('semesterId', new ZodValidationPipe(uuidParamSchema))
-    semesterId: string,
-    @Body(new ZodValidationPipe(finalizeConductRecordsSchema))
-    body: FinalizeConductRecordsInput,
-  ) {
-    const data = await this.conductRecordsService.finalizeSemester(
-      user.activeSchoolId,
-      semesterId,
-      body,
-    );
-
-    return {
-      success: true,
-      data,
-      message: 'Khóa hạnh kiểm thành công',
     };
   }
 

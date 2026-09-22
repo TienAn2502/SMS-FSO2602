@@ -28,29 +28,6 @@ export const listYearSummariesQuerySchema = paginationSchema.extend({
   search: z.string().trim().optional(),
 });
 
-export const finalizeSemesterSummariesSchema = z.object({
-  homeroomClassId: z.uuid('Lớp chủ nhiệm không hợp lệ'),
-});
-
-export const finalizePromotionSchema = z.object({
-  homeroomClassId: z.uuid('Lớp chủ nhiệm không hợp lệ'),
-  decisions: z
-    .array(
-      z.object({
-        studentId: z.uuid('Học sinh không hợp lệ'),
-        promotionDecision: z.enum([
-          'PENDING',
-          'PROMOTED',
-          'RETAINED',
-          'GRADUATED',
-        ]),
-        nextHomeroomClassId: z.uuid('Lớp năm sau không hợp lệ').optional(),
-        note: z.string().trim().max(2000).optional(),
-      }),
-    )
-    .optional(),
-});
-
 export const recomputeYearSummariesSchema = z.object({
   homeroomClassId: z.uuid('Lớp chủ nhiệm không hợp lệ').optional(),
 });
@@ -82,10 +59,6 @@ export type ListSemesterSummariesQuery = z.infer<
 export type ListYearSummariesQuery = z.infer<
   typeof listYearSummariesQuerySchema
 >;
-export type FinalizeSemesterSummariesInput = z.infer<
-  typeof finalizeSemesterSummariesSchema
->;
-export type FinalizePromotionInput = z.infer<typeof finalizePromotionSchema>;
 export type RecomputeYearSummariesInput = z.infer<
   typeof recomputeYearSummariesSchema
 >;

@@ -92,7 +92,9 @@ export function buildHomeroomPromotionReadiness(
     });
   }
 
-  const blockingIssues = issues.filter((issue) => issue.code !== 'ALREADY_CLOSED');
+  const blockingIssues = issues.filter(
+    (issue) => issue.code !== 'ALREADY_CLOSED',
+  );
 
   return {
     homeroomClassId: input.homeroomClassId,
@@ -110,7 +112,9 @@ export function buildYearPromotionReadiness(input: {
 }): YearPromotionReadiness {
   const yearLevelIssues = input.yearLevelIssues ?? [];
   const homeroomIssues = input.homerooms.filter((row) => row.issues.length > 0);
-  const readyHomeroomClasses = input.homerooms.filter((row) => row.ready).length;
+  const readyHomeroomClasses = input.homerooms.filter(
+    (row) => row.ready,
+  ).length;
   const allClosed =
     input.homerooms.length > 0 &&
     input.homerooms.every((row) =>

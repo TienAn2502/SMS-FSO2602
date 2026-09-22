@@ -9,10 +9,7 @@ import {
   toIsoDateString,
 } from '@/common/schemas/academic.schema';
 import type { PaginationMeta } from '@/common/types/api-response.types';
-import {
-  buildPaginationMeta,
-  getSkip,
-} from '@/common/utils/pagination.util';
+import { buildPaginationMeta, getSkip } from '@/common/utils/pagination.util';
 import { validateDateRangeOrThrow } from '@/common/utils/date-range.util';
 import {
   toAcademicYearResponse,

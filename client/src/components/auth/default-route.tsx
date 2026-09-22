@@ -18,7 +18,7 @@ const DefaultRoute = () => {
 
     if (
         role === 'SCHOOL_ADMIN' ||
-        session.impersonation?.impersonatedBy === session.user.id
+        session.impersonation?.impersonatedBy === session.user.id // system admin đăng nhập thay
     ) {
         return <DashboardPage />;
     }

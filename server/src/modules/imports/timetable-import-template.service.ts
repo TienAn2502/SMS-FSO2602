@@ -100,7 +100,6 @@ export class TimetableImportTemplateService {
     }
 
     const gradeLevels = await this.prisma.gradeLevel.findMany({
-      where: { schoolId },
       select: { id: true, code: true },
     });
     const entryGradeCode =
@@ -255,7 +254,10 @@ export class TimetableImportTemplateService {
     schoolId: string,
     semesterId: string,
   ): Promise<
-    Map<string, { subjectCode: string; subjectName: string; teacherEmail: string }>
+    Map<
+      string,
+      { subjectCode: string; subjectName: string; teacherEmail: string }
+    >
   > {
     const sections = await this.prisma.courseSection.findMany({
       where: {
@@ -297,8 +299,7 @@ export class TimetableImportTemplateService {
       map.set(`${classCode}:${subjectCode}`.toUpperCase(), {
         subjectCode,
         subjectName,
-        teacherEmail:
-          section.teachingAssignments[0]?.teacher.user?.email ?? '',
+        teacherEmail: section.teachingAssignments[0]?.teacher.user?.email ?? '',
       });
     }
 

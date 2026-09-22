@@ -56,11 +56,7 @@ export class ClassPlacementImportTemplateService {
     for (const [sheetName, rows] of Object.entries(
       CLASS_PLACEMENT_IMPORT_SAMPLE_BY_SHEET,
     )) {
-      builder.addSheetFromRows(
-        sheetName,
-        CLASS_PLACEMENT_IMPORT_COLUMNS,
-        rows,
-      );
+      builder.addSheetFromRows(sheetName, CLASS_PLACEMENT_IMPORT_COLUMNS, rows);
     }
 
     builder.addInstructionSheet(
@@ -101,7 +97,6 @@ export class ClassPlacementImportTemplateService {
     );
 
     const gradeLevels = await this.prisma.gradeLevel.findMany({
-      where: { schoolId },
       select: { id: true, code: true },
       orderBy: { code: 'asc' },
     });

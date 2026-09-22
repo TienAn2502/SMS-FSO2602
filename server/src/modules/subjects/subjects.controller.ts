@@ -46,6 +46,7 @@ export class SubjectsController {
     UserRole.STUDENT,
     UserRole.TEACHER,
     UserRole.PARENT,
+    UserRole.SYSTEM_ADMIN,
   )
   @ApiOperation({ summary: 'Danh sách môn học' })
   async list(
@@ -53,7 +54,12 @@ export class SubjectsController {
     @Query(new ZodValidationPipe(listSubjectsQuerySchema))
     query: ListSubjectsQuery,
   ) {
-    const result = await this.subjectsService.list(user.activeSchoolId, query);
+    const isSystemAdmin = user.role === UserRole.SYSTEM_ADMIN;
+    const result = await this.subjectsService.list(
+      user.activeSchoolId,
+      query,
+      isSystemAdmin,
+    );
 
     return {
       success: true,
@@ -75,7 +81,8 @@ export class SubjectsController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', new ZodValidationPipe(uuidParamSchema)) id: string,
   ) {
-    return this.subjectsService.findById(user.activeSchoolId, id);
+    const isSystemAdmin = user.role === UserRole.SYSTEM_ADMIN;
+    return this.subjectsService.findById(user.activeSchoolId, id, isSystemAdmin);
   }
 
   @Post()

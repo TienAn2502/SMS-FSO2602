@@ -8,10 +8,7 @@ import {
 import { AppException } from '@/common/exceptions/app.exception';
 import { PrismaService } from '@/common/database/prisma.service';
 import type { PaginationMeta } from '@/common/types/api-response.types';
-import {
-  buildPaginationMeta,
-  getSkip,
-} from '@/common/utils/pagination.util';
+import { buildPaginationMeta, getSkip } from '@/common/utils/pagination.util';
 import { AcademicYearsService } from '@/modules/academic-years/academic-years.service';
 import { GradeLevelsService } from '@/modules/grade-levels/grade-levels.service';
 import {
@@ -101,10 +98,7 @@ export class HomeroomClassesService {
       schoolId,
       input.academicYearId,
     );
-    await this.gradeLevelsService.findGradeLevelInTenant(
-      schoolId,
-      input.gradeLevelId,
-    );
+    await this.gradeLevelsService.findGradeLevelInTenant(input.gradeLevelId);
 
     if (input.homeroomTeacherId) {
       await this.validateHomeroomTeacher(

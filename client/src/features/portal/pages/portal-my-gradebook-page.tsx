@@ -9,7 +9,10 @@ import { LoadingState } from '@/components/feedback/loading-state';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CourseSectionListFilters } from '@/features/course-sections/components/course-section-list-filters';
 import { useCourseSectionListFilters } from '@/features/course-sections/hooks/use-course-section-list-filters';
-import { fetchMyGradebookClasses, type PortalGradebookClassSummary } from '@/features/portal/api/portal-api';
+import {
+    fetchMyGradebookClasses,
+    type PortalGradebookClassSummary,
+} from '@/features/portal/api/portal-api';
 
 export function PortalMyGradebookPage() {
     const {
@@ -84,8 +87,8 @@ export function PortalMyGradebookPage() {
                 </Link>
                 <h1 className='mt-2 text-2xl font-semibold'>Sổ điểm</h1>
                 <p className='text-sm text-muted-foreground'>
-                    Các lớp môn bạn được phân công — chọn lớp rồi chọn học kỳ
-                    để nhập điểm TX / GK / CK.
+                    Các lớp môn bạn được phân công — chọn lớp rồi chọn học kỳ để
+                    nhập điểm TX / GK / CK.
                 </p>
             </div>
 

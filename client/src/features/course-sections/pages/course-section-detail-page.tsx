@@ -48,7 +48,7 @@ import {
 } from '@/features/course-sections/components/change-course-section-teacher-form';
 import { TimetableEntryList } from '@/features/timetable/components/timetable-entry-list';
 import {
-    fetchTimetableEntries,
+    fetchTimetableEntriesByCourseSection,
     updateTimetableEntry,
 } from '@/features/timetable/api/timetable-entries-api';
 import { formatDateTimeVi, formatDateVi } from '@/lib/date-format';
@@ -115,11 +115,13 @@ async function changeCourseSectionTeacher(input: {
         assignAt: input.assignAt,
     });
 
-    const { items: sectionEntries } =
-        await fetchCourseSectionTimetableEntries(input.courseSectionId, {
+    const { items: sectionEntries } = await fetchCourseSectionTimetableEntries(
+        input.courseSectionId,
+        {
             semesterId: input.semesterId,
             limit: 100,
-        });
+        },
+    );
 
     await Promise.all(
         sectionEntries
@@ -137,7 +139,7 @@ export function CourseSectionDetailPage() {
     const queryClient = useQueryClient();
     const { session } = useAuth();
     const role = session?.user.role;
-    const isAdmin = role === 'SCHOOL_ADMIN';
+    const isSchoolAdmin = role === 'SCHOOL_ADMIN';
     const backNavigation = getBackNavigation(role);
     const [showChangeTeacher, setShowChangeTeacher] = useState(false);
 
@@ -195,18 +197,17 @@ export function CourseSectionDetailPage() {
     const teacherTimetableQuery = useQuery({
         queryKey: [
             'timetable-entries',
-            'teacher',
-            activeAssignment?.teacherId,
+            'course-section',
+            id,
             section?.semesterId,
         ],
         queryFn: () =>
-            fetchTimetableEntries({
-                teacherId: activeAssignment!.teacherId,
+            fetchTimetableEntriesByCourseSection(id, {
                 semesterId: section!.semesterId,
                 limit: 100,
                 status: 'ACTIVE',
             }),
-        enabled: Boolean(activeAssignment?.teacherId && section?.semesterId),
+        enabled: Boolean(id && section?.semesterId),
     });
 
     const {
@@ -233,7 +234,7 @@ export function CourseSectionDetailPage() {
     const teachersQuery = useQuery({
         queryKey: ['teachers', session?.activeSchoolId, 'all'],
         queryFn: fetchAllTeachers,
-        enabled: Boolean(isAdmin && showChangeTeacher),
+        enabled: Boolean(isSchoolAdmin && showChangeTeacher),
     });
 
     const updateMutation = useMutation({
@@ -390,7 +391,7 @@ export function CourseSectionDetailPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Thông tin</CardTitle>
-                        {isAdmin && (
+                        {isSchoolAdmin && (
                             <CardDescription>
                                 Tạo lúc {formatDateTimeVi(section.createdAt)} ·
                                 Cập nhật {formatDateTimeVi(section.updatedAt)}
@@ -398,7 +399,7 @@ export function CourseSectionDetailPage() {
                         )}
                     </CardHeader>
                     <CardContent>
-                        {isAdmin ? (
+                        {isSchoolAdmin ? (
                             <form
                                 className='space-y-4'
                                 onSubmit={handleSubmit((values) =>
@@ -547,7 +548,7 @@ export function CourseSectionDetailPage() {
                                     gradeLevelSubjectQuery.data?.subjectName
                                 }
                             />
-                            {isAdmin ? (
+                            {isSchoolAdmin ? (
                                 <Button
                                     type='button'
                                     variant='outline'
@@ -562,10 +563,7 @@ export function CourseSectionDetailPage() {
                     ) : (
                         <div className='rounded-xl border bg-card p-4 md:p-5'>
                             <ChangeCourseSectionTeacherForm
-                                key={
-                                    activeAssignment?.id ??
-                                    'new-assignment'
-                                }
+                                key={activeAssignment?.id ?? 'new-assignment'}
                                 activeAssignment={activeAssignment}
                                 subject={gradeLevelSubjectQuery.data}
                                 semesterName={semester?.name}
@@ -616,7 +614,7 @@ export function CourseSectionDetailPage() {
                             <>
                                 TKB đầy đủ của{' '}
                                 <span className='font-medium text-foreground'>
-                                    {activeAssignment.teacherFullName}
+                                    {section.name}
                                 </span>{' '}
                                 trong {semester?.name ?? 'học kỳ đã chọn'}
                             </>
@@ -637,9 +635,7 @@ export function CourseSectionDetailPage() {
                     {activeAssignment && teacherTimetableQuery.isError ? (
                         <ErrorState
                             message='Không tải được thời khóa biểu'
-                            onRetry={() =>
-                                void teacherTimetableQuery.refetch()
-                            }
+                            onRetry={() => void teacherTimetableQuery.refetch()}
                         />
                     ) : null}
                     {activeAssignment && teacherTimetableQuery.isSuccess ? (

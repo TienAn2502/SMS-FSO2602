@@ -41,3 +41,7 @@ export function looksLikePhone(value: string): boolean {
   const digits = normalizePhoneDigits(value);
   return /^0?\d{9,11}$/.test(digits) && !looksLikePersonCode(value);
 }
+
+export function normalizeIp(ip: string): string {
+  return ip.replace(/^::ffff:/, '');
+}

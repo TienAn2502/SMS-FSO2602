@@ -28,7 +28,6 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { fetchSemesters } from '@/features/academic-years/api/academic-years-api';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { CourseSectionListFilters } from '@/features/course-sections/components/course-section-list-filters';
 import { CourseSectionsImportSheet } from '@/features/course-sections/components/course-sections-import-sheet';
@@ -163,12 +162,6 @@ export function CourseSectionsPage() {
     const formYearId = watch('academicYearId');
     const formHomeroomClassId = watch('homeroomClassId');
     const formSubjectId = watch('subjectId');
-
-    const formSemestersQuery = useQuery({
-        queryKey: ['semesters', session?.activeSchoolId, 'form', formYearId],
-        queryFn: () => fetchSemesters(formYearId),
-        enabled: Boolean(session?.activeSchoolId && formYearId),
-    });
 
     const homeroomClassesQuery = useQuery({
         queryKey: [
@@ -339,7 +332,7 @@ export function CourseSectionsPage() {
     const items = listQuery.data?.items ?? [];
     const grades = gradesQuery.data?.items ?? [];
     const homeroomClasses = homeroomClassesQuery.data?.items ?? [];
-    const formSemesters = formSemestersQuery.data ?? [];
+    const formSemesters = semestersByYearId.get(formYearId) ?? [];
 
     useEffect(() => {
         const subject = subjects.find((row) => row.id === formSubjectId);
@@ -393,7 +386,9 @@ export function CourseSectionsPage() {
                 open={importOpen}
                 onOpenChange={setImportOpen}
                 defaultAcademicYearId={
-                    yearFilter && yearFilter !== 'all' ? yearFilter : formYearId || ''
+                    yearFilter && yearFilter !== 'all'
+                        ? yearFilter
+                        : formYearId || ''
                 }
                 defaultSemesterId={
                     semesterFilter && semesterFilter !== 'all'

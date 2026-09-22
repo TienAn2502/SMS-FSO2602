@@ -19,7 +19,7 @@ import { teacherMatchesSubjectSpecialization } from '@/lib/teacher-specializatio
 import { cn } from '@/lib/utils';
 
 const changeTeacherSchema = z.object({
-    teacherId: z.string().uuid('Chọn giáo viên'),
+    teacherId: z.uuid('Chọn giáo viên'),
     assignAt: z.string().min(1, 'Chọn ngày phân công'),
 });
 

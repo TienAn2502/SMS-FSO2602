@@ -40,3 +40,31 @@ export const updateGradeLevelSubjectSchema = z.object({
 export type UpdateGradeLevelSubjectInput = z.infer<
   typeof updateGradeLevelSubjectSchema
 >;
+
+// Batch update schema
+export const updateGradeLevelSubjectItemSchema = z.object({
+  id: z.uuid('ID không hợp lệ'),
+  periodsPerYear: z
+    .number()
+    .int('Số tiết phải là số nguyên')
+    .min(1, 'Số tiết tối thiểu là 1')
+    .max(999, 'Số tiết tối đa là 999')
+    .nullable()
+    .optional(),
+  isRequired: z.boolean().optional(),
+  evaluationMode: subjectEvaluationModeSchema.optional(),
+});
+
+export const batchUpdateGradeLevelSubjectsSchema = z.object({
+  updates: z
+    .array(updateGradeLevelSubjectItemSchema)
+    .min(1, 'Phải có ít nhất 1 bản ghi để cập nhật'),
+});
+
+export type UpdateGradeLevelSubjectItemInput = z.infer<
+  typeof updateGradeLevelSubjectItemSchema
+>;
+
+export type BatchUpdateGradeLevelSubjectsInput = z.infer<
+  typeof batchUpdateGradeLevelSubjectsSchema
+>;

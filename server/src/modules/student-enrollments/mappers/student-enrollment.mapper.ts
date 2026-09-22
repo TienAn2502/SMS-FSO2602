@@ -1,43 +1,25 @@
 import type {
-
   AcademicYear,
-
   EnrollmentStatus,
-
   HomeroomClass,
-
   Semester,
-
   Student,
-
   StudentEnrollment,
-
 } from '@prisma/client';
-
-
 
 import { toIsoDateString } from '@/common/schemas/academic.schema';
 
-
-
 type StudentEnrollmentWithRelations = StudentEnrollment & {
-
   student: Pick<Student, 'id' | 'fullName'>;
 
   homeroomClass: Pick<HomeroomClass, 'id' | 'name' | 'code'>;
 
   semester: Pick<Semester, 'id' | 'name' | 'code' | 'isCurrent'> & {
-
     academicYear: Pick<AcademicYear, 'id' | 'name' | 'code' | 'isCurrent'>;
-
   };
-
 };
 
-
-
 export interface StudentEnrollmentResponse {
-
   id: string;
 
   studentId: string;
@@ -75,29 +57,19 @@ export interface StudentEnrollmentResponse {
   createdAt: string;
 
   updatedAt: string;
-
 }
 
-
-
 export const studentEnrollmentInclude = {
-
   student: {
-
     select: { id: true, fullName: true },
-
   },
 
   homeroomClass: {
-
     select: { id: true, name: true, code: true },
-
   },
 
   semester: {
-
     select: {
-
       id: true,
 
       name: true,
@@ -107,27 +79,16 @@ export const studentEnrollmentInclude = {
       isCurrent: true,
 
       academicYear: {
-
         select: { id: true, name: true, code: true, isCurrent: true },
-
       },
-
     },
-
   },
-
 } as const;
 
-
-
 export function toStudentEnrollmentResponse(
-
   enrollment: StudentEnrollmentWithRelations,
-
 ): StudentEnrollmentResponse {
-
   return {
-
     id: enrollment.id,
 
     studentId: enrollment.studentId,
@@ -165,8 +126,5 @@ export function toStudentEnrollmentResponse(
     createdAt: enrollment.createdAt.toISOString(),
 
     updatedAt: enrollment.updatedAt.toISOString(),
-
   };
-
 }
-

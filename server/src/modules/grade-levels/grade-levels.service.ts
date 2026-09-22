@@ -1,33 +1,34 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { Prisma, type GradeLevel } from '@prisma/client';
 
+import type { AuthenticatedUser } from '@/common/auth/auth.types';
 import { AppException } from '@/common/exceptions/app.exception';
 import { PrismaService } from '@/common/database/prisma.service';
 import type { PaginationMeta } from '@/common/types/api-response.types';
-import {
-  buildPaginationMeta,
-  getSkip,
-} from '@/common/utils/pagination.util';
+import { buildPaginationMeta, getSkip } from '@/common/utils/pagination.util';
 import {
   toGradeLevelResponse,
   type GradeLevelResponse,
 } from '@/modules/grade-levels/mappers/grade-level.mapper';
-import type {
-  CreateGradeLevelInput,
-  ListGradeLevelsQuery,
-  UpdateGradeLevelInput,
-} from '@/modules/grade-levels/schemas/grade-level.schema';
+import type { ListGradeLevelsQuery } from '@/modules/grade-levels/schemas/grade-level.schema';
+import { UserRole } from '@prisma/client';
 
 @Injectable()
 export class GradeLevelsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async list(
-    schoolId: string,
+    user: AuthenticatedUser,
     query: ListGradeLevelsQuery,
   ): Promise<{ items: GradeLevelResponse[]; meta: PaginationMeta }> {
+    const isSystemAdmin = user.role === UserRole.SYSTEM_ADMIN;
+
+    // System Admin: lấy tất cả grade levels không filter theo tenant
+    // School Admin: đã được filter trong TenantGuard
     const where: Prisma.GradeLevelWhereInput = {
-      schoolId,
+      ...(isSystemAdmin
+        ? {} // System Admin: lấy tất cả
+        : {}), // School Admin: TenantGuard đã filter rồi
       ...(query.search
         ? {
             OR: [
@@ -68,66 +69,14 @@ export class GradeLevelsService {
     };
   }
 
-  async findById(
-    schoolId: string,
-    gradeLevelId: string,
-  ): Promise<GradeLevelResponse> {
-    const gradeLevel = await this.findGradeLevelInTenant(
-      schoolId,
-      gradeLevelId,
-    );
+  async findById(gradeLevelId: string): Promise<GradeLevelResponse> {
+    const gradeLevel = await this.findGradeLevelInTenant(gradeLevelId);
     return toGradeLevelResponse(gradeLevel);
   }
 
-  async create(
-    schoolId: string,
-    input: CreateGradeLevelInput,
-  ): Promise<GradeLevelResponse> {
-    try {
-      const gradeLevel = await this.prisma.gradeLevel.create({
-        data: {
-          schoolId,
-          name: input.name,
-          code: input.code,
-        },
-      });
-
-      return toGradeLevelResponse(gradeLevel);
-    } catch (error: unknown) {
-      this.handleUniqueViolation(error);
-      throw error;
-    }
-  }
-
-  async update(
-    schoolId: string,
-    gradeLevelId: string,
-    input: UpdateGradeLevelInput,
-  ): Promise<GradeLevelResponse> {
-    await this.findGradeLevelInTenant(schoolId, gradeLevelId);
-
-    try {
-      const gradeLevel = await this.prisma.gradeLevel.update({
-        where: { id: gradeLevelId },
-        data: {
-          ...(input.name !== undefined ? { name: input.name } : {}),
-          ...(input.code !== undefined ? { code: input.code } : {}),
-        },
-      });
-
-      return toGradeLevelResponse(gradeLevel);
-    } catch (error: unknown) {
-      this.handleUniqueViolation(error);
-      throw error;
-    }
-  }
-
-  async findGradeLevelInTenant(
-    schoolId: string,
-    gradeLevelId: string,
-  ): Promise<GradeLevel> {
+  async findGradeLevelInTenant(gradeLevelId: string): Promise<GradeLevel> {
     const gradeLevel = await this.prisma.gradeLevel.findFirst({
-      where: { id: gradeLevelId, schoolId },
+      where: { id: gradeLevelId },
     });
 
     if (!gradeLevel) {
@@ -139,18 +88,5 @@ export class GradeLevelsService {
     }
 
     return gradeLevel;
-  }
-
-  private handleUniqueViolation(error: unknown): void {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === 'P2002'
-    ) {
-      throw new AppException(
-        'GRADE_LEVEL_CODE_EXISTS',
-        'Mã khối đã tồn tại trong trường',
-        HttpStatus.CONFLICT,
-      );
-    }
   }
 }
